@@ -5,9 +5,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="Le Pouliguen en direct : marée, mer, météo, bus Lila Presqu'île en temps réel et agenda local."
+      content="Tableau de bord local du Pouliguen : marées, météo marine, plage, qualité de l'eau, bus Lila, trains SNCF, agenda, déchets, itinéraires à pied et à vélo."
     />
     <meta name="theme-color" content="#14324f" />
+    <meta
+      name="keywords"
+      content="Le Pouliguen, marée Le Pouliguen, météo Le Pouliguen, bus Lila Presqu'île, train Le Pouliguen, plages Le Pouliguen, qualité eau baignade, Côte Sauvage, agenda Le Pouliguen"
+    />
+    <meta name="robots" content="index,follow,max-image-preview:large" />
+    <meta name="application-name" content="Le Pouliguen Live" />
+    <meta name="apple-mobile-web-app-title" content="Le Pouliguen Live" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="fr_FR" />
+    <meta property="og:title" content="Le Pouliguen Live : marées, météo, bus, trains et sorties" />
+    <meta
+      property="og:description"
+      content="Toutes les informations pratiques pour préparer sa journée au Pouliguen : mer, plage, transports, agenda local et services utiles."
+    />
+    <meta property="og:site_name" content="Le Pouliguen Live" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Le Pouliguen Live" />
+    <meta
+      name="twitter:description"
+      content="Marées, météo, transports, plage, agenda et services pratiques au Pouliguen."
+    />
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-088KDJN7B7"></script>
     <script>
@@ -18,6 +39,50 @@
       gtag("js", new Date());
       gtag("config", "G-088KDJN7B7");
     </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Le Pouliguen Live",
+        "alternateName": "Pouliguen Live",
+        "applicationCategory": "TravelApplication",
+        "operatingSystem": "Web",
+        "inLanguage": "fr-FR",
+        "isAccessibleForFree": true,
+        "description": "Tableau de bord local pour Le Pouliguen avec marées, météo marine, qualité de l'eau, transports, agenda, déchets et itinéraires.",
+        "about": {
+          "@type": "Place",
+          "name": "Le Pouliguen",
+          "geo": {
+            "@type": "GeoCoordinates",
+            "latitude": 47.2769,
+            "longitude": -2.4292
+          },
+          "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "Le Pouliguen",
+            "postalCode": "44510",
+            "addressRegion": "Pays de la Loire",
+            "addressCountry": "FR"
+          }
+        },
+        "featureList": [
+          "Météo et prévisions locales",
+          "Marées et conditions de mer",
+          "Qualité des eaux de baignade",
+          "Horaires de bus Lila Presqu'île",
+          "Départs de trains SNCF depuis Le Pouliguen",
+          "Agenda local",
+          "Collecte des déchets",
+          "Itinéraires à pied et à vélo",
+          "Défibrillateurs et bornes de recharge"
+        ],
+        "creator": {
+          "@type": "Person",
+          "name": "Stan Berteloot"
+        }
+      }
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -25,6 +90,7 @@
       rel="stylesheet"
     />
     <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="alternate" type="text/plain" title="AI site summary" href="/llms.txt" />
     <link
       rel="icon"
       href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌊</text></svg>"
@@ -33,6 +99,28 @@
   </head>
   <body>
     <div id="root"></div>
+    <noscript>
+      <main>
+        <h1>Le Pouliguen Live</h1>
+        <p>
+          Tableau de bord local pour préparer une journée au Pouliguen :
+          marées, météo, conditions de mer, plages, qualité de l'eau,
+          transports, agenda et services pratiques.
+        </p>
+        <h2>Informations couvertes</h2>
+        <ul>
+          <li>Marées, basse mer, haute mer, température de l'eau et vagues.</li>
+          <li>Météo locale, vent, UV et vigilance officielle.</li>
+          <li>Bus Lila Presqu'île et trains SNCF depuis la gare du Pouliguen.</li>
+          <li>Qualité de l'eau de baignade pour les plages suivies.</li>
+          <li>Agenda local, collecte des déchets, itinéraires à pied et à vélo.</li>
+        </ul>
+        <p>
+          JavaScript est nécessaire pour afficher les données en direct et les
+          cartes interactives.
+        </p>
+      </main>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
