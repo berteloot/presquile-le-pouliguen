@@ -5,6 +5,13 @@ import { LAT, LON } from "../config";
 
 const BASE = "https://data.capatlantique.fr/api/explore/v2.1/catalog/datasets";
 const COMMUNE = "Le Pouliguen";
+const AGENDA_CITIES = [
+  "Le Pouliguen",
+  "Batz-sur-Mer",
+  "La Baule-Escoublac",
+  "Pornichet",
+  "Saint-Nazaire",
+];
 
 export interface WasteCollection {
   date: string; // YYYY-MM-DD
@@ -31,6 +38,7 @@ export interface AgendaEvent {
   title: string;
   dateRange: string;
   location: string;
+  city: string;
   url: string | null;
 }
 
@@ -114,25 +122,28 @@ export async function fetchBeaches(): Promise<Beach[]> {
 }
 
 export async function fetchAgendaEvents(): Promise<AgendaEvent[]> {
+  const cityFilter = AGENDA_CITIES.map((city) => `location_city="${city}"`).join(" OR ");
   const rows = await ods("244400610_publicevents_openagenda", {
-    refine: `location_city:"${COMMUNE}"`,
-    where: "lastdate_end>=now()",
+    where: `lastdate_end>=now() AND (${cityFilter})`,
     order_by: "firstdate_begin",
-    select: "title_fr,daterange_fr,location_name,canonicalurl",
-    limit: "10",
+    select: "title_fr,daterange_fr,location_name,location_city,canonicalurl",
+    limit: "40",
   });
   const seen = new Set<string>();
   const out: AgendaEvent[] = [];
   for (const r of rows) {
     const title = String(r.title_fr ?? "");
-    if (!title || seen.has(title)) continue;
-    seen.add(title);
+    const city = String(r.location_city ?? "");
+    const key = `${title}|${city}|${r.daterange_fr}`;
+    if (!title || seen.has(key)) continue;
+    seen.add(key);
     out.push({
       title,
       dateRange: String(r.daterange_fr ?? ""),
       location: String(r.location_name ?? ""),
+      city,
       url: r.canonicalurl ? String(r.canonicalurl) : null,
     });
   }
-  return out.slice(0, 8);
+  return out.slice(0, 16);
 }

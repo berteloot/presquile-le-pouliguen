@@ -93,6 +93,48 @@ const MONITORED_BEACHES = [
   "Plage Benoît",
   "Plage du Général-de-Gaulle",
 ];
+const NEARBY_TOWNS = [
+  {
+    name: "Batz-sur-Mer",
+    distance: "6 km",
+    angle: "marais salants, patrimoine paludier, côte sauvage",
+    ideas: ["Musée des Marais Salants", "côte sauvage", "petits concerts et fêtes locales"],
+    agendaUrl: "https://www.batzsurmer.fr/informations-transversales/agenda",
+    activityUrl: "https://www.ot-batzsurmer.fr/agenda-batz-sur-mer.html",
+  },
+  {
+    name: "La Baule-Escoublac",
+    distance: "4 km",
+    angle: "grande plage, expos, sport, festivals",
+    ideas: ["La Baule Jazz Festival", "expositions", "sports de plage et polo"],
+    agendaUrl: "https://www.labaule.fr/evenements/",
+    activityUrl: "https://www.labaule-guerande.com/explorer/agenda/",
+  },
+  {
+    name: "Pornichet",
+    distance: "10 km",
+    angle: "animations familiales, marché, hippodrome, plage",
+    ideas: ["Les Renc'Arts", "marchés nocturnes", "longe-côte"],
+    agendaUrl: "https://ville-pornichet.fr/je-bouge/agenda-de-pornichet/",
+    activityUrl: "https://www.pornichet.fr/sejourner/tous-les-evenements-pornichet",
+  },
+  {
+    name: "Saint-Nazaire",
+    distance: "22 km",
+    angle: "visites industrielles, culture, concerts, front de mer",
+    ideas: ["Escal'Atlantic", "base sous-marine", "concerts au VIP"],
+    agendaUrl: "https://www.saintnazaire.fr/mon-quotidien/sortir-a-saint-nazaire/",
+    activityUrl: "https://www.saint-nazaire-tourisme.com/agenda/",
+  },
+];
+const AGENDA_CITY_FILTERS = [
+  "Tous",
+  "Le Pouliguen",
+  "Batz-sur-Mer",
+  "La Baule-Escoublac",
+  "Pornichet",
+  "Saint-Nazaire",
+];
 type CircuitMode = "all" | "rando" | "velo";
 
 function freshnessLabel(fetchedAt: Date | undefined): string {
@@ -241,6 +283,7 @@ export default function App() {
   const [errors, setErrors] = useState<string[]>([]);
   const [selectedCircuit, setSelectedCircuit] = useState<string | null>(null);
   const [circuitMode, setCircuitMode] = useState<CircuitMode>("all");
+  const [agendaCity, setAgendaCity] = useState("Tous");
   const [route, setRoute] = useState<string>(() => window.location.hash);
   const selectedDateValue = toDateInputValue(selectedDate);
   const todayValue = toDateInputValue(now);
@@ -448,6 +491,19 @@ export default function App() {
   const waveSelected = marine
     ? latestBefore(marine.hourlyTimes, marine.waveHeight, marineReference)
     : null;
+  const agendaCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    counts.set("Tous", agenda.length);
+    for (const event of agenda) {
+      if (!event.city) continue;
+      counts.set(event.city, (counts.get(event.city) ?? 0) + 1);
+    }
+    return counts;
+  }, [agenda]);
+  const visibleAgenda = useMemo(
+    () => (agendaCity === "Tous" ? agenda : agenda.filter((event) => event.city === agendaCity)),
+    [agenda, agendaCity],
+  );
 
   const nearestGlass = glassPoints[0] ?? null;
 
@@ -1015,18 +1071,66 @@ export default function App() {
 
         <section className="card card-wide">
           <div className="event-heading">
-            <h3>En ce moment au Pouliguen</h3>
-            <a href={MUNICIPAL_EVENTS_URL} target="_blank" rel="noreferrer">
-              agenda complet
-            </a>
+            <div>
+              <h3>En ce moment sur la presqu'île</h3>
+              {agenda.length > 0 && (
+                <p className="event-summary">
+                  {agenda.length} idées sorties, de la plage aux visites urbaines.
+                </p>
+              )}
+            </div>
+            <div className="event-source-links">
+              <a href={MUNICIPAL_EVENTS_URL} target="_blank" rel="noreferrer">
+                Pouliguen
+              </a>
+              <a
+                href="https://www.labaule-guerande.com/explorer/agenda/"
+                target="_blank"
+                rel="noreferrer"
+              >
+                destination
+              </a>
+            </div>
           </div>
-          {agenda.length > 0 ? (
+          {agenda.length > 0 && (
+            <div className="event-filters" role="tablist" aria-label="Filtrer les événements par ville">
+              {AGENDA_CITY_FILTERS.map((city) => {
+                const count = agendaCounts.get(city) ?? 0;
+                return (
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={agendaCity === city}
+                    className={agendaCity === city ? "event-filter is-active" : "event-filter"}
+                    key={city}
+                    onClick={() => setAgendaCity(city)}
+                    disabled={count === 0}
+                  >
+                    <span>{city}</span>
+                    <em>{count}</em>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          {visibleAgenda.length > 0 ? (
             <ul className="events">
-              {agenda.map((e, i) => (
+              {visibleAgenda.map((e, i) => (
                 <li key={i}>
-                  <strong>{e.title}</strong>
-                  <span>{e.dateRange}</span>
-                  <span>{e.location}</span>
+                  <div className="event-title-row">
+                    {e.city && <span className="event-city">{e.city}</span>}
+                    {e.url ? (
+                      <a href={e.url} target="_blank" rel="noreferrer">
+                        {e.title}
+                      </a>
+                    ) : (
+                      e.title
+                    )}
+                  </div>
+                  <div className="event-meta">
+                    <span>{e.dateRange}</span>
+                    {e.location && <span>{e.location}</span>}
+                  </div>
                 </li>
               ))}
             </ul>
@@ -1042,13 +1146,52 @@ export default function App() {
             </ul>
           ) : (
             <p className="placeholder">
-              Agenda indisponible. Voir{" "}
+              Aucun événement trouvé pour cette ville dans le flux actuel. Voir{" "}
               <a href={MUNICIPAL_EVENTS_URL} target="_blank" rel="noreferrer">
-                l'agenda municipal
+                l'agenda municipal du Pouliguen
               </a>
               .
             </p>
           )}
+        </section>
+
+        <section className="card card-wide">
+          <div className="event-heading">
+            <h3>À explorer autour</h3>
+            <a
+              href="https://www.labaule-guerande.com/explorer/agenda/"
+              target="_blank"
+              rel="noreferrer"
+            >
+              agenda destination
+            </a>
+          </div>
+          <div className="nearby-towns">
+            {NEARBY_TOWNS.map((town) => (
+              <article className="nearby-town" key={town.name}>
+                <div className="nearby-town-head">
+                  <div>
+                    <strong>{town.name}</strong>
+                    <p>{town.angle}</p>
+                  </div>
+                  <span>{town.distance}</span>
+                </div>
+                <ul>
+                  {town.ideas.map((idea) => (
+                    <li key={idea}>{idea}</li>
+                  ))}
+                </ul>
+                <div className="nearby-links">
+                  <a href={town.agendaUrl} target="_blank" rel="noreferrer">
+                    événements
+                  </a>
+                  <a href={town.activityUrl} target="_blank" rel="noreferrer">
+                    activités
+                  </a>
+                </div>
+              </article>
+            ))}
+          </div>
         </section>
 
         <ComingDays
