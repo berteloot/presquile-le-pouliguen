@@ -15,19 +15,32 @@
     <meta name="robots" content="index,follow,max-image-preview:large" />
     <meta name="application-name" content="Le Pouliguen Live" />
     <meta name="apple-mobile-web-app-title" content="Le Pouliguen Live" />
+    <meta name="author" content="Stan Berteloot" />
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="fr_FR" />
     <meta property="og:title" content="Le Pouliguen Live : marées, météo, bus, trains et sorties" />
+    <meta property="og:url" content="https://presquile-le-pouliguen.berteloot.org/" />
     <meta
       property="og:description"
       content="Toutes les informations pratiques pour préparer sa journée au Pouliguen : mer, plage, transports, agenda local et services utiles."
     />
+    <meta
+      property="og:image"
+      content="https://presquile-le-pouliguen.berteloot.org/images/lighthouse-hero.jpg"
+    />
+    <meta property="og:image:width" content="1800" />
+    <meta property="og:image:height" content="1131" />
+    <meta property="og:image:alt" content="Phare de la jetée du Pouliguen au bord de mer" />
     <meta property="og:site_name" content="Le Pouliguen Live" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Le Pouliguen Live" />
     <meta
       name="twitter:description"
       content="Marées, météo, transports, plage, agenda et services pratiques au Pouliguen."
+    />
+    <meta
+      name="twitter:image"
+      content="https://presquile-le-pouliguen.berteloot.org/images/lighthouse-hero.jpg"
     />
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-088KDJN7B7"></script>
@@ -42,45 +55,87 @@
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
-        "@type": "WebApplication",
-        "name": "Le Pouliguen Live",
-        "alternateName": "Pouliguen Live",
-        "applicationCategory": "TravelApplication",
-        "operatingSystem": "Web",
-        "inLanguage": "fr-FR",
-        "isAccessibleForFree": true,
-        "description": "Tableau de bord local pour Le Pouliguen avec marées, météo marine, qualité de l'eau, transports, agenda, déchets et itinéraires.",
-        "about": {
-          "@type": "Place",
-          "name": "Le Pouliguen",
-          "geo": {
-            "@type": "GeoCoordinates",
-            "latitude": 47.2769,
-            "longitude": -2.4292
+        "@graph": [
+          {
+            "@type": "Place",
+            "@id": "https://presquile-le-pouliguen.berteloot.org/#place-le-pouliguen",
+            "name": "Le Pouliguen",
+            "geo": {
+              "@type": "GeoCoordinates",
+              "latitude": 47.2769,
+              "longitude": -2.4292
+            },
+            "address": {
+              "@type": "PostalAddress",
+              "addressLocality": "Le Pouliguen",
+              "postalCode": "44510",
+              "addressRegion": "Pays de la Loire",
+              "addressCountry": "FR"
+            }
           },
-          "address": {
-            "@type": "PostalAddress",
-            "addressLocality": "Le Pouliguen",
-            "postalCode": "44510",
-            "addressRegion": "Pays de la Loire",
-            "addressCountry": "FR"
+          {
+            "@type": "WebSite",
+            "@id": "https://presquile-le-pouliguen.berteloot.org/#website",
+            "url": "https://presquile-le-pouliguen.berteloot.org/",
+            "name": "Le Pouliguen Live",
+            "alternateName": "Pouliguen Live",
+            "inLanguage": "fr-FR",
+            "description": "Tableau de bord local non officiel pour préparer une journée au Pouliguen.",
+            "about": { "@id": "https://presquile-le-pouliguen.berteloot.org/#place-le-pouliguen" },
+            "publisher": { "@id": "https://presquile-le-pouliguen.berteloot.org/#creator" }
+          },
+          {
+            "@type": "WebPage",
+            "@id": "https://presquile-le-pouliguen.berteloot.org/#homepage",
+            "url": "https://presquile-le-pouliguen.berteloot.org/",
+            "name": "Le Pouliguen Live : marées, météo, bus, trains et sorties",
+            "isPartOf": { "@id": "https://presquile-le-pouliguen.berteloot.org/#website" },
+            "inLanguage": "fr-FR",
+            "about": { "@id": "https://presquile-le-pouliguen.berteloot.org/#place-le-pouliguen" },
+            "description": "Marées, météo marine, qualité des eaux de baignade, transports, agenda, déchets, itinéraires à pied et à vélo au Pouliguen.",
+            "primaryImageOfPage": {
+              "@type": "ImageObject",
+              "url": "https://presquile-le-pouliguen.berteloot.org/images/lighthouse-hero.jpg",
+              "caption": "Phare de la jetée du Pouliguen"
+            },
+            "mainEntity": { "@id": "https://presquile-le-pouliguen.berteloot.org/#app" }
+          },
+          {
+            "@type": "WebApplication",
+            "@id": "https://presquile-le-pouliguen.berteloot.org/#app",
+            "url": "https://presquile-le-pouliguen.berteloot.org/",
+            "name": "Le Pouliguen Live",
+            "alternateName": "Pouliguen Live",
+            "applicationCategory": "TravelApplication",
+            "operatingSystem": "Web",
+            "inLanguage": "fr-FR",
+            "isAccessibleForFree": true,
+            "description": "Tableau de bord local pour Le Pouliguen avec marées, météo marine, qualité de l'eau, transports, agenda, déchets et itinéraires.",
+            "spatialCoverage": { "@id": "https://presquile-le-pouliguen.berteloot.org/#place-le-pouliguen" },
+            "audience": [
+              { "@type": "Audience", "audienceType": "Habitants du Pouliguen" },
+              { "@type": "Audience", "audienceType": "Visiteurs du Pouliguen" },
+              { "@type": "Audience", "audienceType": "Plaisanciers et usagers de la plage" }
+            ],
+            "featureList": [
+              "Météo et prévisions locales",
+              "Marées et conditions de mer",
+              "Qualité des eaux de baignade",
+              "Horaires de bus Lila Presqu'île",
+              "Départs de trains SNCF depuis Le Pouliguen",
+              "Agenda local",
+              "Collecte des déchets",
+              "Itinéraires à pied et à vélo",
+              "Défibrillateurs et bornes de recharge"
+            ],
+            "creator": { "@id": "https://presquile-le-pouliguen.berteloot.org/#creator" }
+          },
+          {
+            "@type": "Person",
+            "@id": "https://presquile-le-pouliguen.berteloot.org/#creator",
+            "name": "Stan Berteloot"
           }
-        },
-        "featureList": [
-          "Météo et prévisions locales",
-          "Marées et conditions de mer",
-          "Qualité des eaux de baignade",
-          "Horaires de bus Lila Presqu'île",
-          "Départs de trains SNCF depuis Le Pouliguen",
-          "Agenda local",
-          "Collecte des déchets",
-          "Itinéraires à pied et à vélo",
-          "Défibrillateurs et bornes de recharge"
-        ],
-        "creator": {
-          "@type": "Person",
-          "name": "Stan Berteloot"
-        }
+        ]
       }
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -89,13 +144,15 @@
       href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Plus+Jakarta+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap"
       rel="stylesheet"
     />
+    <link rel="canonical" href="https://presquile-le-pouliguen.berteloot.org/" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="alternate" type="text/plain" title="AI site summary" href="/llms.txt" />
+    <link rel="alternate" type="text/markdown" title="AI-readable site brief" href="/ai/site-brief.md" />
     <link
       rel="icon"
       href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌊</text></svg>"
     />
-    <title>Le Pouliguen Live : marée, bus et météo en direct</title>
+    <title>Le Pouliguen Live : marées, météo, bus, trains, plages et sorties</title>
   </head>
   <body>
     <div id="root"></div>
