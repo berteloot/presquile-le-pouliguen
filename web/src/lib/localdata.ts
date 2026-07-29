@@ -152,6 +152,37 @@ export interface CircuitTrace {
   segments: [number, number][][];
 }
 
+export interface BikeParking {
+  street: string;
+  commune: string;
+  furniture: string;
+  covered: boolean;
+  capacity: number;
+  lat: number;
+  lon: number;
+  distanceKm: number;
+}
+
+export interface BikeSegment {
+  name: string;
+  commune: string;
+  arrangement: string;
+  lengthM: number;
+  updatedAt: string;
+  distanceKm: number;
+}
+
+export interface BikeShareStation {
+  name: string;
+  lat: number;
+  lon: number;
+  capacity: number;
+  bikesAvailable: number;
+  docksAvailable: number;
+  rentalUrl: string | null;
+  distanceKm: number;
+}
+
 function extractSegments(geo: unknown): [number, number][][] {
   const g = (geo as { geometry?: { type?: string; coordinates?: unknown } })
     ?.geometry;
@@ -169,6 +200,12 @@ function extractSegments(geo: unknown): [number, number][][] {
     if (seg.length >= 2) out.push(seg);
   }
   return out;
+}
+
+function nearbyWhere(field = "commune"): string {
+  return Array.from(NEARBY)
+    .map((commune) => `${field}="${commune}"`)
+    .join(" OR ");
 }
 
 /** Route geometries for the circuits close to town, for the map. */
@@ -221,6 +258,87 @@ export async function fetchCircuitTraces(): Promise<CircuitTrace[]> {
     }
   }
   return out;
+}
+
+export async function fetchBikeParking(maxKm = 12): Promise<BikeParking[]> {
+  const select = encodeURIComponent("nom_voie,commune,mobilier,couverture,capacite,geo_point_2d");
+  const res = await fetch(
+    `${CAP_BASE}/244400610_stationnement_velo/records?select=${select}&limit=100`,
+  );
+  if (!res.ok) throw new Error(`bike parking HTTP ${res.status}`);
+  return ((await res.json()).results ?? [])
+    .map((r: Record<string, unknown>) => {
+      const point = r.geo_point_2d as { lat?: number; lon?: number } | undefined;
+      const lat = Number(point?.lat);
+      const lon = Number(point?.lon);
+      return {
+        street: String(r.nom_voie ?? "Stationnement vélo"),
+        commune: String(r.commune ?? ""),
+        furniture: String(r.mobilier ?? ""),
+        covered: /oui/i.test(String(r.couverture ?? "")),
+        capacity: Number(r.capacite ?? 0),
+        lat,
+        lon,
+        distanceKm: haversineKm(LAT, LON, lat, lon),
+      };
+    })
+    .filter((p: BikeParking) => Number.isFinite(p.lat) && Number.isFinite(p.lon) && p.distanceKm <= maxKm)
+    .sort((a: BikeParking, b: BikeParking) => a.distanceKm - b.distanceKm);
+}
+
+export async function fetchBikeSegments(maxKm = 12): Promise<BikeSegment[]> {
+  const where = encodeURIComponent(nearbyWhere());
+  const select = encodeURIComponent("nom,commune,longueur,amenagemen,date_maj,geo_point_2d");
+  const res = await fetch(
+    `${CAP_BASE}/244400610_itineraires_velo/records?select=${select}&where=${where}&limit=100`,
+  );
+  if (!res.ok) throw new Error(`bike segments HTTP ${res.status}`);
+  return ((await res.json()).results ?? [])
+    .map((r: Record<string, unknown>) => {
+      const point = r.geo_point_2d as { lat?: number; lon?: number } | undefined;
+      const lat = Number(point?.lat);
+      const lon = Number(point?.lon);
+      return {
+        name: String(r.nom ?? "Itinéraire vélo"),
+        commune: String(r.commune ?? ""),
+        arrangement: String(r.amenagemen ?? "aménagement non précisé"),
+        lengthM: Number(r.longueur ?? 0),
+        updatedAt: String(r.date_maj ?? ""),
+        distanceKm: haversineKm(LAT, LON, lat, lon),
+      };
+    })
+    .filter((s: BikeSegment) => Number.isFinite(s.distanceKm) && s.distanceKm <= maxKm)
+    .sort((a: BikeSegment, b: BikeSegment) => a.distanceKm - b.distanceKm);
+}
+
+export async function fetchBikeShareStations(maxKm = 14): Promise<BikeShareStation[]> {
+  const res = await fetch(
+    `${CAP_BASE}/21440055800018_ecovelo_velo_baulois_station_information/records?select=name,lat,lon,capacity,joint_num_vehicles_available,joint_num_docks_available,rental_uris&limit=40`,
+  );
+  if (!res.ok) throw new Error(`bike share HTTP ${res.status}`);
+  return ((await res.json()).results ?? [])
+    .map((r: Record<string, unknown>) => {
+      const lat = Number(r.lat);
+      const lon = Number(r.lon);
+      let rentalUrl: string | null = null;
+      try {
+        rentalUrl = JSON.parse(String(r.rental_uris ?? "{}")).web ?? null;
+      } catch {
+        rentalUrl = null;
+      }
+      return {
+        name: String(r.name ?? "Station Vélo Baulois").replace(/^\[\s*|\s*\]$/g, ""),
+        lat,
+        lon,
+        capacity: Number(r.capacity ?? 0),
+        bikesAvailable: Number(r.joint_num_vehicles_available ?? 0),
+        docksAvailable: Number(r.joint_num_docks_available ?? 0),
+        rentalUrl,
+        distanceKm: haversineKm(LAT, LON, lat, lon),
+      };
+    })
+    .filter((s: BikeShareStation) => Number.isFinite(s.lat) && Number.isFinite(s.lon) && s.distanceKm <= maxKm)
+    .sort((a: BikeShareStation, b: BikeShareStation) => a.distanceKm - b.distanceKm);
 }
 
 export async function fetchDae(): Promise<DaePoint[]> {

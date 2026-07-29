@@ -122,28 +122,40 @@ export async function fetchBeaches(): Promise<Beach[]> {
 }
 
 export async function fetchAgendaEvents(): Promise<AgendaEvent[]> {
-  const cityFilter = AGENDA_CITIES.map((city) => `location_city="${city}"`).join(" OR ");
-  const rows = await ods("244400610_publicevents_openagenda", {
-    where: `lastdate_end>=now() AND (${cityFilter})`,
-    order_by: "firstdate_begin",
-    select: "title_fr,daterange_fr,location_name,location_city,canonicalurl",
-    limit: "40",
-  });
+  const rowsByCity = await Promise.all(
+    AGENDA_CITIES.map((city) =>
+      ods("244400610_publicevents_openagenda", {
+        where: `lastdate_end>=now() AND location_city="${city}"`,
+        order_by: "firstdate_begin",
+        select: "title_fr,daterange_fr,location_name,location_city,canonicalurl",
+        limit: "8",
+      }),
+    ),
+  );
   const seen = new Set<string>();
+  const perCity = rowsByCity.map((rows) => {
+    const events: AgendaEvent[] = [];
+    for (const r of rows) {
+      const title = String(r.title_fr ?? "");
+      const city = String(r.location_city ?? "");
+      const key = `${title}|${city}|${r.daterange_fr}`;
+      if (!title || seen.has(key)) continue;
+      seen.add(key);
+      events.push({
+        title,
+        dateRange: String(r.daterange_fr ?? ""),
+        location: String(r.location_name ?? ""),
+        city,
+        url: r.canonicalurl ? String(r.canonicalurl) : null,
+      });
+    }
+    return events;
+  });
   const out: AgendaEvent[] = [];
-  for (const r of rows) {
-    const title = String(r.title_fr ?? "");
-    const city = String(r.location_city ?? "");
-    const key = `${title}|${city}|${r.daterange_fr}`;
-    if (!title || seen.has(key)) continue;
-    seen.add(key);
-    out.push({
-      title,
-      dateRange: String(r.daterange_fr ?? ""),
-      location: String(r.location_name ?? ""),
-      city,
-      url: r.canonicalurl ? String(r.canonicalurl) : null,
-    });
+  for (let i = 0; i < 8; i++) {
+    for (const events of perCity) {
+      if (events[i]) out.push(events[i]);
+    }
   }
-  return out.slice(0, 16);
+  return out;
 }

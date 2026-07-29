@@ -25,11 +25,17 @@ import {
 } from "./lib/capatlantique";
 import {
   chargerLabel,
+  fetchBikeParking,
+  fetchBikeSegments,
+  fetchBikeShareStations,
   fetchChargers,
   fetchCircuits,
   fetchCircuitTraces,
   fetchDae,
   fetchRoadInfo,
+  type BikeParking,
+  type BikeSegment,
+  type BikeShareStation,
   type ChargerStation,
   type Circuit,
   type CircuitTrace,
@@ -270,6 +276,9 @@ export default function App() {
   const [roadInfo, setRoadInfo] = useState<RoadInfo[] | null>(null);
   const [circuits, setCircuits] = useState<Circuit[]>([]);
   const [circuitTraces, setCircuitTraces] = useState<CircuitTrace[]>([]);
+  const [bikeParking, setBikeParking] = useState<BikeParking[] | null>(null);
+  const [bikeSegments, setBikeSegments] = useState<BikeSegment[] | null>(null);
+  const [bikeShareStations, setBikeShareStations] = useState<BikeShareStation[] | null>(null);
   const [dae, setDae] = useState<DaePoint[]>([]);
   const [chargers, setChargers] = useState<ChargerStation[]>([]);
   const [fallbackEvents, setFallbackEvents] = useState<LocalEvent[]>([]);
@@ -355,6 +364,9 @@ export default function App() {
     fetchGlassPoints().then(setGlassPoints).catch(() => {});
     fetchCircuits().then(setCircuits).catch(() => {});
     fetchCircuitTraces().then(setCircuitTraces).catch(() => {});
+    fetchBikeParking().then(setBikeParking).catch(() => setBikeParking([]));
+    fetchBikeSegments().then(setBikeSegments).catch(() => setBikeSegments([]));
+    fetchBikeShareStations().then(setBikeShareStations).catch(() => setBikeShareStations([]));
     fetchDae().then(setDae).catch(() => {});
     fetchChargers().then(setChargers).catch(() => {});
   }, []);
@@ -491,6 +503,56 @@ export default function App() {
   const waveSelected = marine
     ? latestBefore(marine.hourlyTimes, marine.waveHeight, marineReference)
     : null;
+  const bikeSegmentStats = useMemo(() => {
+    const stats = new Map<string, { count: number; lengthM: number }>();
+    for (const segment of bikeSegments ?? []) {
+      const key = segment.arrangement || "Non précisé";
+      const current = stats.get(key) ?? { count: 0, lengthM: 0 };
+      current.count += 1;
+      current.lengthM += Number.isFinite(segment.lengthM) ? segment.lengthM : 0;
+      stats.set(key, current);
+    }
+    return Array.from(stats.entries())
+      .map(([label, value]) => ({
+        label,
+        count: value.count,
+        km: Math.round(value.lengthM / 100) / 10,
+      }))
+      .sort((a, b) => b.km - a.km)
+      .slice(0, 4);
+  }, [bikeSegments]);
+  const bikeMapMarkers = useMemo(
+    () => [
+      ...(bikeParking ?? []).slice(0, 8).map((p) => ({
+        lat: p.lat,
+        lon: p.lon,
+        label: "P",
+        color: "#0b6396",
+        title: `${p.capacity} places vélo · ${p.street}`,
+        popupHtml:
+          `<div class="bus-popup"><h3>${escapeHtml(p.street)}</h3>` +
+          `<p>${escapeHtml(p.commune)} · ${p.capacity} place${p.capacity > 1 ? "s" : ""}` +
+          (p.furniture ? ` · ${escapeHtml(p.furniture)}` : "") +
+          (p.covered ? " · couvert" : "") +
+          `</p></div>`,
+      })),
+      ...(bikeShareStations ?? []).slice(0, 6).map((s) => ({
+        lat: s.lat,
+        lon: s.lon,
+        label: "V",
+        color: "#357a38",
+        title: `Vélo Baulois · ${s.name}`,
+        popupHtml:
+          `<div class="bus-popup"><h3>Vélo Baulois · ${escapeHtml(s.name)}</h3>` +
+          `<p>${s.bikesAvailable} vélo${s.bikesAvailable > 1 ? "s" : ""} disponible${s.bikesAvailable > 1 ? "s" : ""} · ${s.docksAvailable} attaches libres</p>` +
+          (s.rentalUrl
+            ? `<a href="${escapeHtml(s.rentalUrl)}" target="_blank" rel="noreferrer">ouvrir la station</a>`
+            : "") +
+          `</div>`,
+      })),
+    ],
+    [bikeParking, bikeShareStations],
+  );
   const agendaCounts = useMemo(() => {
     const counts = new Map<string, number>();
     counts.set("Tous", agenda.length);
@@ -849,6 +911,62 @@ export default function App() {
           </p>
         </section>
 
+        <section className="card">
+          <h3>Vélo pratique</h3>
+          {bikeParking === null || bikeSegments === null || bikeShareStations === null ? (
+            <p className="placeholder">Chargement des données vélo…</p>
+          ) : (
+            <>
+              {bikeMapMarkers.length > 0 && <PoiMap markers={bikeMapMarkers} />}
+              <div className="bike-practical-grid">
+                <div>
+                  <span className="bike-metric">{bikeParking.length}</span>
+                  <span>stationnements vélo proches</span>
+                </div>
+                <div>
+                  <span className="bike-metric">
+                    {bikeParking.reduce((sum, p) => sum + p.capacity, 0)}
+                  </span>
+                  <span>places recensées</span>
+                </div>
+                <div>
+                  <span className="bike-metric">{bikeShareStations.length}</span>
+                  <span>stations Vélo Baulois à portée</span>
+                </div>
+              </div>
+              {bikeShareStations.length > 0 && (
+                <ul className="bike-stations">
+                  {bikeShareStations.slice(0, 3).map((station) => (
+                    <li key={station.name}>
+                      <strong>{station.name}</strong>
+                      <span>
+                        {station.bikesAvailable} vélo{station.bikesAvailable > 1 ? "s" : ""} ·{" "}
+                        {station.docksAvailable} attaches libres · à{" "}
+                        {station.distanceKm.toFixed(1)} km
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {bikeSegmentStats.length > 0 && (
+                <div className="bike-segments">
+                  <strong>Aménagements cyclables proches</strong>
+                  {bikeSegmentStats.map((segment) => (
+                    <span key={segment.label}>
+                      {segment.label} · {segment.km} km · {segment.count} tronçon
+                      {segment.count > 1 ? "s" : ""}
+                    </span>
+                  ))}
+                </div>
+              )}
+              <p className="meta-line">
+                Sources : Cap Atlantique (stationnements et tronçons vélo),
+                Vélo Baulois pour les vélos électriques en libre-service.
+              </p>
+            </>
+          )}
+        </section>
+
         </div>
 
         <h2 className="section-title" id="cote">La côte</h2>
@@ -1094,7 +1212,10 @@ export default function App() {
           </div>
           {agenda.length > 0 && (
             <div className="event-filters" role="tablist" aria-label="Filtrer les événements par ville">
-              {AGENDA_CITY_FILTERS.map((city) => {
+              {AGENDA_CITY_FILTERS.filter((city) => {
+                const count = agendaCounts.get(city) ?? 0;
+                return city === "Tous" || count > 0 || agendaCity === city;
+              }).map((city) => {
                 const count = agendaCounts.get(city) ?? 0;
                 return (
                   <button
