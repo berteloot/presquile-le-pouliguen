@@ -139,6 +139,17 @@ function addDays(date: Date, days: number): Date {
   return startOfDay(d);
 }
 
+function shortWhenLabel(date: Date, ref: Date): string {
+  const minutes = Math.round((date.getTime() - ref.getTime()) / 60_000);
+  if (minutes < 0 && minutes > -60) return `il y a ${Math.abs(minutes)} min`;
+  if (minutes <= -60 && minutes > -24 * 60) return `il y a ${Math.round(Math.abs(minutes) / 60)} h`;
+  if (minutes > 0 && minutes < 60) return `dans ${minutes} min`;
+  if (minutes >= 60 && minutes < 24 * 60) return `dans ${Math.round(minutes / 60)} h`;
+  if (isSameDay(date, ref)) return "aujourd'hui";
+  if (isSameDay(date, addDays(ref, 1))) return "demain";
+  return fmtDate.format(date);
+}
+
 function dateBoundsFromServices(
   services: Record<string, { start: string; end: string }>,
 ): { min: string | undefined; max: string | undefined } {
@@ -378,6 +389,10 @@ export default function App() {
     () => selectedDayExtrema.filter((e) => e.type === "low"),
     [selectedDayExtrema],
   );
+  const essentialTide = upcoming[0] ?? selectedDayExtrema[selectedDayExtrema.length - 1] ?? null;
+  const essentialTideIsPast = essentialTide
+    ? essentialTide.time.getTime() < now.getTime()
+    : false;
   const trend = useMemo(() => (marine ? currentTrend(marine, now) : null), [marine, now]);
 
   const latestBefore = (times: Date[], values: (number | null)[], ref = now) => {
@@ -488,42 +503,58 @@ export default function App() {
       )}
 
       <section className="essentials" id="essentiel" aria-label="L'essentiel maintenant">
-        {upcoming[0] && (
+        {essentialTide && (
           <div className="essential">
+            <span className="essential-kicker">Marée</span>
             <span className="essential-label">
-              {upcoming[0].type === "high" ? "Marée haute à" : "Marée basse à"}
+              {essentialTideIsPast
+                ? essentialTide.type === "high"
+                  ? "Dernière haute mer"
+                  : "Dernière basse mer"
+                : essentialTide.type === "high"
+                  ? "Haute mer"
+                  : "Basse mer"}
             </span>
-            <span className="essential-value">{fmtTime.format(upcoming[0].time)}</span>
+            <span className="essential-value">{fmtTime.format(essentialTide.time)}</span>
+            <span className="essential-meta">{shortWhenLabel(essentialTide.time, now)}</span>
           </div>
         )}
         {departures[0] && (
           <div className="essential">
+            <span className="essential-kicker">Bus</span>
             <span className="essential-label">
-              Prochain bus, arrêt {stopName || "…"}
+              Arrêt {stopName || "…"}
             </span>
             <span className="essential-value">
               {fmtTime.format(departures[0].time)}
               <small> ligne {departures[0].routeShort}</small>
             </span>
+            <span className="essential-meta">{shortWhenLabel(departures[0].time, now)}</span>
           </div>
         )}
         {trainDepartures[0] && (
           <div className="essential">
+            <span className="essential-kicker">Train</span>
             <span className="essential-label">
-              Prochain train, vers {trainDepartures[0].dest}
+              Vers {trainDepartures[0].dest}
             </span>
             <span className="essential-value">
               {fmtTime.format(trainDepartures[0].time)}
             </span>
+            <span className="essential-meta">{shortWhenLabel(trainDepartures[0].time, now)}</span>
           </div>
         )}
         {collections[0] && (
           <div className="essential">
+            <span className="essential-kicker">Déchets</span>
             <span className="essential-label">
-              Prochaine collecte, {collections[0].flux.toLowerCase()}
+              {collections[0].flux}
             </span>
             <span className="essential-value essential-value-text">
               {collections[0].dateTxt.replace(/ \d{4}$/, "")}
+            </span>
+            <span className="essential-meta">
+              {shortWhenLabel(fromDateInputValue(collections[0].date), now)}
             </span>
           </div>
         )}
@@ -859,10 +890,16 @@ export default function App() {
               </div>
             </div>
             <p className="water-note">
-              Autres plages suivies autour du Pouliguen :{" "}
-              {MONITORED_BEACHES.join(", ")}. Leur classement n'est pas affiché
-              ici afin de ne pas laisser croire que le statut “suffisant”
-              s'applique à toutes.
+              Autres plages suivies autour du Pouliguen, sans statut affiché ici :
+            </p>
+            <ul className="water-beach-list" aria-label="Autres plages suivies">
+              {MONITORED_BEACHES.map((beach) => (
+                <li key={beach}>{beach}</li>
+              ))}
+            </ul>
+            <p className="water-note">
+              Elles restent listées pour repère, mais le badge “suffisant” ne
+              s'applique pas à toutes.
             </p>
           </div>
           <p className="meta-line">
