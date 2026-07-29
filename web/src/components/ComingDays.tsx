@@ -89,7 +89,7 @@ export default function ComingDays({
 
   return (
     <section className="card card-wide">
-      <h3>Les jours à venir</h3>
+      <h3>La météo des jours à venir</h3>
       {nextDays.length > 0 ? (
         <div className="coming-days">
           {nextDays.map((day, i) => (

@@ -1454,12 +1454,47 @@ export default function App() {
         </section>
 
         <section className="card">
-          <h3>Défibrillateurs</h3>
+          <h3>Urgences et défibrillateurs</h3>
+          <p className="card-note emergency-lead">
+            En cas d'urgence vitale, appelez d'abord le 15 ou le 112.
+          </p>
+          <div className="emergency-grid" aria-label="Numéros et lieux utiles en urgence">
+            <a href="tel:15">
+              <strong>15</strong>
+              <span>SAMU · urgence médicale</span>
+            </a>
+            <a href="tel:112">
+              <strong>112</strong>
+              <span>urgence européenne</span>
+            </a>
+            <a href="tel:18">
+              <strong>18</strong>
+              <span>pompiers · incendie, accident</span>
+            </a>
+            <a href="tel:196">
+              <strong>196</strong>
+              <span>urgence en mer · CROSS / SNSM</span>
+            </a>
+            <a href="tel:0241482121">
+              <strong>02 41 48 21 21</strong>
+              <span>centre antipoison · Angers</span>
+            </a>
+            <a
+              href="https://www.sante.fr/centre-hospitalier-ch/saint-nazaire/ch-saint-nazaire-cite-sanitaire/urgences-medicales"
+              target="_blank"
+              rel="noreferrer"
+            >
+              <strong>Urgences hospitalières</strong>
+              <span>CH Saint-Nazaire · 11 bd Georges Charpak</span>
+            </a>
+          </div>
+          <p className="emergency-note">
+            Plongée / suspicion d'accident de désaturation : appelez le 15 ou
+            le 112, ou le 196 depuis le littoral pour une alerte en mer. Demandez
+            une régulation médicale vers une prise en charge hyperbare.
+          </p>
           {dae.length > 0 ? (
             <>
-              <p className="card-note">
-                En cas d'urgence, appelez d'abord le 15 ou le 112.
-              </p>
               <ul className="dae-list">
                 {dae.slice(0, 5).map((d, i) => (
                   <li key={i}>
