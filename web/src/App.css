@@ -138,22 +138,64 @@ a {
   }
 }
 
-/* Hero éditorial clair */
+/* Hero éditorial */
 .hero {
-  padding: 34px 22px 26px;
+  position: relative;
+  min-height: 380px;
+  padding: 46px 22px 30px;
   border-bottom: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  overflow: hidden;
+  background-color: #dcecf5;
+  background-image:
+    linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.94) 0%,
+      rgba(255, 255, 255, 0.82) 41%,
+      rgba(255, 255, 255, 0.12) 100%
+    ),
+    url("/images/lighthouse-hero.jpg");
+  background-position: center 43%;
+  background-size: cover;
+}
+
+@supports (
+  background-image:
+    image-set(
+      url("/images/lighthouse-hero.webp") type("image/webp"),
+      url("/images/lighthouse-hero.jpg") type("image/jpeg")
+    )
+) {
+  .hero {
+    background-image:
+      linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0.94) 0%,
+        rgba(255, 255, 255, 0.82) 41%,
+        rgba(255, 255, 255, 0.12) 100%
+      ),
+      image-set(
+        url("/images/lighthouse-hero.webp") type("image/webp"),
+        url("/images/lighthouse-hero.jpg") type("image/jpeg")
+      );
+  }
 }
 
 .hero-pill {
   display: inline-flex;
   align-items: center;
   padding: 8px 18px;
-  border: 1.5px solid var(--ink);
+  align-self: flex-start;
+  border: 1.5px solid rgba(18, 49, 75, 0.72);
   border-radius: 999px;
   font-size: 14px;
   font-weight: 600;
   letter-spacing: 0.02em;
   margin-bottom: 14px;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(4px);
 }
 
 .hero h1 {
@@ -161,13 +203,14 @@ a {
   font-family: var(--font-display);
   font-size: clamp(38px, 7vw, 58px);
   line-height: 1.04;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
   color: var(--ink);
+  max-width: 560px;
 }
 
 .hero-date {
   margin: 0 0 18px;
-  color: var(--muted);
+  color: #39454f;
   text-transform: capitalize;
   font-size: 17px;
 }
@@ -194,12 +237,18 @@ a {
   font-size: 17px;
   max-width: 400px;
   line-height: 1.4;
+  color: var(--ink);
 }
 
 .hero-sub {
   margin: 12px 0 0;
   font-size: 15px;
-  color: var(--muted);
+  color: #39454f;
+  max-width: 640px;
+}
+
+.hero a {
+  color: var(--navy);
 }
 
 /* L'essentiel : the four immediate answers, tide-table style */
@@ -1288,6 +1337,7 @@ footer p {
   }
 
   .hero {
+    min-height: 420px;
     border-radius: 0 0 18px 18px;
   }
 
@@ -1297,6 +1347,13 @@ footer p {
 
   main {
     grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 759px) {
+  .hero {
+    min-height: 360px;
+    background-position: 35% 44%;
   }
 }
 
