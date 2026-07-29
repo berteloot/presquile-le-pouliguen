@@ -2,7 +2,6 @@ import { useMemo } from "react";
 
 interface ComingDaysProps {
   weather: any;
-  marine: any;
   agenda: any[];
   extrema: any[];
   now: Date;
@@ -42,7 +41,6 @@ function weatherEmoji(code: number): string {
 
 export default function ComingDays({
   weather,
-  marine,
   agenda,
   extrema,
   now,
@@ -94,7 +92,7 @@ export default function ComingDays({
       }
     }
     return days;
-  }, [weather, marine, agenda, extrema, now]);
+  }, [weather, agenda, extrema, now]);
 
   return (
     <section className="card card-wide">

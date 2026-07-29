@@ -4,6 +4,7 @@ interface Props {
   marine: MarineSeries;
   extrema: TideExtreme[];
   now: Date;
+  date: Date;
 }
 
 const W = 600;
@@ -18,9 +19,12 @@ const fmtTime = new Intl.DateTimeFormat("fr-FR", {
   timeZone: "Europe/Paris",
 });
 
-export default function TideChart({ marine, extrema, now }: Props) {
-  const windowStart = now.getTime() - 6 * 3600_000;
-  const windowEnd = now.getTime() + 18 * 3600_000;
+export default function TideChart({ marine, extrema, now, date }: Props) {
+  const dayStart = new Date(date);
+  dayStart.setHours(0, 0, 0, 0);
+  const windowStart = dayStart.getTime();
+  const windowEnd = windowStart + 24 * 3600_000;
+  const showNow = now.getTime() >= windowStart && now.getTime() <= windowEnd;
 
   const points: { t: number; v: number }[] = [];
   for (let i = 0; i < marine.times.length; i++) {
@@ -52,7 +56,7 @@ export default function TideChart({ marine, extrema, now }: Props) {
       viewBox={`0 0 ${W} ${H}`}
       className="tide-chart"
       role="img"
-      aria-label="Courbe de maree sur 24 heures"
+      aria-label="Courbe de maree sur la journee"
     >
       <polygon points={area} className="tide-area" />
       <polyline points={line} className="tide-line" fill="none" />
@@ -69,16 +73,25 @@ export default function TideChart({ marine, extrema, now }: Props) {
           </text>
         </g>
       ))}
-      <line
-        x1={x(now.getTime())}
-        y1={PAD_TOP - 8}
-        x2={x(now.getTime())}
-        y2={H - PAD_BOTTOM}
-        className="tide-now"
-      />
-      <text x={x(now.getTime())} y={PAD_TOP - 12} textAnchor="middle" className="tide-now-label">
-        maintenant
-      </text>
+      {showNow && (
+        <>
+          <line
+            x1={x(now.getTime())}
+            y1={PAD_TOP - 8}
+            x2={x(now.getTime())}
+            y2={H - PAD_BOTTOM}
+            className="tide-now"
+          />
+          <text
+            x={x(now.getTime())}
+            y={PAD_TOP - 12}
+            textAnchor="middle"
+            className="tide-now-label"
+          >
+            maintenant
+          </text>
+        </>
+      )}
     </svg>
   );
 }

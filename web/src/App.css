@@ -338,12 +338,89 @@ main {
   color: var(--ink);
 }
 
+/* Date selector */
+.card-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.card-heading h3 {
+  margin-bottom: 0;
+}
+
+.date-selector {
+  display: inline-grid;
+  grid-template-columns: 42px minmax(140px, 1fr) 42px auto;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+}
+
+.date-selector button,
+.date-selector input {
+  min-height: 42px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+}
+
+.date-selector button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.date-step {
+  width: 42px;
+  padding: 0;
+  border-radius: 8px;
+  font-size: 24px;
+  line-height: 1;
+  color: var(--navy);
+}
+
+.date-selector input {
+  width: 100%;
+  border-radius: 8px;
+  padding: 0 8px;
+  font-variant-numeric: tabular-nums;
+}
+
+.date-today {
+  border-radius: 8px;
+  padding: 0 12px;
+  font-weight: 700;
+  color: var(--sea);
+}
+
+.date-selector button:hover:not(:disabled),
+.date-selector input:hover {
+  border-color: var(--sea);
+  background: var(--sea-soft);
+}
+
+.date-selector button:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+
 /* Tide */
 .tide-summary {
   display: flex;
   gap: 22px;
   flex-wrap: wrap;
   margin-bottom: 8px;
+}
+
+.tide-placeholder {
+  margin: 0;
 }
 
 .tide-next {
@@ -873,6 +950,102 @@ main {
   font-size: 15px;
 }
 
+/* Water quality */
+.water-quality {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.water-highlight {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfd;
+}
+
+.water-highlight div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.water-highlight span {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.water-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  padding: 5px 9px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #fff;
+}
+
+.water-badge-sufficient {
+  background: #7b6a19;
+}
+
+.water-sites {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.water-sites li {
+  padding: 5px 9px;
+  border-radius: 6px;
+  background: var(--sea-soft);
+  color: var(--navy);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.water-metrics {
+  display: grid;
+  gap: 10px;
+}
+
+.water-metrics div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.water-metrics div:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.water-metrics strong {
+  color: var(--sea);
+  font-family: var(--font-display);
+  font-size: 25px;
+  line-height: 1.1;
+}
+
+.water-metrics span {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
 /* Peche a pied */
 .peche-intro {
   font-size: 17px;
@@ -1048,28 +1221,6 @@ footer p {
   margin-top: 10px;
 }
 
-.footer-contact {
-  margin-top: 8px;
-  text-align: center;
-}
-
-.contact-btn {
-  background: var(--sea-soft);
-  color: var(--sea);
-  border: 1px solid var(--sea);
-  padding: 8px 16px;
-  font-size: 14px;
-  font-weight: 600;
-  border-radius: 8px;
-  cursor: pointer;
-  min-height: 36px;
-}
-
-.contact-btn:hover {
-  background: var(--sea);
-  color: #fff;
-}
-
 /* Coming Days */
 .coming-days {
   display: flex;
@@ -1156,5 +1307,14 @@ footer p {
 @media (max-width: 400px) {
   .essentials {
     grid-template-columns: 1fr;
+  }
+
+  .date-selector {
+    width: 100%;
+    grid-template-columns: 42px minmax(0, 1fr) 42px;
+  }
+
+  .date-today {
+    grid-column: 1 / -1;
   }
 }

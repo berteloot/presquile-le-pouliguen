@@ -3,6 +3,7 @@ import "./App.css";
 import BusMap from "./components/BusMap";
 import ComingDays from "./components/ComingDays";
 import DailyBriefing from "./components/DailyBriefing";
+import DateSelector from "./components/DateSelector";
 import Discover from "./components/Discover";
 import PoiMap, { escapeHtml } from "./components/PoiMap";
 import TideChart from "./components/TideChart";
@@ -83,6 +84,16 @@ const fmtDayTime = new Intl.DateTimeFormat("fr-FR", {
 const STOP_STORAGE_KEY = "plq.stop";
 const TRAIN_RT_REFRESH_MS = 120_000;
 const ROAD_INFO_REFRESH_MS = 10 * 60_000;
+const BATHING_WATER_URL =
+  "https://baignades.sante.gouv.fr/baignades/consultSite.do?annee=2025&dptddass=044&impression=yes&isite=044001738&modeDetailImp=3&plv=04400157991&site=044001738";
+const DRINKING_WATER_URL = "https://www.services.eaufrance.fr/service/129129/2024";
+const SANITATION_URL = "https://www.services.eaufrance.fr/service/186462/2024";
+const MONITORED_BEACHES = [
+  "Baie du Guec",
+  "Plage du Nau",
+  "Plage Benoît",
+  "Plage du Général-de-Gaulle",
+];
 
 function freshnessLabel(fetchedAt: Date | undefined): string {
   if (!fetchedAt) return "";
@@ -103,8 +114,53 @@ function fluxBadgeClass(flux: string): string {
   return "flux-badge";
 }
 
+function startOfDay(date: Date): Date {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function toDateInputValue(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function fromDateInputValue(value: string): Date {
+  const [year, month, day] = value.split("-").map(Number);
+  return new Date(year, month - 1, day);
+}
+
+function isSameDay(a: Date, b: Date): boolean {
+  return toDateInputValue(a) === toDateInputValue(b);
+}
+
+function addDays(date: Date, days: number): Date {
+  const d = new Date(date);
+  d.setDate(d.getDate() + days);
+  return startOfDay(d);
+}
+
+function dateBoundsFromServices(
+  services: Record<string, { start: string; end: string }>,
+): { min: string | undefined; max: string | undefined } {
+  const ranges = Object.values(services);
+  if (ranges.length === 0) return { min: undefined, max: undefined };
+  const starts = ranges.map((service) => service.start).filter(Boolean).sort();
+  const ends = ranges.map((service) => service.end).filter(Boolean).sort();
+  const ymdToInput = (ymd: string) =>
+    ymd.length === 8 ? `${ymd.slice(0, 4)}-${ymd.slice(4, 6)}-${ymd.slice(6, 8)}` : undefined;
+
+  return {
+    min: starts[0] ? ymdToInput(starts[0]) : undefined,
+    max: ends[ends.length - 1] ? ymdToInput(ends[ends.length - 1]) : undefined,
+  };
+}
+
 export default function App() {
   const [now, setNow] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(() => startOfDay(new Date()));
   const [weather, setWeather] = useState<WeatherNow | null>(null);
   const [marine, setMarine] = useState<MarineSeries | null>(null);
   const [transit, setTransit] = useState<TransitData | null>(null);
@@ -219,43 +275,108 @@ export default function App() {
     }
   }, [groups, stopName]);
 
+  const selectedDateValue = toDateInputValue(selectedDate);
+  const todayValue = toDateInputValue(now);
+  const selectedDateIsToday = selectedDateValue === todayValue;
+  const selectedDateReference = selectedDateIsToday ? now : selectedDate;
+
+  const transitDateBounds = useMemo(
+    () => (transit ? dateBoundsFromServices(transit.services) : { min: undefined, max: undefined }),
+    [transit],
+  );
+
+  const trainDateBounds = useMemo(
+    () => (trains ? dateBoundsFromServices(trains.services) : { min: undefined, max: undefined }),
+    [trains],
+  );
+
   const departures = useMemo(() => {
     if (!transit || !stopName) return [];
     const group = groups.find((g) => g.name === stopName);
     if (!group) return [];
-    return nextDepartures(transit, group.ids, delays, 6, now);
-  }, [transit, groups, stopName, delays, now]);
+    const dateDelays = selectedDateIsToday ? delays : new Map<string, number>();
+    return nextDepartures(transit, group.ids, dateDelays, 6, selectedDateReference);
+  }, [transit, groups, stopName, delays, selectedDateIsToday, selectedDateReference]);
 
-  const trainDepartures = useMemo(
-    () => (trains ? nextTrains(trains, trainDelays, 5, now) : []),
-    [trains, trainDelays, now],
-  );
+  const trainDepartures = useMemo(() => {
+    if (!trains) return [];
+    const dateDelays = selectedDateIsToday ? trainDelays : new Map<string, number>();
+    return nextTrains(trains, dateDelays, 5, selectedDateReference);
+  }, [trains, trainDelays, selectedDateIsToday, selectedDateReference]);
 
   const extrema = useMemo(() => (marine ? findExtrema(marine) : []), [marine]);
   const upcoming = useMemo(() => nextExtremes(extrema, now).slice(0, 2), [extrema, now]);
+  const tideDateBounds = useMemo(() => {
+    if (!marine || marine.times.length === 0) return { min: undefined, max: undefined };
+    return {
+      min: toDateInputValue(startOfDay(marine.times[0])),
+      max: toDateInputValue(startOfDay(marine.times[marine.times.length - 1])),
+    };
+  }, [marine]);
+  const busDateBounds = {
+    min: tideDateBounds.min ?? transitDateBounds.min,
+    max: tideDateBounds.max ?? transitDateBounds.max,
+  };
+  const railDateBounds = {
+    min: tideDateBounds.min ?? trainDateBounds.min,
+    max: tideDateBounds.max ?? trainDateBounds.max,
+  };
+
+  useEffect(() => {
+    if (tideDateBounds.min && selectedDateValue < tideDateBounds.min) {
+      setSelectedDate(startOfDay(fromDateInputValue(tideDateBounds.min)));
+    }
+    if (tideDateBounds.max && selectedDateValue > tideDateBounds.max) {
+      setSelectedDate(startOfDay(fromDateInputValue(tideDateBounds.max)));
+    }
+  }, [selectedDateValue, tideDateBounds.min, tideDateBounds.max]);
+
+  const selectedDayExtrema = useMemo(
+    () => extrema.filter((e) => isSameDay(e.time, selectedDate)),
+    [extrema, selectedDate],
+  );
   const lowTides = useMemo(
-    () => nextExtremes(extrema, now).filter((e) => e.type === "low").slice(0, 3),
-    [extrema, now],
+    () => selectedDayExtrema.filter((e) => e.type === "low"),
+    [selectedDayExtrema],
   );
   const trend = useMemo(() => (marine ? currentTrend(marine, now) : null), [marine, now]);
 
-  const latestBefore = (times: Date[], values: (number | null)[]) => {
+  const latestBefore = (times: Date[], values: (number | null)[], ref = now) => {
     let best: number | null = null;
     for (let i = 0; i < times.length; i++) {
-      if (times[i].getTime() <= now.getTime() && values[i] != null) {
+      if (times[i].getTime() <= ref.getTime() && values[i] != null) {
         best = values[i];
       }
     }
     return best;
   };
-  const seaTempNow = marine ? latestBefore(marine.hourlyTimes, marine.seaTemp) : null;
-  const waveNow = marine ? latestBefore(marine.hourlyTimes, marine.waveHeight) : null;
+  const marineReference = new Date(selectedDate);
+  if (selectedDateValue === todayValue) {
+    marineReference.setTime(now.getTime());
+  } else {
+    marineReference.setHours(12, 0, 0, 0);
+  }
+  const seaTempSelected = marine
+    ? latestBefore(marine.hourlyTimes, marine.seaTemp, marineReference)
+    : null;
+  const waveSelected = marine
+    ? latestBefore(marine.hourlyTimes, marine.waveHeight, marineReference)
+    : null;
 
   const nearestGlass = glassPoints[0] ?? null;
 
   const onStopChange = (name: string) => {
     setStopName(name);
     localStorage.setItem(STOP_STORAGE_KEY, name);
+  };
+
+  const selectDate = (value: string) => {
+    if (!value) return;
+    setSelectedDate(startOfDay(fromDateInputValue(value)));
+  };
+
+  const shiftSelectedDate = (days: number) => {
+    setSelectedDate((date) => addDays(date, days));
   };
 
   const delayNote = (delaySeconds: number | null) => {
@@ -374,7 +495,19 @@ export default function App() {
         <div className="cards">
 
         <section className="card">
-          <h3>Prochains bus</h3>
+          <div className="card-heading">
+            <h3>Prochains bus</h3>
+            <DateSelector
+              value={selectedDateValue}
+              min={busDateBounds.min}
+              max={busDateBounds.max}
+              isToday={selectedDateIsToday}
+              onChange={selectDate}
+              onPrevious={() => shiftSelectedDate(-1)}
+              onNext={() => shiftSelectedDate(1)}
+              onToday={() => selectDate(todayValue)}
+            />
+          </div>
           {transit ? (
             <>
               <p className="card-note">
@@ -420,10 +553,10 @@ export default function App() {
                 </ul>
               ) : (
                 <p className="placeholder">
-                  Plus de passage prévu aujourd'hui à cet arrêt.
+                  Aucun passage trouvé pour cette date à cet arrêt.
                 </p>
               )}
-              {alerts.length > 0 && (
+              {selectedDateIsToday && alerts.length > 0 && (
                 <div className="alerts">
                   {alerts.map((a, i) => (
                     <p key={i}>
@@ -446,7 +579,19 @@ export default function App() {
         </section>
 
         <section className="card">
-          <h3>Prochains trains</h3>
+          <div className="card-heading">
+            <h3>Prochains trains</h3>
+            <DateSelector
+              value={selectedDateValue}
+              min={railDateBounds.min}
+              max={railDateBounds.max}
+              isToday={selectedDateIsToday}
+              onChange={selectDate}
+              onPrevious={() => shiftSelectedDate(-1)}
+              onNext={() => shiftSelectedDate(1)}
+              onToday={() => selectDate(todayValue)}
+            />
+          </div>
           {trains ? (
             <>
               <p className="card-note">
@@ -481,7 +626,7 @@ export default function App() {
                   ))}
                 </ul>
               ) : (
-                <p className="placeholder">Plus de train prévu aujourd'hui.</p>
+                <p className="placeholder">Aucun train trouvé pour cette date.</p>
               )}
               <p className="ticket-links">
                 Billets de train :{" "}
@@ -536,19 +681,37 @@ export default function App() {
         <div className="cards">
 
         <section className="card">
-          <h3>Mer et marée</h3>
+          <div className="card-heading">
+            <h3>Mer et marée</h3>
+            <DateSelector
+              value={selectedDateValue}
+              min={tideDateBounds.min}
+              max={tideDateBounds.max}
+              isToday={selectedDateValue === todayValue}
+              onChange={selectDate}
+              onPrevious={() => shiftSelectedDate(-1)}
+              onNext={() => shiftSelectedDate(1)}
+              onToday={() => selectDate(todayValue)}
+            />
+          </div>
           {marine ? (
             <>
               <div className="tide-summary">
-                {upcoming.map((e, i) => (
-                  <div key={i} className="tide-next">
-                    <span className="tide-kind">
-                      {e.type === "high" ? "Marée haute" : "Marée basse"}
-                    </span>
-                    <span className="tide-time">{fmtTime.format(e.time)}</span>
-                  </div>
-                ))}
-                {trend && (
+                {selectedDayExtrema.length > 0 ? (
+                  selectedDayExtrema.map((e, i) => (
+                    <div key={i} className="tide-next">
+                      <span className="tide-kind">
+                        {e.type === "high" ? "Marée haute" : "Marée basse"}
+                      </span>
+                      <span className="tide-time">{fmtTime.format(e.time)}</span>
+                    </div>
+                  ))
+                ) : (
+                  <p className="placeholder tide-placeholder">
+                    Aucun horaire de marée disponible pour cette date.
+                  </p>
+                )}
+                {trend && selectedDateValue === todayValue && (
                   <div className="tide-next">
                     <span className="tide-kind">Tendance</span>
                     <span className="tide-time">
@@ -557,10 +720,10 @@ export default function App() {
                   </div>
                 )}
               </div>
-              <TideChart marine={marine} extrema={extrema} now={now} />
+              <TideChart marine={marine} extrema={extrema} now={now} date={selectedDate} />
               <p className="meta-line">
-                {seaTempNow != null && <>Eau {seaTempNow.toFixed(1)}°C · </>}
-                {waveNow != null && <>vagues {waveNow.toFixed(1)} m · </>}
+                {seaTempSelected != null && <>Eau {seaTempSelected.toFixed(1)}°C · </>}
+                {waveSelected != null && <>vagues {waveSelected.toFixed(1)} m · </>}
                 horaires issus d'un modèle océanique (écart possible de 30 à 45
                 minutes), ne pas utiliser pour la navigation.
               </p>
@@ -624,41 +787,98 @@ export default function App() {
         </section>
 
         <section className="card">
+          <h3>Qualité de l'eau</h3>
+          <div className="water-quality">
+            <div className="water-highlight">
+              <span className="water-badge water-badge-sufficient">Suffisant</span>
+              <div>
+                <strong>Baie du Guec, classement baignade 2025</strong>
+                <span>
+                  Classement officiel calculé sur quatre saisons de résultats
+                  microbiologiques, pas seulement sur le dernier prélèvement.
+                </span>
+              </div>
+            </div>
+            <ul className="water-sites">
+              {MONITORED_BEACHES.map((name) => (
+                <li key={name}>{name}</li>
+              ))}
+            </ul>
+            <div className="water-metrics">
+              <div>
+                <strong>100 %</strong>
+                <span>conformité microbiologique eau potable, EPTB Vilaine 2024</span>
+              </div>
+              <div>
+                <strong>100 %</strong>
+                <span>conformité physico-chimique eau potable, EPTB Vilaine 2024</span>
+              </div>
+              <div>
+                <strong>3,04 € TTC/m³</strong>
+                <span>assainissement collectif Cap Atlantique, base 120 m³ en 2024</span>
+              </div>
+            </div>
+          </div>
+          <p className="meta-line">
+            Sources :{" "}
+            <a href={BATHING_WATER_URL} target="_blank" rel="noreferrer">
+              Ministère de la Santé
+            </a>{" "}
+            ·{" "}
+            <a href={DRINKING_WATER_URL} target="_blank" rel="noreferrer">
+              eau potable SISPEA
+            </a>{" "}
+            ·{" "}
+            <a href={SANITATION_URL} target="_blank" rel="noreferrer">
+              assainissement SISPEA
+            </a>
+            . Les indicateurs EPTB Vilaine et Cap Atlantique sont des indicateurs
+            de service, pas un contrôle à une adresse précise.
+          </p>
+        </section>
+
+        <section className="card">
           <h3>Pêche à pied</h3>
-          {lowTides.length > 0 ? (
-            <>
-              <p className="peche-intro">
-                Prochaines basses mers (meilleur créneau environ 1 h 30 avant et
-                après) :
+          {marine ? (
+            lowTides.length > 0 ? (
+              <>
+                <p className="peche-intro">
+                  Basses mers du jour sélectionné (meilleur créneau environ 1 h 30
+                  avant et après) :
+                </p>
+                <ul className="lowtides">
+                  {lowTides.map((e, i) => (
+                    <li key={i}>
+                      <span className="lowtide-time">{fmtDayTime.format(e.time)}</span>
+                      <span className="lowtide-kind">basse mer</span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="meta-line">
+                  Avant de partir, vérifiez les fermetures sanitaires et les tailles
+                  autorisées :{" "}
+                  <a
+                    href="https://www.pecheapied-responsable.fr"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    pecheapied-responsable.fr
+                  </a>{" "}
+                  ·{" "}
+                  <a
+                    href="https://www.loire-atlantique.gouv.fr"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    préfecture de Loire-Atlantique
+                  </a>
+                </p>
+              </>
+            ) : (
+              <p className="placeholder">
+                Aucune basse mer disponible pour cette date.
               </p>
-              <ul className="lowtides">
-                {lowTides.map((e, i) => (
-                  <li key={i}>
-                    <span className="lowtide-time">{fmtDayTime.format(e.time)}</span>
-                    <span className="lowtide-kind">basse mer</span>
-                  </li>
-                ))}
-              </ul>
-              <p className="meta-line">
-                Avant de partir, vérifiez les fermetures sanitaires et les tailles
-                autorisées :{" "}
-                <a
-                  href="https://www.pecheapied-responsable.fr"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  pecheapied-responsable.fr
-                </a>{" "}
-                ·{" "}
-                <a
-                  href="https://www.loire-atlantique.gouv.fr"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  préfecture de Loire-Atlantique
-                </a>
-              </p>
-            </>
+            )
           ) : (
             <p className="placeholder">Chargement des horaires de marée…</p>
           )}
@@ -717,9 +937,8 @@ export default function App() {
         </section>
 
         <ComingDays
-          now={now}
+          now={selectedDate}
           weather={weather}
-          marine={marine}
           agenda={agenda}
           extrema={extrema}
         />
@@ -900,11 +1119,6 @@ export default function App() {
           (plages, déchets, circuits, agenda), Département de
           Loire-Atlantique (info routes), OpenStreetMap (défibrillateurs),
           fichier national IRVE (bornes de recharge).
-        </p>
-        <p className="footer-contact">
-          <button type="button" className="contact-btn" onClick={() => window.open('mailto:presquile@berteloot.org?subject=Le%20Pouliguen%20Live', '_blank')}>
-            Contactez le développeur
-          </button>
         </p>
       </footer>
     </div>
