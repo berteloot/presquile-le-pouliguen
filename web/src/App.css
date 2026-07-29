@@ -432,6 +432,52 @@ main {
   background: var(--sea);
 }
 
+.visit-planner {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.visit-planner article {
+  display: grid;
+  gap: 4px;
+  padding: 13px 14px;
+  border: 1px solid #d7e4ec;
+  border-left: 4px solid var(--sea);
+  border-radius: 8px;
+  background: #fbfcfd;
+}
+
+.visit-planner span {
+  color: var(--sea-link);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.visit-planner strong {
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.35;
+}
+
+.visit-planner small {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.visit-planner a {
+  font-weight: 700;
+}
+
+@media (min-width: 760px) {
+  .visit-planner {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 /* Date selector */
 .card-heading {
   display: flex;

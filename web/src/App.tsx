@@ -7,6 +7,7 @@ import DateSelector from "./components/DateSelector";
 import Discover from "./components/Discover";
 import PoiMap, { escapeHtml } from "./components/PoiMap";
 import TideChart from "./components/TideChart";
+import VisitPlanner from "./components/VisitPlanner";
 import {
   EVENTS_DATA_URL,
   TRIP_UPDATES_REFRESH_MS,
@@ -985,6 +986,18 @@ export default function App() {
           lowTides={lowTides}
           departures={departures}
           trainDepartures={trainDepartures}
+        />
+
+        <VisitPlanner
+          now={now}
+          weather={weather}
+          marine={marine}
+          upcoming={upcoming}
+          lowTides={lowTides}
+          departures={departures}
+          trainDepartures={trainDepartures}
+          roadInfo={roadInfo}
+          agenda={agenda}
         />
 
         <section className="card card-wide">
