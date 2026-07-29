@@ -75,11 +75,13 @@ export function nextDepartures(
   delays: Map<string, number>,
   count = 6,
   now = new Date(),
+  includeNextDay = true,
 ): NextDeparture[] {
   const stopNames = new Map(data.stops.map((s) => [s.id, s.name]));
   const nowSeconds = parisNow(now).seconds;
   const out: NextDeparture[] = [];
-  for (const dayOffset of [0, 1]) {
+  const dayOffsets = includeNextDay ? [0, 1] : [0];
+  for (const dayOffset of dayOffsets) {
     if (out.length >= count) break;
     const ref = new Date(now.getTime() + dayOffset * 86_400_000);
     const { dateYmd, weekday } = parisNow(ref);

@@ -1,4 +1,4 @@
-import { OPEN_METEO_FORECAST, OPEN_METEO_MARINE } from "../config";
+import { OPEN_METEO_FORECAST, OPEN_METEO_MARINE, openMeteoMarineForDate } from "../config";
 import type { MarineSeries, WeatherNow } from "./types";
 
 export async function fetchWeather(): Promise<WeatherNow> {
@@ -22,10 +22,11 @@ export async function fetchWeather(): Promise<WeatherNow> {
   };
 }
 
-export async function fetchMarine(): Promise<MarineSeries> {
-  const res = await fetch(OPEN_METEO_MARINE);
+async function fetchMarineUrl(url: string): Promise<MarineSeries> {
+  const res = await fetch(url);
   if (!res.ok) throw new Error(`marine HTTP ${res.status}`);
   const j = await res.json();
+  if (j.error) throw new Error(`marine API ${j.reason ?? "error"}`);
   // Sea level rides on the 15-minute series for tide-time precision; waves
   // and water temperature stay hourly. Both series carry their own times.
   return {
@@ -36,6 +37,14 @@ export async function fetchMarine(): Promise<MarineSeries> {
     seaTemp: j.hourly.sea_surface_temperature,
     fetchedAt: new Date(),
   };
+}
+
+export async function fetchMarine(): Promise<MarineSeries> {
+  return fetchMarineUrl(OPEN_METEO_MARINE);
+}
+
+export async function fetchMarineForDate(dateYmd: string): Promise<MarineSeries> {
+  return fetchMarineUrl(openMeteoMarineForDate(dateYmd));
 }
 
 const WMO_LABELS: Record<number, string> = {

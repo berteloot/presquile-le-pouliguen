@@ -36,7 +36,7 @@ import {
   type RoadInfo,
 } from "./lib/localdata";
 import {
-  fetchMarine,
+  fetchMarineForDate,
   fetchWeather,
   weatherLabel,
   windDirectionLabel,
@@ -86,10 +86,7 @@ const TRAIN_RT_REFRESH_MS = 120_000;
 const ROAD_INFO_REFRESH_MS = 10 * 60_000;
 const BATHING_WATER_URL =
   "https://baignades.sante.gouv.fr/baignades/consultSite.do?annee=2025&dptddass=044&impression=yes&isite=044001738&modeDetailImp=3&plv=04400157991&site=044001738";
-const DRINKING_WATER_URL = "https://www.services.eaufrance.fr/service/129129/2024";
-const SANITATION_URL = "https://www.services.eaufrance.fr/service/186462/2024";
 const MONITORED_BEACHES = [
-  "Baie du Guec",
   "Plage du Nau",
   "Plage Benoît",
   "Plage du Général-de-Gaulle",
@@ -158,6 +155,39 @@ function dateBoundsFromServices(
   };
 }
 
+function dateBoundsFromExceptions(
+  exceptions: Record<string, Record<string, number>>,
+): { min: string | undefined; max: string | undefined } {
+  const dates = Object.values(exceptions)
+    .flatMap((serviceDates) =>
+      Object.entries(serviceDates)
+        .filter(([, type]) => type === 1)
+        .map(([date]) => date),
+    )
+    .sort();
+  const ymdToInput = (ymd: string) =>
+    ymd.length === 8 ? `${ymd.slice(0, 4)}-${ymd.slice(4, 6)}-${ymd.slice(6, 8)}` : undefined;
+
+  return {
+    min: dates[0] ? ymdToInput(dates[0]) : undefined,
+    max: dates[dates.length - 1] ? ymdToInput(dates[dates.length - 1]) : undefined,
+  };
+}
+
+function dateBoundsFromSchedule(
+  services: Record<string, { start: string; end: string }>,
+  exceptions: Record<string, Record<string, number>>,
+): { min: string | undefined; max: string | undefined } {
+  const serviceBounds = dateBoundsFromServices(services);
+  const exceptionBounds = dateBoundsFromExceptions(exceptions);
+  const mins = [serviceBounds.min, exceptionBounds.min].filter((v): v is string => Boolean(v)).sort();
+  const maxes = [serviceBounds.max, exceptionBounds.max].filter((v): v is string => Boolean(v)).sort();
+  return {
+    min: mins[0],
+    max: maxes[maxes.length - 1],
+  };
+}
+
 export default function App() {
   const [now, setNow] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(() => startOfDay(new Date()));
@@ -184,6 +214,10 @@ export default function App() {
   const [errors, setErrors] = useState<string[]>([]);
   const [selectedCircuit, setSelectedCircuit] = useState<string | null>(null);
   const [route, setRoute] = useState<string>(() => window.location.hash);
+  const selectedDateValue = toDateInputValue(selectedDate);
+  const todayValue = toDateInputValue(now);
+  const selectedDateIsToday = selectedDateValue === todayValue;
+  const selectedDateReference = selectedDateIsToday ? now : selectedDate;
 
   useEffect(() => {
     const onHash = () => setRoute(window.location.hash);
@@ -213,12 +247,25 @@ export default function App() {
       setErrors((e) => (e.includes(what) ? e : [...e, what]));
     const load = () => {
       fetchWeather().then(setWeather).catch(() => pushError("météo"));
-      fetchMarine().then(setMarine).catch(() => pushError("mer"));
     };
     load();
     const id = setInterval(load, WEATHER_REFRESH_MS);
     return () => clearInterval(id);
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchMarineForDate(selectedDateValue)
+      .then((data) => {
+        if (!cancelled) setMarine(data);
+      })
+      .catch(() => {
+        if (!cancelled) setErrors((e) => (e.includes("mer") ? e : [...e, "mer"]));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedDateValue]);
 
   useEffect(() => {
     loadTransitData()
@@ -275,18 +322,19 @@ export default function App() {
     }
   }, [groups, stopName]);
 
-  const selectedDateValue = toDateInputValue(selectedDate);
-  const todayValue = toDateInputValue(now);
-  const selectedDateIsToday = selectedDateValue === todayValue;
-  const selectedDateReference = selectedDateIsToday ? now : selectedDate;
-
   const transitDateBounds = useMemo(
-    () => (transit ? dateBoundsFromServices(transit.services) : { min: undefined, max: undefined }),
+    () =>
+      transit
+        ? dateBoundsFromSchedule(transit.services, transit.serviceExceptions)
+        : { min: undefined, max: undefined },
     [transit],
   );
 
   const trainDateBounds = useMemo(
-    () => (trains ? dateBoundsFromServices(trains.services) : { min: undefined, max: undefined }),
+    () =>
+      trains
+        ? dateBoundsFromSchedule(trains.services, trains.serviceExceptions)
+        : { min: undefined, max: undefined },
     [trains],
   );
 
@@ -295,41 +343,32 @@ export default function App() {
     const group = groups.find((g) => g.name === stopName);
     if (!group) return [];
     const dateDelays = selectedDateIsToday ? delays : new Map<string, number>();
-    return nextDepartures(transit, group.ids, dateDelays, 6, selectedDateReference);
+    return nextDepartures(
+      transit,
+      group.ids,
+      dateDelays,
+      8,
+      selectedDateReference,
+      selectedDateIsToday,
+    );
   }, [transit, groups, stopName, delays, selectedDateIsToday, selectedDateReference]);
 
   const trainDepartures = useMemo(() => {
     if (!trains) return [];
     const dateDelays = selectedDateIsToday ? trainDelays : new Map<string, number>();
-    return nextTrains(trains, dateDelays, 5, selectedDateReference);
+    return nextTrains(trains, dateDelays, 8, selectedDateReference, selectedDateIsToday);
+  }, [trains, trainDelays, selectedDateIsToday, selectedDateReference]);
+
+  const parisTrainDepartures = useMemo(() => {
+    if (!trains) return [];
+    const dateDelays = selectedDateIsToday ? trainDelays : new Map<string, number>();
+    return nextTrains(trains, dateDelays, 40, selectedDateReference, false)
+      .filter((t) => /paris/i.test(t.dest))
+      .slice(0, 3);
   }, [trains, trainDelays, selectedDateIsToday, selectedDateReference]);
 
   const extrema = useMemo(() => (marine ? findExtrema(marine) : []), [marine]);
   const upcoming = useMemo(() => nextExtremes(extrema, now).slice(0, 2), [extrema, now]);
-  const tideDateBounds = useMemo(() => {
-    if (!marine || marine.times.length === 0) return { min: undefined, max: undefined };
-    return {
-      min: toDateInputValue(startOfDay(marine.times[0])),
-      max: toDateInputValue(startOfDay(marine.times[marine.times.length - 1])),
-    };
-  }, [marine]);
-  const busDateBounds = {
-    min: tideDateBounds.min ?? transitDateBounds.min,
-    max: tideDateBounds.max ?? transitDateBounds.max,
-  };
-  const railDateBounds = {
-    min: tideDateBounds.min ?? trainDateBounds.min,
-    max: tideDateBounds.max ?? trainDateBounds.max,
-  };
-
-  useEffect(() => {
-    if (tideDateBounds.min && selectedDateValue < tideDateBounds.min) {
-      setSelectedDate(startOfDay(fromDateInputValue(tideDateBounds.min)));
-    }
-    if (tideDateBounds.max && selectedDateValue > tideDateBounds.max) {
-      setSelectedDate(startOfDay(fromDateInputValue(tideDateBounds.max)));
-    }
-  }, [selectedDateValue, tideDateBounds.min, tideDateBounds.max]);
 
   const selectedDayExtrema = useMemo(
     () => extrema.filter((e) => isSameDay(e.time, selectedDate)),
@@ -499,8 +538,8 @@ export default function App() {
             <h3>Prochains bus</h3>
             <DateSelector
               value={selectedDateValue}
-              min={busDateBounds.min}
-              max={busDateBounds.max}
+              min={transitDateBounds.min}
+              max={transitDateBounds.max}
               isToday={selectedDateIsToday}
               onChange={selectDate}
               onPrevious={() => shiftSelectedDate(-1)}
@@ -583,8 +622,8 @@ export default function App() {
             <h3>Prochains trains</h3>
             <DateSelector
               value={selectedDateValue}
-              min={railDateBounds.min}
-              max={railDateBounds.max}
+              min={trainDateBounds.min}
+              max={trainDateBounds.max}
               isToday={selectedDateIsToday}
               onChange={selectDate}
               onPrevious={() => shiftSelectedDate(-1)}
@@ -627,6 +666,22 @@ export default function App() {
                 </ul>
               ) : (
                 <p className="placeholder">Aucun train trouvé pour cette date.</p>
+              )}
+              {parisTrainDepartures.length > 0 && (
+                <div className="train-focus">
+                  <strong>Direct Paris</strong>
+                  <ul>
+                    {parisTrainDepartures.map((t, i) => (
+                      <li key={`${t.trip}-paris-${i}`}>
+                        <span>
+                          {fmtTime.format(t.time)}
+                          {t.number && <small className="train-number"> n° {t.number}</small>}
+                        </span>
+                        {delayNote(t.delaySeconds)}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               )}
               <p className="ticket-links">
                 Billets de train :{" "}
@@ -685,8 +740,6 @@ export default function App() {
             <h3>Mer et marée</h3>
             <DateSelector
               value={selectedDateValue}
-              min={tideDateBounds.min}
-              max={tideDateBounds.max}
               isToday={selectedDateValue === todayValue}
               onChange={selectDate}
               onPrevious={() => shiftSelectedDate(-1)}
@@ -790,50 +843,31 @@ export default function App() {
           <h3>Qualité de l'eau</h3>
           <div className="water-quality">
             <div className="water-highlight">
-              <span className="water-badge water-badge-sufficient">Suffisant</span>
+              <span className="water-badge water-badge-sufficient">
+                Baie du Guec · suffisant
+              </span>
               <div>
                 <strong>Baie du Guec, classement baignade 2025</strong>
                 <span>
-                  Classement officiel calculé sur quatre saisons de résultats
-                  microbiologiques, pas seulement sur le dernier prélèvement.
+                  “Suffisant” signifie que l'eau reste classée conforme pour la
+                  baignade, mais dans la catégorie la plus basse avant
+                  “insuffisant”. Ce label concerne Baie du Guec uniquement.
                 </span>
+                <a href={BATHING_WATER_URL} target="_blank" rel="noreferrer">
+                  Voir la fiche officielle du Ministère de la Santé
+                </a>
               </div>
             </div>
-            <ul className="water-sites">
-              {MONITORED_BEACHES.map((name) => (
-                <li key={name}>{name}</li>
-              ))}
-            </ul>
-            <div className="water-metrics">
-              <div>
-                <strong>100 %</strong>
-                <span>conformité microbiologique eau potable, EPTB Vilaine 2024</span>
-              </div>
-              <div>
-                <strong>100 %</strong>
-                <span>conformité physico-chimique eau potable, EPTB Vilaine 2024</span>
-              </div>
-              <div>
-                <strong>3,04 € TTC/m³</strong>
-                <span>assainissement collectif Cap Atlantique, base 120 m³ en 2024</span>
-              </div>
-            </div>
+            <p className="water-note">
+              Autres plages suivies autour du Pouliguen :{" "}
+              {MONITORED_BEACHES.join(", ")}. Leur classement n'est pas affiché
+              ici afin de ne pas laisser croire que le statut “suffisant”
+              s'applique à toutes.
+            </p>
           </div>
           <p className="meta-line">
-            Sources :{" "}
-            <a href={BATHING_WATER_URL} target="_blank" rel="noreferrer">
-              Ministère de la Santé
-            </a>{" "}
-            ·{" "}
-            <a href={DRINKING_WATER_URL} target="_blank" rel="noreferrer">
-              eau potable SISPEA
-            </a>{" "}
-            ·{" "}
-            <a href={SANITATION_URL} target="_blank" rel="noreferrer">
-              assainissement SISPEA
-            </a>
-            . Les indicateurs EPTB Vilaine et Cap Atlantique sont des indicateurs
-            de service, pas un contrôle à une adresse précise.
+            Le classement officiel est calculé sur quatre saisons de résultats
+            microbiologiques, pas seulement sur le dernier prélèvement.
           </p>
         </section>
 

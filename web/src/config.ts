@@ -17,6 +17,17 @@ export const OPEN_METEO_MARINE =
   `&cell_selection=sea` +
   `&timezone=${encodeURIComponent(TZ)}&past_days=1&forecast_days=2`;
 
+export function openMeteoMarineForDate(dateYmd: string): string {
+  return (
+    `https://marine-api.open-meteo.com/v1/marine?latitude=${LAT}&longitude=${LON}` +
+    `&hourly=wave_height,sea_surface_temperature` +
+    `&minutely_15=sea_level_height_msl` +
+    `&cell_selection=sea` +
+    `&timezone=${encodeURIComponent(TZ)}` +
+    `&start_date=${dateYmd}&end_date=${dateYmd}`
+  );
+}
+
 const RT_BASE = "https://proxy.transport.data.gouv.fr/resource";
 export const GTFS_RT_VEHICLES = `${RT_BASE}/lila-presquile-cap-atlantique-gtfs-rt-vehicle-position`;
 export const GTFS_RT_TRIP_UPDATES = `${RT_BASE}/lila-presquile-cap-atlantique-gtfs-rt-trip-update`;

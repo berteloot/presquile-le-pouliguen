@@ -71,11 +71,13 @@ export function nextTrains(
   delays: Map<string, number>,
   count = 5,
   now = new Date(),
+  includeNextDay = true,
 ): TrainDeparture[] {
   const out: TrainDeparture[] = [];
   const nowSeconds = parisNow(now).seconds;
 
-  for (const dayOffset of [0, 1]) {
+  const dayOffsets = includeNextDay ? [0, 1] : [0];
+  for (const dayOffset of dayOffsets) {
     if (out.length >= count) break;
     const ref = new Date(now.getTime() + dayOffset * 86_400_000);
     const { dateYmd, weekday } = parisNow(ref);
