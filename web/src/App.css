@@ -1223,6 +1223,24 @@ main {
 }
 
 /* Events */
+.event-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+.event-heading h3 {
+  margin-bottom: 0;
+}
+
+.event-heading a {
+  font-size: 15px;
+  font-weight: 700;
+}
+
 .events {
   list-style: none;
   margin: 0;
@@ -1249,10 +1267,6 @@ main {
 
 .event-note {
   font-style: italic;
-}
-
-.events a {
-  font-size: 15px;
 }
 
 /* Découvrir page */

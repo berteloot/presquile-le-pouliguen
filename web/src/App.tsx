@@ -84,6 +84,7 @@ const fmtDayTime = new Intl.DateTimeFormat("fr-FR", {
 const STOP_STORAGE_KEY = "plq.stop";
 const TRAIN_RT_REFRESH_MS = 120_000;
 const ROAD_INFO_REFRESH_MS = 10 * 60_000;
+const MUNICIPAL_EVENTS_URL = "https://www.lepouliguen.fr/evenements/";
 const BATHING_WATER_URL =
   "https://baignades.sante.gouv.fr/baignades/consultSite.do?annee=2025&dptddass=044&impression=yes&isite=044001738&modeDetailImp=3&plv=04400157991&site=044001738";
 const MONITORED_BEACHES = [
@@ -970,7 +971,12 @@ export default function App() {
         />
 
         <section className="card card-wide">
-          <h3>En ce moment au Pouliguen</h3>
+          <div className="event-heading">
+            <h3>En ce moment au Pouliguen</h3>
+            <a href={MUNICIPAL_EVENTS_URL} target="_blank" rel="noreferrer">
+              agenda complet
+            </a>
+          </div>
           {agenda.length > 0 ? (
             <ul className="events">
               {agenda.map((e, i) => (
@@ -978,11 +984,6 @@ export default function App() {
                   <strong>{e.title}</strong>
                   <span>{e.dateRange}</span>
                   <span>{e.location}</span>
-                  {e.url && (
-                    <a href={e.url} target="_blank" rel="noreferrer">
-                      détails
-                    </a>
-                  )}
                 </li>
               ))}
             </ul>
@@ -999,8 +1000,8 @@ export default function App() {
           ) : (
             <p className="placeholder">
               Agenda indisponible. Voir{" "}
-              <a href="https://www.lepouliguen.fr/" target="_blank" rel="noreferrer">
-                lepouliguen.fr
+              <a href={MUNICIPAL_EVENTS_URL} target="_blank" rel="noreferrer">
+                l'agenda municipal
               </a>
               .
             </p>
