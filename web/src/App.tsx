@@ -5,7 +5,7 @@ import ComingDays from "./components/ComingDays";
 import DailyBriefing from "./components/DailyBriefing";
 import DateSelector from "./components/DateSelector";
 import Discover from "./components/Discover";
-import PoiMap, { escapeHtml } from "./components/PoiMap";
+import PoiMap from "./components/PoiMap";
 import TideChart from "./components/TideChart";
 import VisitPlanner from "./components/VisitPlanner";
 import {
@@ -48,6 +48,7 @@ import {
   weatherLabel,
   windDirectionLabel,
 } from "./lib/openmeteo";
+import { escapeHtml } from "./lib/html";
 import { currentTrend, findExtrema, nextExtremes } from "./lib/tides";
 import {
   fetchTrainDelays,
@@ -94,44 +95,12 @@ const ROAD_INFO_REFRESH_MS = 10 * 60_000;
 const MUNICIPAL_EVENTS_URL = "https://www.lepouliguen.fr/evenements/";
 const BATHING_WATER_URL =
   "https://baignades.sante.gouv.fr/baignades/consultSite.do?annee=2025&dptddass=044&impression=yes&isite=044001738&modeDetailImp=3&plv=04400157991&site=044001738";
+const PARKING_URL =
+  "https://www.lepouliguen.fr/decouvrir/se-deplacer-et-stationner-au-pouliguen/";
 const MONITORED_BEACHES = [
   "Plage du Nau",
   "Plage Benoît",
   "Plage du Général-de-Gaulle",
-];
-const NEARBY_TOWNS = [
-  {
-    name: "Batz-sur-Mer",
-    distance: "6 km",
-    angle: "marais salants, patrimoine paludier, côte sauvage",
-    ideas: ["Musée des Marais Salants", "côte sauvage", "petits concerts et fêtes locales"],
-    agendaUrl: "https://www.batzsurmer.fr/informations-transversales/agenda",
-    activityUrl: "https://www.ot-batzsurmer.fr/agenda-batz-sur-mer.html",
-  },
-  {
-    name: "La Baule-Escoublac",
-    distance: "4 km",
-    angle: "grande plage, expos, sport, festivals",
-    ideas: ["La Baule Jazz Festival", "expositions", "sports de plage et polo"],
-    agendaUrl: "https://www.labaule.fr/evenements/",
-    activityUrl: "https://www.labaule-guerande.com/explorer/agenda/",
-  },
-  {
-    name: "Pornichet",
-    distance: "10 km",
-    angle: "animations familiales, marché, hippodrome, plage",
-    ideas: ["Les Renc'Arts", "marchés nocturnes", "longe-côte"],
-    agendaUrl: "https://ville-pornichet.fr/je-bouge/agenda-de-pornichet/",
-    activityUrl: "https://www.pornichet.fr/sejourner/tous-les-evenements-pornichet",
-  },
-  {
-    name: "Saint-Nazaire",
-    distance: "22 km",
-    angle: "visites industrielles, culture, concerts, front de mer",
-    ideas: ["Escal'Atlantic", "base sous-marine", "concerts au VIP"],
-    agendaUrl: "https://www.saintnazaire.fr/mon-quotidien/sortir-a-saint-nazaire/",
-    activityUrl: "https://www.saint-nazaire-tourisme.com/agenda/",
-  },
 ];
 const AGENDA_CITY_FILTERS = [
   "Tous",
@@ -141,7 +110,20 @@ const AGENDA_CITY_FILTERS = [
   "Pornichet",
   "Saint-Nazaire",
 ];
+const NAV_LINKS = [
+  { href: "#essentiel", label: "L'essentiel" },
+  { href: "#deplacer", label: "Se déplacer" },
+  { href: "#cote", label: "La côte" },
+  { href: "#aujourdhui", label: "Aujourd'hui" },
+  { href: "#pratique", label: "Vie pratique" },
+  { href: "#/decouvrir", label: "Découvrir" },
+];
 type CircuitMode = "all" | "rando" | "velo";
+type SourceStatusKind = "live" | "partial" | "static" | "unavailable";
+
+function SourceBadge({ kind, children }: { kind: SourceStatusKind; children: string }) {
+  return <span className={`source-badge source-badge-${kind}`}>{children}</span>;
+}
 
 function freshnessLabel(fetchedAt: Date | undefined): string {
   if (!fetchedAt) return "";
@@ -294,6 +276,8 @@ export default function App() {
   const [circuitMode, setCircuitMode] = useState<CircuitMode>("all");
   const [agendaCity, setAgendaCity] = useState("Tous");
   const [route, setRoute] = useState<string>(() => window.location.hash);
+  const [openMaps, setOpenMaps] = useState<Record<string, boolean>>({});
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const selectedDateValue = toDateInputValue(selectedDate);
   const todayValue = toDateInputValue(now);
   const selectedDateIsToday = selectedDateValue === todayValue;
@@ -306,6 +290,10 @@ export default function App() {
   }, []);
 
   const isDiscover = route.startsWith("#/decouvrir");
+
+  useEffect(() => {
+    setIsMobileNavOpen(false);
+  }, [route]);
 
   useEffect(() => {
     // Coming back from the Découvrir page to an anchor: the section only
@@ -590,21 +578,43 @@ export default function App() {
     return <em className="ontime"> à l'heure</em>;
   };
 
+  const toggleMap = (key: string) => {
+    setOpenMaps((maps) => ({ ...maps, [key]: !maps[key] }));
+  };
+
   return (
     <div className="app">
       <header className="topbar">
         <a className="brand" href="#essentiel">
           Le Pouliguen <span>Live</span>
         </a>
-        <nav className="topnav" aria-label="Navigation principale">
-          <a href="#essentiel">L'essentiel</a>
-          <a href="#deplacer">Se déplacer</a>
-          <a href="#cote">La côte</a>
-          <a href="#aujourdhui">Aujourd'hui</a>
-          <a href="#pratique">Vie pratique</a>
-          <a href="#/decouvrir" className={isDiscover ? "nav-active" : ""}>
-            Découvrir
-          </a>
+        <button
+          type="button"
+          className="menu-toggle"
+          aria-label={isMobileNavOpen ? "Fermer le menu" : "Ouvrir le menu"}
+          aria-controls="main-navigation"
+          aria-expanded={isMobileNavOpen}
+          onClick={() => setIsMobileNavOpen((open) => !open)}
+        >
+          <span />
+          <span />
+          <span />
+        </button>
+        <nav
+          id="main-navigation"
+          className={isMobileNavOpen ? "topnav topnav-open" : "topnav"}
+          aria-label="Navigation principale"
+        >
+          {NAV_LINKS.map((link) => (
+            <a
+              key={link.href}
+              href={link.href}
+              className={isDiscover && link.href === "#/decouvrir" ? "nav-active" : ""}
+              onClick={() => setIsMobileNavOpen(false)}
+            >
+              {link.label}
+            </a>
+          ))}
         </nav>
       </header>
 
@@ -651,6 +661,37 @@ export default function App() {
           Données momentanément indisponibles : {errors.join(", ")}.
         </div>
       )}
+
+      <section className="source-health" aria-label="État des sources de données">
+        <div>
+          <SourceBadge kind={weather && marine ? "live" : "unavailable"}>
+            météo et mer
+          </SourceBadge>
+          <span>{weather && marine ? "données directes" : "source indisponible"}</span>
+        </div>
+        <div>
+          <SourceBadge kind={transit ? "live" : "unavailable"}>
+            bus
+          </SourceBadge>
+          <span>{transit ? "horaires et temps réel" : "source indisponible"}</span>
+        </div>
+        <div>
+          <SourceBadge kind={trains ? "partial" : "unavailable"}>
+            train
+          </SourceBadge>
+          <span>{trains ? "horaires, retards si publiés" : "source indisponible"}</span>
+        </div>
+        <div>
+          <SourceBadge kind={agenda.length > 0 ? "partial" : "unavailable"}>
+            agenda
+          </SourceBadge>
+          <span>{agenda.length > 0 ? "flux partiel selon les villes" : "source indisponible"}</span>
+        </div>
+        <div>
+          <SourceBadge kind="static">parking</SourceBadge>
+          <span>source municipale 2026</span>
+        </div>
+      </section>
 
       <section className="essentials" id="essentiel" aria-label="L'essentiel maintenant">
         {essentialTide && (
@@ -879,7 +920,17 @@ export default function App() {
         <section className="card">
           <h3>Bus en direct sur la carte</h3>
           {transit ? (
-            <BusMap data={transit} delays={delays} />
+            <>
+              <button
+                type="button"
+                className="map-toggle"
+                onClick={() => toggleMap("bus")}
+                aria-expanded={Boolean(openMaps.bus)}
+              >
+                {openMaps.bus ? "masquer la carte" : "voir la carte des bus"}
+              </button>
+              {openMaps.bus && <BusMap data={transit} delays={delays} />}
+            </>
           ) : (
             <p className="placeholder">Chargement de la carte…</p>
           )}
@@ -912,12 +963,61 @@ export default function App() {
         </section>
 
         <section className="card">
+          <div className="card-heading">
+            <h3>Stationnement</h3>
+            <SourceBadge kind="static">municipal 2026</SourceBadge>
+          </div>
+          <ul className="parking-list">
+            <li>
+              <strong>Gratuit toute l'année</strong>
+              <span>
+                La mairie conseille de rejoindre les parkings de proximité pour
+                stationner sans contrainte de temps.
+              </span>
+            </li>
+            <li>
+              <strong>Zones bleues en été</strong>
+              <span>
+                En juillet et août, certaines rues et parkings restent gratuits
+                mais limités à 30 min ou 2 h selon les secteurs.
+              </span>
+            </li>
+            <li>
+              <strong>Quai Jules-Sandeau</strong>
+              <span>
+                La circulation peut être modifiée en saison, avec des créneaux
+                piétons les soirs d'été.
+              </span>
+            </li>
+          </ul>
+          <p className="meta-line">
+            Source officielle :{" "}
+            <a href={PARKING_URL} target="_blank" rel="noreferrer">
+              mairie du Pouliguen, se déplacer et stationner
+            </a>
+            .
+          </p>
+        </section>
+
+        <section className="card">
           <h3>Vélo pratique</h3>
           {bikeParking === null || bikeSegments === null || bikeShareStations === null ? (
             <p className="placeholder">Chargement des données vélo…</p>
           ) : (
             <>
-              {bikeMapMarkers.length > 0 && <PoiMap markers={bikeMapMarkers} />}
+              {bikeMapMarkers.length > 0 && (
+                <>
+                  <button
+                    type="button"
+                    className="map-toggle"
+                    onClick={() => toggleMap("bike")}
+                    aria-expanded={Boolean(openMaps.bike)}
+                  >
+                    {openMaps.bike ? "masquer la carte" : "voir la carte vélo"}
+                  </button>
+                  {openMaps.bike && <PoiMap markers={bikeMapMarkers} />}
+                </>
+              )}
               <div className="bike-practical-grid">
                 <div>
                   <span className="bike-metric">{bikeParking.length}</span>
@@ -1027,22 +1127,32 @@ export default function App() {
           <h3>Plages</h3>
           {beaches.length > 0 ? (
             <>
-              <PoiMap
-                markers={beaches.map((b) => ({
-                  lat: b.lat,
-                  lon: b.lon,
-                  label: "P",
-                  color: "#0b6396",
-                  title: b.name,
-                  popupHtml:
-                    `<div class="bus-popup"><h3>${escapeHtml(b.name)}</h3>` +
-                    `<p>${escapeHtml(b.description.slice(0, 120))}…</p>` +
-                    (b.url
-                      ? `<a href="${escapeHtml(b.url)}" target="_blank" rel="noreferrer">En savoir plus</a>`
-                      : "") +
-                    `</div>`,
-                }))}
-              />
+              <button
+                type="button"
+                className="map-toggle"
+                onClick={() => toggleMap("beaches")}
+                aria-expanded={Boolean(openMaps.beaches)}
+              >
+                {openMaps.beaches ? "masquer la carte" : "voir la carte des plages"}
+              </button>
+              {openMaps.beaches && (
+                <PoiMap
+                  markers={beaches.map((b) => ({
+                    lat: b.lat,
+                    lon: b.lon,
+                    label: "P",
+                    color: "#0b6396",
+                    title: b.name,
+                    popupHtml:
+                      `<div class="bus-popup"><h3>${escapeHtml(b.name)}</h3>` +
+                      `<p>${escapeHtml(b.description.slice(0, 120))}…</p>` +
+                      (b.url
+                        ? `<a href="${escapeHtml(b.url)}" target="_blank" rel="noreferrer">En savoir plus</a>`
+                        : "") +
+                      `</div>`,
+                  }))}
+                />
+              )}
               <ul className="beaches">
                 {beaches.map((b, i) => (
                   <li key={i}>
@@ -1276,45 +1386,6 @@ export default function App() {
           )}
         </section>
 
-        <section className="card card-wide">
-          <div className="event-heading">
-            <h3>À explorer autour</h3>
-            <a
-              href="https://www.labaule-guerande.com/explorer/agenda/"
-              target="_blank"
-              rel="noreferrer"
-            >
-              agenda destination
-            </a>
-          </div>
-          <div className="nearby-towns">
-            {NEARBY_TOWNS.map((town) => (
-              <article className="nearby-town" key={town.name}>
-                <div className="nearby-town-head">
-                  <div>
-                    <strong>{town.name}</strong>
-                    <p>{town.angle}</p>
-                  </div>
-                  <span>{town.distance}</span>
-                </div>
-                <ul>
-                  {town.ideas.map((idea) => (
-                    <li key={idea}>{idea}</li>
-                  ))}
-                </ul>
-                <div className="nearby-links">
-                  <a href={town.agendaUrl} target="_blank" rel="noreferrer">
-                    événements
-                  </a>
-                  <a href={town.activityUrl} target="_blank" rel="noreferrer">
-                    activités
-                  </a>
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
-
         <ComingDays
           now={selectedDate}
           weather={weather}
@@ -1399,7 +1470,7 @@ export default function App() {
               </button>
             </div>
           )}
-          {circuitTraces.length > 0 && (
+          {circuitTraces.length > 0 && selectedCircuit && (
             <PoiMap
               selectedLine={selectedCircuit}
               lines={circuitTraces
@@ -1517,23 +1588,33 @@ export default function App() {
           <h3>Recharge de voiture électrique</h3>
           {chargers.length > 0 ? (
             <>
-              <PoiMap
-                markers={chargers.slice(0, 25).map((c) => ({
-                  lat: c.lat,
-                  lon: c.lon,
-                  label: "R",
-                  color: "#1d6b43",
-                  title: chargerLabel(c),
-                  popupHtml:
-                    `<div class="bus-popup"><h3>${escapeHtml(chargerLabel(c))}</h3>` +
-                    (c.address ? `<p>${escapeHtml(c.address)}</p>` : "") +
-                    `<p>${c.points} point${c.points > 1 ? "s" : ""} de charge` +
-                    (c.maxPowerKw > 0 ? `, jusqu'à ${Math.round(c.maxPowerKw)} kW` : "") +
-                    `</p>` +
-                    (c.operator ? `<p class="pop-meta">${escapeHtml(c.operator)}</p>` : "") +
-                    `</div>`,
-                }))}
-              />
+              <button
+                type="button"
+                className="map-toggle"
+                onClick={() => toggleMap("chargers")}
+                aria-expanded={Boolean(openMaps.chargers)}
+              >
+                {openMaps.chargers ? "masquer la carte" : "voir la carte des bornes"}
+              </button>
+              {openMaps.chargers && (
+                <PoiMap
+                  markers={chargers.slice(0, 25).map((c) => ({
+                    lat: c.lat,
+                    lon: c.lon,
+                    label: "R",
+                    color: "#1d6b43",
+                    title: chargerLabel(c),
+                    popupHtml:
+                      `<div class="bus-popup"><h3>${escapeHtml(chargerLabel(c))}</h3>` +
+                      (c.address ? `<p>${escapeHtml(c.address)}</p>` : "") +
+                      `<p>${c.points} point${c.points > 1 ? "s" : ""} de charge` +
+                      (c.maxPowerKw > 0 ? `, jusqu'à ${Math.round(c.maxPowerKw)} kW` : "") +
+                      `</p>` +
+                      (c.operator ? `<p class="pop-meta">${escapeHtml(c.operator)}</p>` : "") +
+                      `</div>`,
+                  }))}
+                />
+              )}
               <ul className="chargers">
                 {chargers.slice(0, 5).map((c, i) => (
                   <li key={i}>
@@ -1571,7 +1652,11 @@ export default function App() {
           les services compétents (15 ou 112).
         </p>
         <p className="footer-credits">
-          Développé avec amour au Pouliguen par Stan Berteloot.
+          Développé avec amour au Pouliguen par{" "}
+          <a href="https://www.linkedin.com/in/berteloot/" target="_blank" rel="noreferrer">
+            Stan Berteloot
+          </a>
+          .
           Données : Open-Meteo (météo, mer), Lila Presqu'île et SNCF via
           transport.data.gouv.fr (bus, trains, temps réel), Cap Atlantique
           (plages, déchets, circuits, agenda), Département de

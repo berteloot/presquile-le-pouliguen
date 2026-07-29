@@ -88,7 +88,7 @@ export default function PoiMap({
       mapRef.current = null;
       lineLayersRef.current = new Map();
     };
-  }, [markers, lines]);
+  }, [markers, lines, fitToLines]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -108,12 +108,4 @@ export default function PoiMap({
   }, [selectedLine]);
 
   return <div ref={containerRef} className="poi-map" />;
-}
-
-export function escapeHtml(s: string): string {
-  return s
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;");
 }

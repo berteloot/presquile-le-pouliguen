@@ -101,6 +101,12 @@ a {
   display: flex;
   gap: 2px;
   overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.topnav::-webkit-scrollbar {
+  display: none;
 }
 
 .topnav a {
@@ -123,6 +129,35 @@ a {
 .topnav .nav-active {
   background: var(--navy);
   color: #fff;
+}
+
+.menu-toggle {
+  display: none;
+  width: 44px;
+  height: 44px;
+  border: 1px solid #c8dbe6;
+  border-radius: 8px;
+  background: #fff;
+  color: var(--navy);
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 5px;
+  padding: 0;
+}
+
+.menu-toggle span {
+  display: block;
+  width: 20px;
+  height: 2px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.menu-toggle:hover {
+  background: var(--sea-soft);
+  border-color: var(--sea);
 }
 
 :focus-visible {
@@ -391,11 +426,90 @@ main {
   font-size: 16px;
 }
 
+.source-health {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  margin: 14px 16px 0;
+  padding: 2px 0 4px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.source-health::-webkit-scrollbar {
+  display: none;
+}
+
+.source-health div {
+  min-width: max-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid #d7e4ec;
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: #fbfcfd;
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.2;
+}
+
+.source-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  border-radius: 999px;
+  padding: 3px 8px;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.source-badge-live {
+  background: var(--ok);
+}
+
+.source-badge-partial {
+  background: #7b6413;
+}
+
+.source-badge-static {
+  background: var(--navy);
+}
+
+.source-badge-unavailable {
+  background: #8a3b22;
+}
+
 .meta-line {
   font-size: 15px;
   color: var(--muted);
   margin: 10px 0 0;
   line-height: 1.5;
+}
+
+.map-toggle {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid #c8dbe6;
+  border-radius: 8px;
+  padding: 9px 12px;
+  margin: 0 0 12px;
+  background: #f7fafc;
+  color: var(--sea-link);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  text-align: center;
+}
+
+.map-toggle:hover {
+  border-color: var(--sea);
+  background: var(--sea-soft);
 }
 
 .briefing-text {
@@ -641,10 +755,13 @@ main {
   font-size: 17px;
   color: var(--ink);
   margin-bottom: 12px;
+  min-width: 0;
 }
 
 .stop-picker select {
   flex: 1;
+  min-width: 0;
+  max-width: 100%;
   font-size: 17px;
   font-family: inherit;
   min-height: 48px;
@@ -1515,6 +1632,35 @@ main {
   color: var(--ink);
 }
 
+.parking-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.parking-list li {
+  display: grid;
+  gap: 3px;
+  padding: 11px 12px;
+  border: 1px solid #d7e4ec;
+  border-left: 4px solid var(--sea);
+  border-radius: 8px;
+  background: #fbfcfd;
+}
+
+.parking-list strong {
+  color: var(--navy);
+  font-size: 16px;
+}
+
+.parking-list span {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
 /* Events */
 .event-heading {
   display: flex;
@@ -1863,9 +2009,66 @@ footer p {
 }
 
 @media (max-width: 759px) {
+  .topbar {
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+  }
+
+  .brand {
+    font-size: 20px;
+  }
+
+  .menu-toggle {
+    display: inline-flex;
+  }
+
+  .topnav {
+    display: none;
+    width: 100%;
+    flex-direction: column;
+    gap: 0;
+    order: 3;
+    padding: 8px 0 4px;
+    border-top: 1px solid var(--line);
+    overflow: visible;
+  }
+
+  .topnav-open {
+    display: flex;
+  }
+
+  .topnav a {
+    justify-content: space-between;
+    min-height: 46px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 16px;
+  }
+
+  .topnav a + a {
+    margin-top: 2px;
+  }
+
+  .topnav a::after {
+    content: "›";
+    color: var(--muted);
+    font-weight: 800;
+  }
+
+  .topnav .nav-active::after {
+    color: #fff;
+  }
+
   .hero {
     min-height: 330px;
     background-position: 35% 44%;
+  }
+
+  .stop-picker {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 6px;
   }
 }
 

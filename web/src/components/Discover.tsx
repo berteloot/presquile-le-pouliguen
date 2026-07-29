@@ -1,6 +1,10 @@
+import NearbyTowns from "./NearbyTowns";
+
 export default function Discover() {
   return (
     <main className="discover">
+      <NearbyTowns />
+
       <section className="card card-wide">
         <h3>Un port devenu station balnéaire</h3>
         <p>
