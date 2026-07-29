@@ -92,6 +92,7 @@ const MONITORED_BEACHES = [
   "Plage Benoît",
   "Plage du Général-de-Gaulle",
 ];
+type CircuitMode = "all" | "rando" | "velo";
 
 function freshnessLabel(fetchedAt: Date | undefined): string {
   if (!fetchedAt) return "";
@@ -225,6 +226,7 @@ export default function App() {
   );
   const [errors, setErrors] = useState<string[]>([]);
   const [selectedCircuit, setSelectedCircuit] = useState<string | null>(null);
+  const [circuitMode, setCircuitMode] = useState<CircuitMode>("all");
   const [route, setRoute] = useState<string>(() => window.location.hash);
   const selectedDateValue = toDateInputValue(selectedDate);
   const todayValue = toDateInputValue(now);
@@ -390,6 +392,21 @@ export default function App() {
     () => selectedDayExtrema.filter((e) => e.type === "low"),
     [selectedDayExtrema],
   );
+  const sortedCircuits = useMemo(() => {
+    const localRank = (c: Circuit) =>
+      c.communes.some((commune) => /pouliguen/i.test(commune))
+        ? 0
+        : c.communes.some((commune) => /batz|baule|croisic|gu[eé]rande/i.test(commune))
+          ? 1
+          : 2;
+    return circuits
+      .filter((c) => circuitMode === "all" || c.kind === circuitMode)
+      .sort((a, b) => localRank(a) - localRank(b) || (a.km ?? 999) - (b.km ?? 999));
+  }, [circuits, circuitMode]);
+  const featuredCircuit =
+    sortedCircuits.find((c) => c.name === selectedCircuit) ??
+    sortedCircuits.find((c) => c.communes.some((commune) => /pouliguen/i.test(commune))) ??
+    sortedCircuits[0];
   const essentialTide = upcoming[0] ?? selectedDayExtrema[selectedDayExtrema.length - 1] ?? null;
   const essentialTideIsPast = essentialTide
     ? essentialTide.time.getTime() < now.getTime()
@@ -1048,29 +1065,74 @@ export default function App() {
         </section>
 
         <section className="card">
-          <h3>Balades à pied et à vélo</h3>
+          <div className="card-heading">
+            <h3>Balades à pied et à vélo</h3>
+            <div className="circuit-tabs" aria-label="Filtrer les balades">
+              {[
+                ["all", "Toutes"],
+                ["rando", "À pied"],
+                ["velo", "Vélo"],
+              ].map(([mode, label]) => (
+                <button
+                  key={mode}
+                  type="button"
+                  className={circuitMode === mode ? "circuit-tab circuit-tab-active" : "circuit-tab"}
+                  onClick={() => setCircuitMode(mode as CircuitMode)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+          {featuredCircuit && (
+            <div className="circuit-feature">
+              <span className="circuit-kind">
+                {featuredCircuit.kind === "velo" ? "vélo" : "à pied"}
+              </span>
+              <div>
+                <strong>{featuredCircuit.name}</strong>
+                <span>
+                  {[featuredCircuit.km != null ? `${featuredCircuit.km} km` : null, featuredCircuit.duration]
+                    .filter(Boolean)
+                    .join(" · ")}
+                  {featuredCircuit.communes.length > 0
+                    ? ` · ${featuredCircuit.communes[0]}`
+                    : ""}
+                </span>
+              </div>
+              <button
+                type="button"
+                className="circuit-map-btn"
+                onClick={() => setSelectedCircuit(featuredCircuit.name)}
+              >
+                voir sur la carte
+              </button>
+            </div>
+          )}
           {circuitTraces.length > 0 && (
             <PoiMap
               selectedLine={selectedCircuit}
-              lines={circuitTraces.map((t) => ({
-                segments: t.segments,
-                color: t.kind === "velo" ? "#0b6396" : "#7a4a24",
-                title: t.name,
-                popupHtml:
-                  `<div class="bus-popup"><h3>${escapeHtml(t.name)}</h3>` +
-                  `<p>${t.kind === "velo" ? "Circuit vélo" : "Randonnée"}` +
-                  (t.km != null ? ` · ${t.km} km` : "") +
-                  `</p>` +
-                  (t.pdf
-                    ? `<a href="${escapeHtml(t.pdf)}" target="_blank" rel="noreferrer">Fiche PDF du circuit</a>`
-                    : "") +
-                  `</div>`,
-              }))}
+              lines={circuitTraces
+                .filter((t) => circuitMode === "all" || t.kind === circuitMode)
+                .map((t) => ({
+                  segments: t.segments,
+                  color: t.kind === "velo" ? "#0b6396" : "#7a4a24",
+                  title: t.name,
+                  popupHtml:
+                    `<div class="bus-popup"><h3>${escapeHtml(t.name)}</h3>` +
+                    `<p>${t.kind === "velo" ? "Circuit vélo" : "Randonnée"}` +
+                    (t.km != null ? ` · ${t.km} km` : "") +
+                    `</p>` +
+                    (t.pdf
+                      ? `<a href="${escapeHtml(t.pdf)}" target="_blank" rel="noreferrer">Fiche PDF du circuit</a>`
+                      : "") +
+                    `</div>`,
+                }))}
             />
           )}
-          {circuits.length > 0 ? (
+          {sortedCircuits.length > 0 ? (
             <ul className="circuits">
-              {circuits.slice(0, 6).map((c, i) => (
+              {sortedCircuits.slice(0, 8).map((c, i) => (
                 <li key={i}>
                   <span className="circuit-kind">
                     {c.kind === "velo" ? "vélo" : "à pied"}
@@ -1084,8 +1146,7 @@ export default function App() {
                       {c.name}
                     </button>
                     <span>
-                      {c.km != null ? `${c.km} km` : ""}
-                      {c.duration ? ` · ${c.duration}` : ""}
+                      {[c.km != null ? `${c.km} km` : null, c.duration].filter(Boolean).join(" · ")}
                       {c.communes.length > 0 ? ` · ${c.communes[0]}` : ""}
                     </span>
                   </span>

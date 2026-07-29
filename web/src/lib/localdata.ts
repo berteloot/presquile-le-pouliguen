@@ -87,6 +87,20 @@ const NEARBY = new Set([
   "GUÉRANDE",
 ]);
 
+function formatDuration(value: unknown): string | null {
+  if (value == null) return null;
+  const text = String(value);
+  if (/\d+h/i.test(text)) return text.replace(/\s+/g, "");
+  const hours = Number(text);
+  if (!Number.isFinite(hours) || hours <= 0) return null;
+  const totalMinutes = Math.round(hours * 60);
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  if (h === 0) return `${m} min`;
+  if (m === 0) return `${h} h`;
+  return `${h} h ${String(m).padStart(2, "0")}`;
+}
+
 export async function fetchCircuits(): Promise<Circuit[]> {
   const [randoRes, veloRes] = await Promise.all([
     fetch(
@@ -106,7 +120,7 @@ export async function fetchCircuits(): Promise<Circuit[]> {
         kind: "rando",
         communes,
         km: r.kilometre != null ? Math.round(Number(r.kilometre) / 100) / 10 : null,
-        duration: null,
+        duration: formatDuration(r.temps),
         pdf: r.fiche ? String(r.fiche) : null,
       });
     }
@@ -120,7 +134,7 @@ export async function fetchCircuits(): Promise<Circuit[]> {
         kind: "velo",
         communes,
         km: r.kilometre != null ? Number(r.kilometre) : null,
-        duration: r.temps ? String(r.temps) : null,
+        duration: formatDuration(r.temps),
         pdf: r.fiche ? String(r.fiche) : null,
       });
     }

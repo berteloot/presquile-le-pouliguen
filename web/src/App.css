@@ -920,6 +920,87 @@ main {
 }
 
 /* Circuits */
+.circuit-tabs {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid #d7e4ec;
+  border-radius: 10px;
+  background: #f7fafc;
+}
+
+.circuit-tab {
+  min-height: 34px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  padding: 0 11px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.circuit-tab:hover,
+.circuit-tab-active {
+  border-color: #c8dbe6;
+  background: #fff;
+  color: var(--sea-link);
+}
+
+.circuit-feature {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  margin: 0 0 12px;
+  padding: 12px;
+  border: 1px solid #d7e4ec;
+  border-left: 4px solid var(--sea);
+  border-radius: 8px;
+  background: #fbfcfd;
+}
+
+.circuit-feature .circuit-kind {
+  justify-self: start;
+}
+
+.circuit-feature div {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.circuit-feature strong {
+  color: var(--navy);
+  line-height: 1.25;
+}
+
+.circuit-feature span:last-child {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.circuit-map-btn {
+  min-height: 36px;
+  border: 1px solid #c8dbe6;
+  border-radius: 7px;
+  padding: 0 12px;
+  background: #fff;
+  color: var(--sea-link);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.circuit-map-btn:hover {
+  border-color: var(--sea);
+  background: var(--sea-soft);
+}
+
 .circuits {
   list-style: none;
   margin: 0;
@@ -985,6 +1066,25 @@ main {
 .circuits a {
   font-size: 14px;
   white-space: nowrap;
+}
+
+@media (max-width: 520px) {
+  .circuit-tabs {
+    width: 100%;
+  }
+
+  .circuit-tab {
+    flex: 1;
+  }
+
+  .circuit-feature {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .circuit-map-btn {
+    width: 100%;
+  }
 }
 
 .poi-map {
