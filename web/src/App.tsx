@@ -153,6 +153,19 @@ function shortWhenLabel(date: Date, ref: Date): string {
   return fmtDate.format(date);
 }
 
+function sunMomentLabel(weather: WeatherNow, ref: Date): string {
+  if (ref < weather.sunrise) return `lever du soleil ${fmtTime.format(weather.sunrise)}`;
+  if (ref <= weather.sunset) return `coucher du soleil ${fmtTime.format(weather.sunset)}`;
+
+  const tomorrow = addDays(ref, 1);
+  const tomorrowWeather = weather.daily.find((day) => isSameDay(day.date, tomorrow));
+  if (tomorrowWeather) {
+    return `lever du soleil demain ${fmtTime.format(tomorrowWeather.sunrise)}`;
+  }
+
+  return `soleil couché, lever demain`;
+}
+
 function dateBoundsFromServices(
   services: Record<string, { start: string; end: string }>,
 ): { min: string | undefined; max: string | undefined } {
@@ -499,7 +512,7 @@ export default function App() {
         {weather && (
           <p className="hero-sub">
             {Math.round(weather.tempMin)}° / {Math.round(weather.tempMax)}° · UV max{" "}
-            {Math.round(weather.uvMax)} · coucher du soleil {fmtTime.format(weather.sunset)} ·{" "}
+            {Math.round(weather.uvMax)} · {sunMomentLabel(weather, now)} ·{" "}
             <a
               href="https://vigilance.meteofrance.fr"
               target="_blank"

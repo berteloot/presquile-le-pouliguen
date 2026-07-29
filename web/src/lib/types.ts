@@ -86,6 +86,8 @@ export interface WeatherNow {
 
 export interface WeatherDay {
   date: Date;
+  sunrise: Date;
+  sunset: Date;
   tempMax: number;
   tempMin: number;
   weatherCode: number;
