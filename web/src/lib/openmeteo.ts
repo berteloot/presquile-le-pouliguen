@@ -18,6 +18,13 @@ export async function fetchWeather(): Promise<WeatherNow> {
     tempMax: j.daily.temperature_2m_max[0],
     tempMin: j.daily.temperature_2m_min[0],
     uvMax: j.daily.uv_index_max[0],
+    daily: j.daily.time.map((time: string, index: number) => ({
+      date: new Date(time),
+      tempMax: j.daily.temperature_2m_max[index],
+      tempMin: j.daily.temperature_2m_min[index],
+      weatherCode: j.daily.weather_code[index],
+      uvMax: j.daily.uv_index_max[index],
+    })),
     fetchedAt: new Date(),
   };
 }

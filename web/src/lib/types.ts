@@ -80,7 +80,16 @@ export interface WeatherNow {
   tempMax: number;
   tempMin: number;
   uvMax: number;
+  daily: WeatherDay[];
   fetchedAt: Date;
+}
+
+export interface WeatherDay {
+  date: Date;
+  tempMax: number;
+  tempMin: number;
+  weatherCode: number;
+  uvMax: number;
 }
 
 export interface MarineSeries {

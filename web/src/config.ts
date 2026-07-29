@@ -7,8 +7,8 @@ export const OPEN_METEO_FORECAST =
   `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}` +
   `&current=temperature_2m,apparent_temperature,wind_speed_10m,wind_gusts_10m,wind_direction_10m,precipitation,weather_code` +
   `&hourly=temperature_2m,precipitation_probability,weather_code` +
-  `&daily=sunrise,sunset,temperature_2m_max,temperature_2m_min,uv_index_max` +
-  `&timezone=${encodeURIComponent(TZ)}&forecast_days=2`;
+  `&daily=sunrise,sunset,temperature_2m_max,temperature_2m_min,weather_code,uv_index_max` +
+  `&timezone=${encodeURIComponent(TZ)}&forecast_days=8`;
 
 export const OPEN_METEO_MARINE =
   `https://marine-api.open-meteo.com/v1/marine?latitude=${LAT}&longitude=${LON}` +

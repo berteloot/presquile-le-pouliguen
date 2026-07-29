@@ -1,9 +1,11 @@
 import { useMemo } from "react";
+import type { AgendaEvent } from "../lib/capatlantique";
+import type { TideExtreme, WeatherDay, WeatherNow } from "../lib/types";
 
 interface ComingDaysProps {
-  weather: any;
-  agenda: any[];
-  extrema: any[];
+  weather: WeatherNow | null;
+  agenda: AgendaEvent[];
+  extrema: TideExtreme[];
   now: Date;
 }
 
@@ -39,6 +41,14 @@ function weatherEmoji(code: number): string {
   return "🌤️";
 }
 
+function sameLocalDay(a: Date, b: Date): boolean {
+  return (
+    a.getDate() === b.getDate() &&
+    a.getMonth() === b.getMonth() &&
+    a.getFullYear() === b.getFullYear()
+  );
+}
+
 export default function ComingDays({
   weather,
   agenda,
@@ -46,50 +56,33 @@ export default function ComingDays({
   now,
 }: ComingDaysProps) {
   const nextDays = useMemo(() => {
-    const days = [];
+    const days: {
+      date: Date;
+      weather: WeatherDay | null;
+      tides: TideExtreme[];
+      events: AgendaEvent[];
+    }[] = [];
     for (let i = 1; i <= 7; i++) {
       const date = new Date(now);
       date.setDate(date.getDate() + i);
       date.setHours(12, 0, 0, 0);
 
-      // Find weather for this day
-      const dayWeather = weather?.daily && weather.daily.time
-        ? weather.daily.time.map((t: string, idx: number) => ({
-            date: new Date(t),
-            tempMax: weather.daily.temperature_2m_max?.[idx],
-            tempMin: weather.daily.temperature_2m_min?.[idx],
-            code: weather.daily.weather_code?.[idx],
-          })).find((w: any) => {
-            const wd = new Date(w.date);
-            return wd.getDate() === date.getDate() &&
-                   wd.getMonth() === date.getMonth() &&
-                   wd.getFullYear() === date.getFullYear();
-          })
-        : null;
+      const dayWeather = weather?.daily.find((day) => sameLocalDay(day.date, date)) ?? null;
 
-      // Find tides for this day
-      const dayTides = extrema.filter((e: any) => {
-        const tideDate = new Date(e.time);
-        return tideDate.getDate() === date.getDate() &&
-               tideDate.getMonth() === date.getMonth() &&
-               tideDate.getFullYear() === date.getFullYear();
-      });
+      const dayTides = extrema.filter((e) => sameLocalDay(e.time, date));
 
-      // Find events for this day
-      const dayEvents = agenda.filter((e: any) => {
+      const dayEvents = agenda.filter((e) => {
         if (!e.dateRange) return false;
         return e.dateRange.toLowerCase().includes(fmtDayShort.format(date).toLowerCase()) ||
                e.dateRange.toLowerCase().includes(fmtDayDate.format(date).toLowerCase());
       });
 
-      if (dayWeather || dayTides.length > 0 || dayEvents.length > 0) {
-        days.push({
-          date,
-          weather: dayWeather,
-          tides: dayTides,
-          events: dayEvents,
-        });
-      }
+      days.push({
+        date,
+        weather: dayWeather,
+        tides: dayTides,
+        events: dayEvents,
+      });
     }
     return days;
   }, [weather, agenda, extrema, now]);
@@ -105,7 +98,8 @@ export default function ComingDays({
                 <span className="coming-day-date">{fmtDayShort.format(day.date)}</span>
                 {day.weather && (
                   <span className="coming-day-weather">
-                    {weatherEmoji(day.weather.code)} {day.weather.tempMax}° / {day.weather.tempMin}°
+                    {weatherEmoji(day.weather.weatherCode)} {Math.round(day.weather.tempMax)}° /{" "}
+                    {Math.round(day.weather.tempMin)}°
                   </span>
                 )}
               </div>
