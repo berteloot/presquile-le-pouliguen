@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import "./App.css";
 import BusMap from "./components/BusMap";
+import ComingDays from "./components/ComingDays";
 import DailyBriefing from "./components/DailyBriefing";
 import Discover from "./components/Discover";
 import PoiMap, { escapeHtml } from "./components/PoiMap";
@@ -715,6 +716,14 @@ export default function App() {
           )}
         </section>
 
+        <ComingDays
+          now={now}
+          weather={weather}
+          marine={marine}
+          agenda={agenda}
+          extrema={extrema}
+        />
+
         <h2 className="section-title" id="pratique">Vie pratique</h2>
         <div className="cards">
 
@@ -876,13 +885,26 @@ export default function App() {
       )}
 
       <footer>
-        <p>
-          Sources : Open-Meteo (météo, mer), Lila Presqu'île et SNCF via
-          transport.data.gouv.fr (bus, trains, temps réel), Cap Atlantique open
-          data (plages, déchets, circuits, agenda), Département de
+        <p className="footer-legal">
+          <strong>Clause de non-responsabilité</strong> : Les informations
+          présentées (horaires, conditions météo, marée, événements) sont
+          fournies à titre indicatif uniquement et ne dispensent pas de consulter
+          les sources officielles (Météo-France, SHOM, transporteurs, autorités
+          locales). En cas de situation dangereuse ou d'urgence, contactez
+          les services compétents (15 ou 112).
+        </p>
+        <p className="footer-credits">
+          Développé avec amour au Pouliguen par Stan Berteloot.
+          Données : Open-Meteo (météo, mer), Lila Presqu'île et SNCF via
+          transport.data.gouv.fr (bus, trains, temps réel), Cap Atlantique
+          (plages, déchets, circuits, agenda), Département de
           Loire-Atlantique (info routes), OpenStreetMap (défibrillateurs),
-          fichier national IRVE (bornes de recharge). Données fournies à titre
-          indicatif.
+          fichier national IRVE (bornes de recharge).
+        </p>
+        <p className="footer-contact">
+          <button type="button" className="contact-btn" onClick={() => window.open('mailto:presquile@berteloot.org?subject=Le%20Pouliguen%20Live', '_blank')}>
+            Contactez le développeur
+          </button>
         </p>
       </footer>
     </div>

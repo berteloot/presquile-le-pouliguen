@@ -1036,6 +1036,105 @@ footer p {
   line-height: 1.6;
 }
 
+.footer-legal {
+  font-weight: 600;
+  color: var(--navy);
+  padding: 8px 0;
+}
+
+.footer-credits {
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+  margin-top: 10px;
+}
+
+.footer-contact {
+  margin-top: 8px;
+  text-align: center;
+}
+
+.contact-btn {
+  background: var(--sea-soft);
+  color: var(--sea);
+  border: 1px solid var(--sea);
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  min-height: 36px;
+}
+
+.contact-btn:hover {
+  background: var(--sea);
+  color: #fff;
+}
+
+/* Coming Days */
+.coming-days {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.coming-day {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 14px;
+  background: var(--sea-soft);
+}
+
+.coming-day-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.coming-day-date {
+  font-weight: 700;
+  font-size: 17px;
+  color: var(--navy);
+  text-transform: capitalize;
+}
+
+.coming-day-weather {
+  font-size: 16px;
+  color: var(--ink);
+}
+
+.coming-day-tides {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.tide-mini {
+  font-size: 13px;
+  color: var(--sea);
+  background: #fff;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+.coming-day-events {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.event-mini {
+  font-size: 13px;
+  color: var(--ink);
+  background: #fff;
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
 @media (min-width: 760px) {
   .app {
     max-width: 960px;
