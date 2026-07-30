@@ -36,6 +36,8 @@ Working MVP, static-only architecture, verified running locally:
 - Live agenda: upcoming presqu'île events from the Cap Atlantique OpenAgenda
   extraction, merged with curated/snapshotted `web/public/data/events.json`
   for sources such as the official Le Croisic agenda
+- Cinéma Pax: cached official weekly sessions from the Films & horaires page,
+  with VO / young-audience hints, running time and direct ticket/source links
 - Beaches: the commune's 4 official bathing sites with descriptions and links,
   plus a link to official water quality (baignades.sante.gouv.fr)
 - Waste collection: next door-to-door pickups (bac vert / bac jaune) for the
@@ -80,7 +82,9 @@ directly. No backend is required for Phase 1, which means free static hosting.
 
 Data refresh: `python3 tools/build_transit_data.py` (bus GTFS) and
 `python3 tools/build_local_data.py all` (trains, DAE, chargers, curated
-agenda snapshot). Most other operational data is queried live from the browser.
+agenda snapshot, Cinéma Pax cache). Most other operational data is queried live
+from the browser. The Cinéma Pax cache also has a scheduled GitHub Actions
+refresh workflow.
 
 ## Layout
 
@@ -99,6 +103,7 @@ web/                          Vite + React + TypeScript PWA.
   src/components/             TideChart (SVG), BusMap (Leaflet).
   public/data/transit.json    Generated, committed.
   public/data/events.json     Curated/snapshotted events merged into agenda.
+  public/data/cinema-pax.json Generated, committed Cinéma Pax schedule cache.
 ```
 
 ## Run
@@ -110,6 +115,7 @@ npm run dev        # local dev
 npm run build      # production build to dist/
 npm run preview    # serve dist/ locally
 python3 ../tools/build_transit_data.py   # refresh transit data
+python3 ../tools/build_local_data.py cinema # refresh Cinéma Pax cache
 ```
 
 ## Data sources

@@ -91,6 +91,13 @@
     },
     {
       "kind": "http",
+      "name": "Cinema Pax cache",
+      "url": "https://presquile-le-pouliguen.berteloot.org/data/cinema-pax.json",
+      "expect_status": [200],
+      "json_path": "sessions.0.film"
+    },
+    {
+      "kind": "http",
       "name": "Open-Meteo forecast",
       "url": "https://api.open-meteo.com/v1/forecast?latitude=47.2769&longitude=-2.4292&current=temperature_2m,weather_code&daily=sunrise,sunset&timezone=Europe%2FParis&forecast_days=2",
       "expect_status": [200],

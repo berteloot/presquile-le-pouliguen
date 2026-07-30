@@ -1979,6 +1979,153 @@ main {
   font-style: italic;
 }
 
+.cinema-card {
+  border-color: #d7dce7;
+  background:
+    linear-gradient(135deg, rgba(20, 50, 79, 0.04), rgba(196, 48, 43, 0.05)),
+    var(--card);
+}
+
+.cinema-heading,
+.cinema-actions,
+.cinema-insights,
+.cinema-sessions li,
+.cinema-sessions p {
+  display: flex;
+}
+
+.cinema-heading {
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.cinema-heading h3,
+.cinema-summary {
+  margin: 0;
+}
+
+.cinema-summary {
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.cinema-actions {
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.cinema-actions a {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 12px;
+  border: 1px solid #cbd9e4;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--navy);
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.cinema-insights {
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.cinema-insights span {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #edf4f8;
+  color: var(--navy);
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.cinema-sessions {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.cinema-sessions li {
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid #e4e8ee;
+}
+
+.cinema-sessions time {
+  flex: 0 0 70px;
+  display: grid;
+  gap: 2px;
+  color: var(--sea);
+  font-variant-numeric: tabular-nums;
+}
+
+.cinema-sessions time strong {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.cinema-sessions time span,
+.cinema-sessions small,
+.cinema-sessions p {
+  color: var(--muted);
+}
+
+.cinema-sessions a {
+  color: var(--navy);
+  font-weight: 800;
+}
+
+.cinema-sessions p {
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 4px 0 0;
+  font-size: 14px;
+}
+
+.cinema-sessions p span + span::before {
+  content: "•";
+  margin-right: 6px;
+  color: #94a3b8;
+}
+
+.cinema-sessions small {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+@media (max-width: 560px) {
+  .cinema-heading {
+    display: grid;
+  }
+
+  .cinema-actions {
+    justify-content: flex-start;
+  }
+
+  .cinema-sessions li {
+    gap: 10px;
+  }
+
+  .cinema-sessions time {
+    flex-basis: 58px;
+  }
+
+  .cinema-sessions time strong {
+    font-size: 21px;
+  }
+}
+
 .nearby-towns {
   display: grid;
   grid-template-columns: 1fr;

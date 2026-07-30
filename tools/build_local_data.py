@@ -7,12 +7,14 @@ Produces, under web/public/data/:
   dae.json       Defibrillators in town (OpenStreetMap via Overpass)
   chargers.json  Public EV charging points near town (IRVE consolidated file)
   events.json    Curated/snapshotted events missing from live CORS feeds
+  cinema-pax.json Cinéma Pax sessions, cached from the official weekly page
 
-Run: python3 tools/build_local_data.py [trains|dae|chargers|events|all]
+Run: python3 tools/build_local_data.py [trains|dae|chargers|events|cinema|all]
 """
 from __future__ import annotations
 
 import csv
+import hashlib
 import html
 import io
 import json
@@ -39,6 +41,8 @@ IRVE_DATASET_API = (
     "fichier-consolide-des-bornes-de-recharge-pour-vehicules-electriques/"
 )
 LE_CROISIC_AGENDA_URL = "https://lecroisic.fr/fr/ev/748477/agenda-578"
+CINEMA_PAX_URL = "http://www.cinemapax.fr/films-horaires/"
+CINEMA_PAX_TICKETS_URL = "https://lepouliguencinemapax.cine.boutique/"
 FRENCH_MONTHS = {
     "janvier": 1,
     "février": 2,
@@ -280,6 +284,64 @@ def strip_tags(value: str) -> str:
     return re.sub(r"\s+", " ", text).strip()
 
 
+def absolute_cinema_url(url: str) -> str:
+    return urllib.parse.urljoin(CINEMA_PAX_URL, html.unescape(url)).replace("https://www.", "http://www.")
+
+
+def duration_to_minutes(value: str) -> int | None:
+    match = re.search(r"(?:(\d+)\s*h)?\s*(?:(\d+)(?:\s*min)?)?", value.lower())
+    if not match:
+        return None
+    hours = int(match.group(1) or 0)
+    minutes = int(match.group(2) or 0)
+    total = hours * 60 + minutes
+    return total or None
+
+
+def parse_cinema_day_labels(page: str) -> dict[str, str]:
+    labels = {}
+    current_year = datetime.now(ZoneInfo("Europe/Paris")).year
+    previous_month = 0
+    for day_id, label in re.findall(
+        r'<div class="title day(\d+)"[^>]*>\s*<span>.*?</span>\s*([^<]+)</div>',
+        page,
+        flags=re.S,
+    ):
+        text = strip_tags(label).lower()
+        match = re.search(r"(\d{1,2})\s+([a-zà-ÿ]+)", text)
+        if not match:
+            continue
+        day = int(match.group(1))
+        month = FRENCH_MONTHS.get(match.group(2))
+        if not month:
+            continue
+        if previous_month and month < previous_month:
+            current_year += 1
+        previous_month = month
+        labels[day_id] = f"{current_year:04d}-{month:02d}-{day:02d}"
+    return labels
+
+
+def parse_film_metadata(url: str) -> dict:
+    try:
+        page = fetch(url, timeout=45).decode("utf-8", errors="replace")
+    except Exception as exc:
+        print(f"Skipping film metadata for {url}: {exc}")
+        return {}
+    rows = {}
+    for row in re.findall(r"<tr>\s*<td>(.*?)</td>\s*<td>(.*?)</td>\s*</tr>", page, flags=re.S):
+        key = strip_tags(row[0]).lower()
+        value = strip_tags(row[1])
+        if key and value:
+            rows[key] = value
+    return {
+        "duration_minutes": duration_to_minutes(rows.get("durée", "")),
+        "genres": rows.get("genres", ""),
+        "director": rows.get("réalisateur", ""),
+        "age": rows.get("limite d'âge", ""),
+    }
+
+
 def parse_french_end_date(date_range: str, today) -> object | None:
     text = re.sub(r"\([^)]*\)", " ", date_range).replace("\xa0", " ")
     text = re.sub(r"\s+", " ", text).strip()
@@ -360,6 +422,99 @@ def build_events() -> None:
     print(f"{len(events)} curated events")
 
 
+def build_cinema() -> None:
+    print("Fetching Cinéma Pax schedule ...")
+    page = fetch(CINEMA_PAX_URL, timeout=60).decode("utf-8", errors="replace")
+    day_labels = parse_cinema_day_labels(page)
+    modified_match = re.search(r'<meta property="article:modified_time" content="([^"]+)"', page)
+    source_updated = modified_match.group(1) if modified_match else None
+    pdf_match = re.search(r'href="([^"]+\.pdf)"[^>]*class="[^"]*\bbtn\b[^"]*"', page, re.I)
+
+    sessions = []
+    films: dict[str, dict] = {}
+    for day_id, body in re.findall(
+        r'<table class="day(\d+)"[^>]*>(.*?)</table>',
+        page,
+        flags=re.S,
+    ):
+        date = day_labels.get(day_id)
+        if not date:
+            continue
+        for row in re.findall(r"<tr\b[^>]*>(.*?)</tr>", body, flags=re.S):
+            time_match = re.search(r"<strong>(\d{1,2}:\d{2})</strong>", row)
+            link_match = re.search(r'<a href="([^"]+)">(.*?)</a>', row, flags=re.S)
+            if not time_match or not link_match:
+                continue
+            version_match = re.search(r'<span class="version">\s*\(([^)]+)\)\s*</span>', row)
+            film_url = absolute_cinema_url(link_match.group(1))
+            title = strip_tags(link_match.group(2))
+            special_labels = []
+            for icon_match in re.finditer(r'<i\b[^>]*title="([^"]+)"', row, flags=re.S):
+                label = strip_tags(icon_match.group(1))
+                if label:
+                    special_labels.append(label)
+            films.setdefault(film_url, {"title": title, "url": film_url})
+            sessions.append(
+                {
+                    "film": title,
+                    "date": date,
+                    "time": time_match.group(1),
+                    "version": strip_tags(version_match.group(1)) if version_match else "",
+                    "film_url": film_url,
+                    "special_labels": special_labels,
+                }
+            )
+
+    for film_url, film in films.items():
+        film.update(parse_film_metadata(film_url))
+    for session in sessions:
+        metadata = films.get(session["film_url"], {})
+        session["duration_minutes"] = metadata.get("duration_minutes")
+        session["genres"] = metadata.get("genres", "")
+        session["age"] = metadata.get("age", "")
+
+    sessions.sort(key=lambda item: (item["date"], item["time"], item["film"]))
+    content_fingerprint = json.dumps(
+        {
+            "source_updated_at": source_updated,
+            "sessions": sessions,
+            "films": sorted(films.values(), key=lambda item: item["title"]),
+        },
+        ensure_ascii=False,
+        sort_keys=True,
+    )
+    schedule_hash = hashlib.sha256(content_fingerprint.encode()).hexdigest()
+    existing_generated = None
+    existing_path = OUT_DIR / "cinema-pax.json"
+    if existing_path.exists():
+        try:
+            existing = json.loads(existing_path.read_text())
+            if existing.get("schedule_hash") == schedule_hash:
+                existing_generated = existing.get("generated")
+        except (OSError, json.JSONDecodeError):
+            existing_generated = None
+
+    write_json(
+        "cinema-pax.json",
+        {
+            "generated": existing_generated or now_stamp(),
+            "schedule_hash": schedule_hash,
+            "cinema": {
+                "name": "Cinéma Pax",
+                "address": "5 rue du Maréchal Joffre, 44510 Le Pouliguen",
+                "source_url": CINEMA_PAX_URL,
+                "tickets_url": CINEMA_PAX_TICKETS_URL,
+                "program_pdf_url": absolute_cinema_url(pdf_match.group(1)) if pdf_match else None,
+            },
+            "source_updated_at": source_updated,
+            "sessions": sessions,
+            "films": sorted(films.values(), key=lambda item: item["title"]),
+            "notice": "Horaires extraits du site officiel. Vérifier la séance et réserver sur cinemapax.fr.",
+        },
+    )
+    print(f"{len(sessions)} Cinéma Pax sessions, {len(films)} films")
+
+
 if __name__ == "__main__":
     which = sys.argv[1] if len(sys.argv) > 1 else "all"
     if which in ("trains", "all"):
@@ -370,3 +525,5 @@ if __name__ == "__main__":
         build_chargers()
     if which in ("events", "all"):
         build_events()
+    if which in ("cinema", "all"):
+        build_cinema()

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import "./App.css";
 import BusMap from "./components/BusMap";
+import CinemaPax from "./components/CinemaPax";
 import ComingDays from "./components/ComingDays";
 import DailyBriefing from "./components/DailyBriefing";
 import DateSelector from "./components/DateSelector";
@@ -25,6 +26,7 @@ import {
   type GlassPoint,
   type WasteCollection,
 } from "./lib/capatlantique";
+import { fetchCinemaPax } from "./lib/cinema";
 import {
   chargerLabel,
   fetchBikeParking,
@@ -66,6 +68,7 @@ import {
   stopGroups,
 } from "./lib/transit";
 import type {
+  CinemaPaxData,
   LocalEvent,
   MarineSeries,
   ServiceAlert,
@@ -324,6 +327,7 @@ export default function App() {
   const [chargers, setChargers] = useState<ChargerStation[]>([]);
   const [fallbackEvents, setFallbackEvents] = useState<LocalEvent[]>([]);
   const [agenda, setAgenda] = useState<AgendaEvent[]>([]);
+  const [cinema, setCinema] = useState<CinemaPaxData | null>(null);
   const [beaches, setBeaches] = useState<Beach[]>([]);
   const [collections, setCollections] = useState<WasteCollection[]>([]);
   const [glassPoints, setGlassPoints] = useState<GlassPoint[]>([]);
@@ -421,6 +425,7 @@ export default function App() {
     fetchBikeShareStations().then(setBikeShareStations).catch(() => setBikeShareStations([]));
     fetchDae().then(setDae).catch(() => {});
     fetchChargers().then(setChargers).catch(() => {});
+    fetchCinemaPax().then(setCinema).catch(() => setCinema(null));
   }, []);
 
   useEffect(() => {
@@ -745,6 +750,12 @@ export default function App() {
           kind={trains ? "partial" : "unavailable"}
           label="train"
           status={trains ? "horaires, retards si publiés" : "source indisponible"}
+        />
+        <SourceHealthLink
+          href="#aujourdhui"
+          kind={cinema && cinema.sessions.length > 0 ? "static" : "unavailable"}
+          label="cinéma"
+          status={cinema && cinema.sessions.length > 0 ? "cache officiel" : "cache indisponible"}
         />
         <SourceHealthLink
           href="#aujourdhui"
@@ -1364,6 +1375,12 @@ export default function App() {
           trainDepartures={trainDepartures}
           roadInfo={roadInfo}
           agenda={agenda}
+        />
+
+        <CinemaPax
+          cinema={cinema}
+          now={now}
+          rainy={Boolean(weather && (weather.precipitation > 0 || weather.weatherCode >= 51))}
         />
 
         <section className="card card-wide">

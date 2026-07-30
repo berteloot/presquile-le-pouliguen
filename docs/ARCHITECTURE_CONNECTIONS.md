@@ -45,6 +45,7 @@ These files are generated locally and committed under `web/public/data/`.
 | `dae.json` | `tools/build_local_data.py dae` | OpenStreetMap Overpass | Defibrillator list | Overpass downtime/rate limits, OSM incompleteness, stale community data |
 | `chargers.json` | `tools/build_local_data.py chargers` | National IRVE consolidated file | Public EV charger list | CSV schema changes, data.gouv resource changes, stale operator data |
 | `events.json` | Curated fallback | Manual/local | Fallback event list | Stale curated data, links rot |
+| `cinema-pax.json` | `tools/build_local_data.py cinema` | Official Cinéma Pax Films & horaires page | Upcoming screenings, versions, durations and source links | Cinema HTML template changes, program page unavailable, film metadata pages missing duration |
 
 Refresh commands:
 
@@ -53,6 +54,12 @@ python3 tools/build_transit_data.py
 python3 tools/build_local_data.py all
 cd web && npm run build
 ```
+
+Cinéma Pax also has a dedicated scheduled refresh workflow:
+`.github/workflows/cinema-pax-cache.yml`. It runs every six hours, with extra
+Tuesday evening and Wednesday morning checks when weekly cinema programs often
+roll over. It commits only when the normalized schedule hash changes, avoiding
+noisy redeploys.
 
 ## Live Browser Connections
 
@@ -66,6 +73,7 @@ cd web && npm run build
 | Roads/circuits/bike | `web/src/lib/localdata.ts` | Loire-Atlantique and Cap Atlantique OpenDataSoft | Road disruptions, walking/cycling circuits, bike parking, bike share | Dataset slugs/fields change, geometry format changes, rate limits |
 | Bathing-water classification | `web/src/App.tsx` | Ministry of Health bathing-water page | Source link for Baie du Guec classification | 2025-specific URL ages out, site markup/routes change |
 | Parking | `web/src/App.tsx` | Le Pouliguen municipal page | Official parking guidance source | Seasonal rules change, municipal URL changes |
+| Cinema display | `web/src/components/CinemaPax.tsx`, `web/src/lib/cinema.ts` | Committed `/data/cinema-pax.json` cache | Upcoming Cinéma Pax sessions without browser-side scraping | Cache stale until the scheduled collector sees a change |
 | Translation | `web/src/components/LanguageSwitcher.tsx` | Google Translate website widget | EN/ES machine translation | Widget deprecation, script blocked by privacy tools, translation UI injection affecting layout |
 | Analytics | `web/index.html` | Google Analytics tag `G-088KDJN7B7` | Usage analytics | Ad blockers, tag ID mismatch, consent/privacy changes |
 
@@ -97,6 +105,9 @@ build command, publish directory, and security headers for all paths.
   third-party script. French remains the canonical source language.
 - **Event coverage:** agenda coverage is partial by design. Some nearby towns
   can return zero when the source feed lacks structured events.
+- **Cinema rights and freshness:** the app links back to Cinéma Pax and avoids
+  republishing full synopses or posters. A direct official feed would be better
+  than HTML parsing if the cinema can provide one.
 
 ## Monitoring
 
@@ -116,6 +127,7 @@ Current monitor scope:
 - AI/SEO files (`llms.txt`, `ai/site-brief.md`, sitemap, manifest) are reachable
 - key generated JSON files are reachable and not older than their freshness
   threshold
+- Cinéma Pax cache is reachable and contains screenings
 - Open-Meteo forecast and marine feeds return expected JSON
 - Lila and SNCF GTFS-RT proxy feeds return non-empty protobuf payloads
 - Cap Atlantique and Loire-Atlantique OpenDataSoft probes return records

@@ -120,3 +120,30 @@ export interface LocalEvent {
   note?: string;
   source?: string;
 }
+
+export interface CinemaPaxSession {
+  film: string;
+  date: string;
+  time: string;
+  version: string;
+  film_url: string;
+  special_labels: string[];
+  duration_minutes: number | null;
+  genres: string;
+  age: string;
+}
+
+export interface CinemaPaxData {
+  generated: string;
+  schedule_hash: string;
+  cinema: {
+    name: string;
+    address: string;
+    source_url: string;
+    tickets_url: string;
+    program_pdf_url: string | null;
+  };
+  source_updated_at: string | null;
+  sessions: CinemaPaxSession[];
+  notice: string;
+}
