@@ -117,8 +117,20 @@ Pierre-style runner without moving app-specific files into another project.
 
 - script: `tools/site_monitor.py`
 - config: `monitoring/pierre-site-monitor.json`
-- scheduled runner: `.github/workflows/pierre-site-monitor.yml`
+- primary scheduled runner: Lightsail cron on `44.192.11.116`
+- backup scheduled runner: `.github/workflows/pierre-site-monitor.yml`
 - local state file: `.monitor-state.json` when run outside GitHub Actions
+
+Lightsail runner:
+
+- checkout: `/home/ec2-user/apps/presquile-le-pouliguen`
+- script: `/home/ec2-user/apps/presquile-le-pouliguen/.lightsail/run_pierre_site_monitor.sh`
+- state: `/home/ec2-user/pierre/data/presquile-le-pouliguen/site-monitor-state.json`
+- log: `/home/ec2-user/pierre/logs/presquile_site_monitor.log`
+- cron: every 15 minutes, UTC
+- Telegram credentials: `/home/ec2-user/pierre/.env`, using
+  `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID`, or the first
+  `TELEGRAM_ALLOWED_USER_IDS` entry as fallback
 
 Current monitor scope:
 
@@ -133,8 +145,8 @@ Current monitor scope:
 - Cap Atlantique and Loire-Atlantique OpenDataSoft probes return records
 - Google Translate widget script is reachable
 
-GitHub Actions runs the monitor every 15 minutes and on manual dispatch. It uses
-repository secrets:
+GitHub Actions also runs the monitor every 15 minutes and on manual dispatch as
+a backup path. It uses repository secrets:
 
 - `TELEGRAM_BOT_TOKEN`
 - `TELEGRAM_CHAT_ID`
