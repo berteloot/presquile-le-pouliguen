@@ -142,7 +142,10 @@ a {
   padding: 3px;
 }
 
-.language-switcher button {
+.language-switcher a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-width: 38px;
   min-height: 34px;
   border: 0;
@@ -153,9 +156,10 @@ a {
   font: inherit;
   font-size: 12px;
   font-weight: 800;
+  text-decoration: none;
 }
 
-.language-switcher button:hover {
+.language-switcher a:hover {
   background: var(--sea-soft);
 }
 
@@ -2075,7 +2079,7 @@ footer p {
     margin-left: auto;
   }
 
-  .language-switcher button {
+  .language-switcher a {
     min-width: 34px;
     min-height: 34px;
     font-size: 11px;
