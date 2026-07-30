@@ -1,6 +1,7 @@
 services:
-  - type: static_site
+  - type: web
     name: presquile-le-pouliguen
+    runtime: static
     buildCommand: cd web && npm ci && npm run build
     staticPublishPath: web/dist
     headers:

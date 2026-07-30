@@ -76,8 +76,8 @@ cd web && npm run build
 3. The canonical domain points to the static deployment.
 4. Render origin remains useful as a second probe and fallback diagnostic URL.
 
-Render configuration lives in `render.yaml`. It defines the static build command,
-publish directory, and security headers for all paths.
+Render configuration lives in `render.yaml`. It defines the static-site runtime,
+build command, publish directory, and security headers for all paths.
 
 ## Known Reliability Edges
 
