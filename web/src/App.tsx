@@ -162,9 +162,13 @@ function SourceHealthLink({
   status: string;
 }) {
   return (
-    <a className="source-health-item" href={href} aria-label={`${label} : ${status}`}>
+    <a
+      className="source-health-item"
+      href={href}
+      aria-label={`${label} : ${status}`}
+      title={`${label} : ${status}`}
+    >
       <SourceBadge kind={kind}>{label}</SourceBadge>
-      <span>{status}</span>
     </a>
   );
 }
