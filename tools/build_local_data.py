@@ -6,15 +6,18 @@ Produces, under web/public/data/:
                  trip ids so the browser can match GTFS-RT delays)
   dae.json       Defibrillators in town (OpenStreetMap via Overpass)
   chargers.json  Public EV charging points near town (IRVE consolidated file)
+  events.json    Curated/snapshotted events missing from live CORS feeds
 
-Run: python3 tools/build_local_data.py [trains|dae|chargers|all]
+Run: python3 tools/build_local_data.py [trains|dae|chargers|events|all]
 """
 from __future__ import annotations
 
 import csv
+import html
 import io
 import json
 import math
+import re
 import sys
 import urllib.parse
 import urllib.request
@@ -22,6 +25,7 @@ import zipfile
 from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 OUT_DIR = Path(__file__).resolve().parent.parent / "web" / "public" / "data"
 UA = {"User-Agent": "presquile-le-pouliguen/0.1 (local utility app)"}
@@ -34,6 +38,24 @@ IRVE_DATASET_API = (
     "https://www.data.gouv.fr/api/1/datasets/"
     "fichier-consolide-des-bornes-de-recharge-pour-vehicules-electriques/"
 )
+LE_CROISIC_AGENDA_URL = "https://lecroisic.fr/fr/ev/748477/agenda-578"
+FRENCH_MONTHS = {
+    "janvier": 1,
+    "février": 2,
+    "fevrier": 2,
+    "mars": 3,
+    "avril": 4,
+    "mai": 5,
+    "juin": 6,
+    "juillet": 7,
+    "août": 8,
+    "aout": 8,
+    "septembre": 9,
+    "octobre": 10,
+    "novembre": 11,
+    "décembre": 12,
+    "decembre": 12,
+}
 
 
 def fetch(url: str, timeout: int = 180) -> bytes:
@@ -60,6 +82,13 @@ def write_out(name: str, payload: dict) -> None:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     path = OUT_DIR / name
     path.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":")))
+    print(f"Wrote {path} ({path.stat().st_size / 1024:.0f} KB)")
+
+
+def write_json(name: str, payload) -> None:
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
+    path = OUT_DIR / name
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2))
     print(f"Wrote {path} ({path.stat().st_size / 1024:.0f} KB)")
 
 
@@ -245,6 +274,92 @@ def build_chargers() -> None:
     print(f"{len(items)} charging stations nearby")
 
 
+def strip_tags(value: str) -> str:
+    text = re.sub(r"<[^>]+>", " ", value)
+    text = html.unescape(text)
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def parse_french_end_date(date_range: str, today) -> object | None:
+    text = re.sub(r"\([^)]*\)", " ", date_range).replace("\xa0", " ")
+    text = re.sub(r"\s+", " ", text).strip()
+    if " - " in text:
+        text = text.split(" - ")[-1]
+    elif " et " in text:
+        text = text.split(" et ")[-1]
+    match = re.search(r"(\d{1,2})\s+([A-Za-zÀ-ÿ]+)(?:\s+(\d{4}))?", text)
+    if not match:
+        return None
+    day = int(match.group(1))
+    month = FRENCH_MONTHS.get(match.group(2).lower())
+    year = int(match.group(3) or today.year)
+    if not month:
+        return None
+    return datetime(year, month, day).date()
+
+
+def build_events() -> None:
+    today = datetime.now(ZoneInfo("Europe/Paris")).date()
+    month_url = f"{LE_CROISIC_AGENDA_URL}/{today.year}/{today.month}"
+    print("Fetching Le Croisic official agenda ...")
+    page = fetch(month_url, timeout=60).decode("utf-8", errors="replace")
+    events = [
+        {
+            "title": "Marché nocturne",
+            "when": "Chaque mercredi soir en été (du 8 juillet au 19 août)",
+            "where": "Bord de mer, centre-ville",
+            "dateRange": "Chaque mercredi soir en été (du 8 juillet au 19 août)",
+            "location": "Bord de mer, centre-ville",
+            "city": "Le Pouliguen",
+            "url": "https://www.lepouliguen.fr/",
+            "note": "Artisans, créateurs et producteurs locaux.",
+            "source": "https://www.lepouliguen.fr/",
+        }
+    ]
+    seen = {f"{events[0]['title']}|{events[0]['city']}"}
+    for match in re.finditer(
+        r'<a\s+href="(?P<href>[^"]+)"[^>]*class="[^"]*\bcard-date\b[^"]*"[^>]*>(?P<body>.*?)</a>',
+        page,
+        flags=re.S,
+    ):
+        body = match.group("body")
+        title_match = re.search(r'<h2[^>]*class="[^"]*\bcard-title\b[^"]*"[^>]*>(.*?)</h2>', body, re.S)
+        date_match = re.search(r'<p[^>]*class="[^"]*\bmb-1\b[^"]*"[^>]*>(.*?)</p>', body, re.S)
+        details = [
+            strip_tags(value)
+            for value in re.findall(r'<p[^>]*class="[^"]*\bcard-text\b[^"]*"[^>]*>(.*?)</p>', body, re.S)
+        ]
+        if not title_match or not date_match:
+            continue
+        title = strip_tags(title_match.group(1))
+        date_range = strip_tags(date_match.group(1))
+        end_date = parse_french_end_date(date_range, today)
+        if end_date and end_date < today:
+            continue
+        detail = next((d for d in reversed(details) if d and "gratuit" not in d.lower()), "")
+        location = f"Le Croisic{f' · {detail}' if detail else ''}"
+        key = f"{title}|Le Croisic"
+        if not title or key in seen:
+            continue
+        seen.add(key)
+        events.append(
+            {
+                "title": title,
+                "when": date_range,
+                "where": location,
+                "dateRange": date_range,
+                "location": location,
+                "city": "Le Croisic",
+                "url": urllib.parse.urljoin(month_url, match.group("href")),
+                "source": month_url,
+            }
+        )
+        if len([e for e in events if e.get("city") == "Le Croisic"]) >= 8:
+            break
+    write_json("events.json", events)
+    print(f"{len(events)} curated events")
+
+
 if __name__ == "__main__":
     which = sys.argv[1] if len(sys.argv) > 1 else "all"
     if which in ("trains", "all"):
@@ -253,3 +368,5 @@ if __name__ == "__main__":
         build_dae()
     if which in ("chargers", "all"):
         build_chargers()
+    if which in ("events", "all"):
+        build_events()

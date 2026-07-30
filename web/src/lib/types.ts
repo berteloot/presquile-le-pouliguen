@@ -113,6 +113,10 @@ export interface LocalEvent {
   title: string;
   when: string;
   where: string;
+  dateRange?: string;
+  location?: string;
+  city?: string;
+  url?: string;
   note?: string;
   source?: string;
 }

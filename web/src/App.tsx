@@ -106,7 +106,9 @@ const MONITORED_BEACHES = [
 const AGENDA_CITY_FILTERS = [
   "Tous",
   "Le Pouliguen",
+  "Le Croisic",
   "Batz-sur-Mer",
+  "Guérande",
   "La Baule-Escoublac",
   "Pornichet",
   "Saint-Nazaire",
@@ -232,6 +234,34 @@ function dateBoundsFromExceptions(
   };
 }
 
+function curatedEventToAgenda(event: LocalEvent): AgendaEvent | null {
+  if (!event.title) return null;
+  return {
+    title: event.title,
+    dateRange: event.dateRange ?? event.when,
+    location: event.location ?? event.where,
+    city: event.city ?? "",
+    url: event.url ?? event.source ?? null,
+  };
+}
+
+function mergeAgendaEvents(live: AgendaEvent[], curated: LocalEvent[]): AgendaEvent[] {
+  const seen = new Set<string>();
+  const out: AgendaEvent[] = [];
+  const push = (event: AgendaEvent) => {
+    const key = `${event.title}|${event.city}|${event.dateRange}`.toLowerCase();
+    if (!event.title || seen.has(key)) return;
+    seen.add(key);
+    out.push(event);
+  };
+
+  live.forEach(push);
+  curated.map(curatedEventToAgenda).forEach((event) => {
+    if (event) push(event);
+  });
+  return out;
+}
+
 function dateBoundsFromSchedule(
   services: Record<string, { start: string; end: string }>,
   exceptions: Record<string, Record<string, number>>,
@@ -343,11 +373,15 @@ export default function App() {
     loadTrainsData()
       .then(setTrains)
       .catch(() => setErrors((e) => [...e, "trains"]));
-    fetch(EVENTS_DATA_URL)
-      .then((r) => (r.ok ? r.json() : []))
-      .then(setFallbackEvents)
-      .catch(() => {});
-    fetchAgendaEvents().then(setAgenda).catch(() => {});
+    Promise.all([
+      fetchAgendaEvents().catch(() => []),
+      fetch(EVENTS_DATA_URL)
+        .then((r) => (r.ok ? r.json() : []))
+        .catch(() => []),
+    ]).then(([liveAgenda, curatedEvents]: [AgendaEvent[], LocalEvent[]]) => {
+      setFallbackEvents(curatedEvents);
+      setAgenda(mergeAgendaEvents(liveAgenda, curatedEvents));
+    });
     fetchBeaches().then(setBeaches).catch(() => {});
     fetchNextCollections().then(setCollections).catch(() => {});
     fetchGlassPoints().then(setGlassPoints).catch(() => {});
@@ -1312,6 +1346,13 @@ export default function App() {
             <div className="event-source-links">
               <a href={MUNICIPAL_EVENTS_URL} target="_blank" rel="noreferrer">
                 Pouliguen
+              </a>
+              <a
+                href="https://lecroisic.fr/fr/ev/748477/agenda-578"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Croisic
               </a>
               <a
                 href="https://www.labaule-guerande.com/explorer/agenda/"

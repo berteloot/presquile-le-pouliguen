@@ -7,7 +7,9 @@ const BASE = "https://data.capatlantique.fr/api/explore/v2.1/catalog/datasets";
 const COMMUNE = "Le Pouliguen";
 const AGENDA_CITIES = [
   "Le Pouliguen",
+  "Le Croisic",
   "Batz-sur-Mer",
+  "Guérande",
   "La Baule-Escoublac",
   "Pornichet",
   "Saint-Nazaire",

@@ -32,8 +32,9 @@ Working MVP, static-only architecture, verified running locally:
   (Lila Presqu'île static GTFS preprocessed at build time + GTFS-RT TripUpdate)
 - Live bus map (Leaflet + GTFS-RT VehiclePosition, 20 s refresh)
 - Network service alerts (GTFS-RT ServiceAlert)
-- Live agenda: upcoming Le Pouliguen events from the Cap Atlantique OpenAgenda
-  extraction (curated `web/public/data/events.json` kept as fallback)
+- Live agenda: upcoming presqu'île events from the Cap Atlantique OpenAgenda
+  extraction, merged with curated/snapshotted `web/public/data/events.json`
+  for sources such as the official Le Croisic agenda
 - Beaches: the commune's 4 official bathing sites with descriptions and links,
   plus a link to official water quality (baignades.sante.gouv.fr)
 - Waste collection: next door-to-door pickups (bac vert / bac jaune) for the
@@ -75,8 +76,8 @@ directly. No backend is required for Phase 1, which means free static hosting.
   Vie pratique) matching the product's five-needs structure
 
 Data refresh: `python3 tools/build_transit_data.py` (bus GTFS) and
-`python3 tools/build_local_data.py all` (trains, DAE, chargers). Everything
-else is queried live from the browser.
+`python3 tools/build_local_data.py all` (trains, DAE, chargers, curated
+agenda snapshot). Most other operational data is queried live from the browser.
 
 ## Layout
 
@@ -94,7 +95,7 @@ web/                          Vite + React + TypeScript PWA.
                               (gtfs-realtime-bindings), stop grouping.
   src/components/             TideChart (SVG), BusMap (Leaflet).
   public/data/transit.json    Generated, committed.
-  public/data/events.json     Curated events, one sourced entry so far.
+  public/data/events.json     Curated/snapshotted events merged into agenda.
 ```
 
 ## Run

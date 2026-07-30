@@ -83,6 +83,14 @@
     },
     {
       "kind": "http",
+      "name": "Curated agenda snapshot",
+      "url": "https://presquile-le-pouliguen.berteloot.org/data/events.json",
+      "expect_status": [200],
+      "contains": "Le Croisic",
+      "min_bytes": 500
+    },
+    {
+      "kind": "http",
       "name": "Open-Meteo forecast",
       "url": "https://api.open-meteo.com/v1/forecast?latitude=47.2769&longitude=-2.4292&current=temperature_2m,weather_code&daily=sunrise,sunset&timezone=Europe%2FParis&forecast_days=2",
       "expect_status": [200],
@@ -129,6 +137,14 @@
       "url": "https://data.capatlantique.fr/api/explore/v2.1/catalog/datasets/244400610_publicevents_openagenda/records?where=lastdate_end%3E%3Dnow()%20AND%20location_city%3D%22Le%20Pouliguen%22&select=title_fr&limit=1",
       "expect_status": [200],
       "json_path": "results"
+    },
+    {
+      "kind": "http",
+      "name": "Le Croisic official agenda",
+      "url": "https://lecroisic.fr/fr/ev/748477/agenda-578",
+      "expect_status": [200],
+      "contains": "Le Croisic",
+      "min_bytes": 5000
     },
     {
       "kind": "http",
