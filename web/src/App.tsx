@@ -106,6 +106,16 @@ const STOP_STORAGE_KEY = "plq.stop";
 const TRAIN_RT_REFRESH_MS = 120_000;
 const ROAD_INFO_REFRESH_MS = 10 * 60_000;
 const MUNICIPAL_EVENTS_URL = "https://www.lepouliguen.fr/evenements/";
+const DESTINATION_AGENDA_URL = "https://www.labaule-guerande.com/explorer/agenda/";
+const AGENDA_CITY_URLS: Record<string, string> = {
+  "Le Pouliguen": MUNICIPAL_EVENTS_URL,
+  "Le Croisic": "https://lecroisic.fr/fr/ev/748477/agenda-578",
+  "Batz-sur-Mer": "https://www.batzsurmer.fr/informations-transversales/agenda",
+  "Guérande": DESTINATION_AGENDA_URL,
+  "La Baule-Escoublac": "https://www.labaule.fr/evenements/",
+  Pornichet: "https://ville-pornichet.fr/je-bouge/agenda-de-pornichet/",
+  "Saint-Nazaire": "https://www.saint-nazaire-tourisme.com/agenda/",
+};
 const BATHING_WATER_URL =
   "https://baignades.sante.gouv.fr/baignades/consultSite.do?annee=2025&dptddass=044&impression=yes&isite=044001738&modeDetailImp=3&plv=04400157991&site=044001738";
 const PARKING_URL =
@@ -157,6 +167,10 @@ function SourceHealthLink({
       <span>{status}</span>
     </a>
   );
+}
+
+function safeAgendaUrl(event: AgendaEvent): string {
+  return AGENDA_CITY_URLS[event.city] ?? DESTINATION_AGENDA_URL;
 }
 
 function freshnessLabel(fetchedAt: Date | undefined): string {
@@ -1405,7 +1419,7 @@ export default function App() {
                 Croisic
               </a>
               <a
-                href="https://www.labaule-guerande.com/explorer/agenda/"
+                href={DESTINATION_AGENDA_URL}
                 target="_blank"
                 rel="noreferrer"
               >
@@ -1443,17 +1457,14 @@ export default function App() {
                 <li key={i}>
                   <div className="event-title-row">
                     {e.city && <span className="event-city">{e.city}</span>}
-                    {e.url ? (
-                      <a href={e.url} target="_blank" rel="noreferrer">
-                        {e.title}
-                      </a>
-                    ) : (
-                      e.title
-                    )}
+                    <a href={safeAgendaUrl(e)} target="_blank" rel="noreferrer">
+                      {e.title}
+                    </a>
                   </div>
                   <div className="event-meta">
                     <span>{e.dateRange}</span>
                     {e.location && <span>{e.location}</span>}
+                    <span>agenda officiel</span>
                   </div>
                 </li>
               ))}

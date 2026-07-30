@@ -42,6 +42,7 @@ body {
   color: var(--ink);
   font-size: 18px;
   line-height: 1.55;
+  overflow-x: hidden;
 }
 
 .app {
@@ -515,20 +516,33 @@ main {
 
 @media (width <= 560px) {
   .source-health {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    padding-bottom: 4px;
-    scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    overflow: visible;
+    margin-top: 12px;
   }
 
-  .source-health::-webkit-scrollbar {
+  .source-health-item {
+    justify-content: center;
+    width: 100%;
+    min-height: 44px;
+    padding: 4px;
+    border-color: #dbe8ef;
+    background: #fff;
+  }
+
+  .source-health-item > span:not(.source-badge) {
     display: none;
   }
 
-  .source-health::after {
-    content: "";
-    flex: 0 0 8px;
+  .source-badge {
+    justify-content: center;
+    width: 100%;
+    min-height: 34px;
+    padding: 4px 5px;
+    font-size: 10.5px;
+    text-align: center;
   }
 }
 
@@ -2097,11 +2111,15 @@ main {
 .cinema-sessions a {
   color: var(--navy);
   font-weight: 800;
+  overflow-wrap: anywhere;
 }
 
 .cinema-sessions .cinema-book-link {
   display: inline-flex;
+  align-items: center;
+  justify-content: center;
   margin-left: 8px;
+  min-height: 28px;
   padding: 2px 8px;
   border: 1px solid #cbd9e4;
   border-radius: 999px;
@@ -2135,13 +2153,20 @@ main {
 @media (max-width: 560px) {
   .cinema-heading {
     display: grid;
+    gap: 10px;
   }
 
   .cinema-actions {
     justify-content: flex-start;
   }
 
+  .cinema-actions a {
+    min-height: 42px;
+  }
+
   .cinema-sessions li {
+    display: grid;
+    grid-template-columns: 58px minmax(0, 1fr);
     gap: 10px;
   }
 
@@ -2151,6 +2176,11 @@ main {
 
   .cinema-sessions time strong {
     font-size: 21px;
+  }
+
+  .cinema-sessions .cinema-book-link {
+    margin-left: 0;
+    margin-top: 6px;
   }
 }
 
@@ -2404,18 +2434,29 @@ footer p {
 }
 
 @media (max-width: 759px) {
+  body {
+    font-size: 16px;
+  }
+
   .topbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto 44px;
     align-items: center;
     gap: 8px;
     padding: 8px 12px;
   }
 
   .brand {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    min-width: 0;
+    margin-right: 0;
     font-size: 20px;
   }
 
   .language-switcher {
-    margin-left: auto;
+    margin-left: 0;
   }
 
   .language-switcher button,
@@ -2431,6 +2472,7 @@ footer p {
 
   .topnav {
     display: none;
+    grid-column: 1 / -1;
     width: 100%;
     flex-direction: column;
     gap: 0;
@@ -2467,8 +2509,112 @@ footer p {
   }
 
   .hero {
-    min-height: 330px;
+    min-height: 300px;
+    padding: 26px 20px 24px;
     background-position: 35% 44%;
+  }
+
+  .hero-pill {
+    margin-bottom: 10px;
+    padding: 6px 13px;
+    font-size: 12px;
+  }
+
+  .hero h1 {
+    max-width: 330px;
+    font-size: clamp(34px, 10vw, 42px);
+  }
+
+  .hero-date {
+    margin-bottom: 10px;
+    font-size: 16px;
+  }
+
+  .hero-weather {
+    gap: 8px;
+  }
+
+  .hero-temp {
+    font-size: 34px;
+  }
+
+  .hero-cond {
+    font-size: 16px;
+  }
+
+  .hero-sub {
+    font-size: 14px;
+  }
+
+  main {
+    padding: 12px;
+  }
+
+  .cards {
+    margin-top: 12px;
+  }
+
+  .card {
+    padding: 16px;
+    margin-bottom: 12px;
+    border-radius: 8px;
+  }
+
+  .card h2,
+  .card h3 {
+    font-size: 20px;
+  }
+
+  .section-title {
+    margin-top: 20px;
+    font-size: 24px;
+    scroll-margin-top: 72px;
+  }
+
+  .essentials {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    padding: 12px 12px 0;
+  }
+
+  .essential {
+    min-width: 0;
+    padding: 12px 12px 11px;
+  }
+
+  .essential-value {
+    font-size: 29px;
+  }
+
+  .essential-value-text {
+    font-size: 17px;
+  }
+
+  .bus-map {
+    height: 320px;
+  }
+
+  .poi-map {
+    height: 260px;
+  }
+
+  .departures li {
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .dep-headsign {
+    min-width: 0;
+  }
+
+  .event-title-row {
+    align-items: flex-start;
+  }
+
+  .event-title-row a,
+  .events li > strong {
+    overflow-wrap: anywhere;
+    line-height: 1.35;
   }
 
   .stop-picker {
@@ -2478,11 +2624,13 @@ footer p {
   }
 }
 
-@media (max-width: 400px) {
+@media (max-width: 360px) {
   .essentials {
     grid-template-columns: 1fr;
   }
+}
 
+@media (max-width: 400px) {
   .date-selector {
     width: 100%;
     grid-template-columns: 42px minmax(0, 1fr) 42px;
