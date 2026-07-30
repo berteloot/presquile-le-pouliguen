@@ -1,14 +1,17 @@
 import type { MarineSeries, TideExtreme } from "./types";
 
 const SYNODIC_MONTH_DAYS = 29.530588853;
-const NEW_MOON_EPOCH_UTC = Date.UTC(2000, 0, 6, 18, 14);
+const KNOWN_NEW_MOON_JD = 2451550.09766;
 const DAY_MS = 86_400_000;
+const RAD = Math.PI / 180;
 
 export interface MoonInfo {
   ageDays: number;
   illumination: number;
+  phaseFraction: number;
   phaseName: string;
   phaseIcon: string;
+  lunationLengthDays: number;
   nextFullMoon: Date;
   nextNewMoon: Date;
   nextStrongTideWindow: Date;
@@ -69,65 +72,123 @@ export function currentTrend(
   return b > a ? "rising" : "falling";
 }
 
-function daysSinceEpoch(date: Date): number {
-  return (date.getTime() - NEW_MOON_EPOCH_UTC) / DAY_MS;
+function julianDate(date: Date): number {
+  return date.getTime() / DAY_MS + 2440587.5;
 }
 
-function normalizedMoonAge(date: Date): number {
-  const age = daysSinceEpoch(date) % SYNODIC_MONTH_DAYS;
-  return age < 0 ? age + SYNODIC_MONTH_DAYS : age;
+function dateFromJulian(jd: number): Date {
+  return new Date((jd - 2440587.5) * DAY_MS);
 }
 
-function nextMoonMoment(date: Date, targetAge: number): Date {
-  const age = normalizedMoonAge(date);
-  let daysUntil = targetAge - age;
-  if (daysUntil <= 0) daysUntil += SYNODIC_MONTH_DAYS;
-  return new Date(date.getTime() + daysUntil * DAY_MS);
+function lunationJulianDate(lunation: number, phase: 0 | 0.5): number {
+  const k = lunation + phase;
+  const t = k / 1236.85;
+  const t2 = t * t;
+  const t3 = t2 * t;
+  const t4 = t3 * t;
+  const jde =
+    KNOWN_NEW_MOON_JD +
+    SYNODIC_MONTH_DAYS * k +
+    0.00015437 * t2 -
+    0.00000015 * t3 +
+    0.00000000073 * t4;
+  const e = 1 - 0.002516 * t - 0.0000074 * t2;
+  const m = (2.5534 + 29.1053567 * k - 0.0000014 * t2 - 0.00000011 * t3) * RAD;
+  const mp =
+    (201.5643 + 385.81693528 * k + 0.0107582 * t2 + 0.00001238 * t3 - 0.000000058 * t4) *
+    RAD;
+  const f =
+    (160.7108 + 390.67050284 * k - 0.0016118 * t2 - 0.00000227 * t3 + 0.000000011 * t4) *
+    RAD;
+  const omega = (124.7746 - 1.56375588 * k + 0.0020672 * t2 + 0.00000215 * t3) * RAD;
+  const correction =
+    -0.4067 * Math.sin(mp) +
+    0.1727 * e * Math.sin(m) +
+    0.0161 * Math.sin(2 * mp) +
+    0.0104 * Math.sin(2 * f) +
+    0.0073 * e * Math.sin(mp - m) -
+    0.0051 * e * Math.sin(mp + m) +
+    0.0021 * e * e * Math.sin(2 * m) -
+    0.0011 * Math.sin(mp - 2 * f) -
+    0.0006 * Math.sin(mp + 2 * f) +
+    0.0006 * e * Math.sin(2 * mp + m) -
+    0.0004 * Math.sin(3 * mp) +
+    0.0004 * e * Math.sin(m + 2 * f) +
+    0.0004 * e * Math.sin(m - 2 * f) -
+    0.0002 * e * Math.sin(2 * mp - m) -
+    0.0002 * Math.sin(omega);
+
+  return jde + correction - 69 / 86_400;
 }
 
-function strongTideCandidates(date: Date, targetAge: number, basis: MoonInfo["strongTideBasis"]) {
-  const age = normalizedMoonAge(date);
-  return [-1, 0, 1, 2].map((cycle) => {
-    const moonMoment = new Date(
-      date.getTime() + (targetAge - age + cycle * SYNODIC_MONTH_DAYS) * DAY_MS,
-    );
-    return {
-      basis,
-      time: new Date(moonMoment.getTime() + 36 * 60 * 60 * 1000),
-    };
-  });
+function lunationIndexNear(jd: number): number {
+  return Math.floor((jd - KNOWN_NEW_MOON_JD) / SYNODIC_MONTH_DAYS);
 }
 
-function phaseLabel(ageDays: number): { name: string; icon: string } {
-  if (ageDays < 1.85) return { name: "nouvelle lune", icon: "●" };
-  if (ageDays < 5.54) return { name: "premier croissant", icon: "◔" };
-  if (ageDays < 9.23) return { name: "premier quartier", icon: "◐" };
-  if (ageDays < 12.92) return { name: "lune gibbeuse croissante", icon: "◕" };
-  if (ageDays < 16.61) return { name: "pleine lune", icon: "○" };
-  if (ageDays < 20.3) return { name: "lune gibbeuse décroissante", icon: "◕" };
-  if (ageDays < 23.99) return { name: "dernier quartier", icon: "◑" };
-  if (ageDays < 27.68) return { name: "dernier croissant", icon: "◔" };
+function lunationAround(jd: number) {
+  let k = lunationIndexNear(jd);
+  while (lunationJulianDate(k, 0) > jd) k -= 1;
+  while (lunationJulianDate(k + 1, 0) <= jd) k += 1;
+  return {
+    index: k,
+    previousNew: lunationJulianDate(k, 0),
+    full: lunationJulianDate(k, 0.5),
+    nextNew: lunationJulianDate(k + 1, 0),
+  };
+}
+
+function nextLunarEvent(jd: number, phase: 0 | 0.5): Date {
+  const start = lunationIndexNear(jd) - 1;
+  for (let i = 0; i < 6; i += 1) {
+    const candidate = lunationJulianDate(start + i, phase);
+    if (candidate >= jd) return dateFromJulian(candidate);
+  }
+  return dateFromJulian(lunationJulianDate(start + 6, phase));
+}
+
+function strongTideCandidates(jd: number, phase: 0 | 0.5, basis: MoonInfo["strongTideBasis"]) {
+  const start = lunationIndexNear(jd) - 2;
+  return Array.from({ length: 8 }, (_, i) => ({
+    basis,
+    time: dateFromJulian(lunationJulianDate(start + i, phase) + 1.5),
+  }));
+}
+
+function phaseLabel(fraction: number): { name: string; icon: string } {
+  if (fraction < 0.02 || fraction >= 0.98) return { name: "nouvelle lune", icon: "●" };
+  if (fraction < 0.235) return { name: "premier croissant", icon: "◔" };
+  if (fraction < 0.265) return { name: "premier quartier", icon: "◐" };
+  if (fraction < 0.48) return { name: "lune gibbeuse croissante", icon: "◕" };
+  if (fraction < 0.52) return { name: "pleine lune", icon: "○" };
+  if (fraction < 0.735) return { name: "lune gibbeuse décroissante", icon: "◕" };
+  if (fraction < 0.765) return { name: "dernier quartier", icon: "◑" };
+  if (fraction < 0.98) return { name: "dernier croissant", icon: "◔" };
   return { name: "nouvelle lune", icon: "●" };
 }
 
 export function moonInfo(date: Date): MoonInfo {
-  const ageDays = normalizedMoonAge(date);
-  const fullAge = SYNODIC_MONTH_DAYS / 2;
-  const nextFullMoon = nextMoonMoment(date, fullAge);
-  const nextNewMoon = nextMoonMoment(date, 0);
+  const jd = julianDate(date);
+  const lunation = lunationAround(jd);
+  const lunationLengthDays = lunation.nextNew - lunation.previousNew;
+  const ageDays = jd - lunation.previousNew;
+  const phaseFraction = ageDays / lunationLengthDays;
+  const nextFullMoon = nextLunarEvent(jd, 0.5);
+  const nextNewMoon = nextLunarEvent(jd, 0);
   const nextStrong = [
-    ...strongTideCandidates(date, fullAge, "pleine lune"),
-    ...strongTideCandidates(date, 0, "nouvelle lune"),
+    ...strongTideCandidates(jd, 0.5, "pleine lune"),
+    ...strongTideCandidates(jd, 0, "nouvelle lune"),
   ]
     .filter((candidate) => candidate.time.getTime() >= date.getTime())
     .sort((a, b) => a.time.getTime() - b.time.getTime())[0];
-  const phase = phaseLabel(ageDays);
+  const phase = phaseLabel(phaseFraction);
 
   return {
     ageDays: Math.round(ageDays * 10) / 10,
-    illumination: Math.round(((1 - Math.cos((2 * Math.PI * ageDays) / SYNODIC_MONTH_DAYS)) / 2) * 100),
+    illumination: Math.round(((1 - Math.cos(2 * Math.PI * phaseFraction)) / 2) * 1000) / 10,
+    phaseFraction,
     phaseName: phase.name,
     phaseIcon: phase.icon,
+    lunationLengthDays: Math.round(lunationLengthDays * 10) / 10,
     nextFullMoon,
     nextNewMoon,
     nextStrongTideWindow: nextStrong.time,

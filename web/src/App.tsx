@@ -6,6 +6,7 @@ import DailyBriefing from "./components/DailyBriefing";
 import DateSelector from "./components/DateSelector";
 import Discover from "./components/Discover";
 import LanguageSwitcher from "./components/LanguageSwitcher";
+import MoonPhase from "./components/MoonPhase";
 import PoiMap from "./components/PoiMap";
 import TideChart from "./components/TideChart";
 import VisitPlanner from "./components/VisitPlanner";
@@ -1177,22 +1178,7 @@ export default function App() {
                 )}
               </div>
               <TideChart marine={marine} extrema={extrema} now={now} date={selectedDate} />
-              <div className="moon-card">
-                <span className="moon-icon" aria-hidden="true">
-                  {selectedMoon.phaseIcon}
-                </span>
-                <div>
-                  <strong>{selectedMoon.phaseName}</strong>
-                  <span>
-                    lune éclairée à {selectedMoon.illumination} % · âge {selectedMoon.ageDays} j
-                  </span>
-                  <span>
-                    vives-eaux attendues autour du{" "}
-                    {fmtShortDateTime.format(selectedMoon.nextStrongTideWindow)}, environ 36 h
-                    après la {selectedMoon.strongTideBasis}.
-                  </span>
-                </div>
-              </div>
+              <MoonPhase moon={selectedMoon} formatDateTime={fmtShortDateTime} />
               <p className="meta-line">
                 {seaTempSelected != null && <>Eau {seaTempSelected.toFixed(1)}°C · </>}
                 {waveSelected != null && <>vagues {waveSelected.toFixed(1)} m · </>}

@@ -778,45 +778,108 @@ main {
   margin-top: 6px;
 }
 
-.moon-card {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
+.moon-panel {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
   margin-top: 10px;
-  padding: 12px 14px;
+  padding: 14px;
   border: 1px solid #d7e4ec;
   border-radius: 10px;
-  background: #f7fbfd;
+  background:
+    radial-gradient(circle at 48px 42px, rgba(12, 93, 143, 0.12), transparent 74px),
+    #f7fbfd;
 }
 
-.moon-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 999px;
-  background: var(--navy);
-  color: #fff;
-  font-size: 20px;
-  line-height: 1;
-  flex: 0 0 auto;
+.moon-visual {
+  width: 88px;
+  height: 88px;
+  display: block;
 }
 
-.moon-card div {
+.moon-copy {
   display: grid;
-  gap: 3px;
+  gap: 6px;
 }
 
-.moon-card strong {
+.moon-title-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.moon-title-row strong {
   color: var(--navy);
-  font-size: 16px;
+  font-size: 17px;
 }
 
-.moon-card span {
-  color: var(--muted);
+.moon-title-row span,
+.moon-copy p,
+.moon-events dd,
+.moon-events dt {
   font-size: 14px;
   line-height: 1.35;
+}
+
+.moon-title-row span,
+.moon-copy p,
+.moon-events dt {
+  color: var(--muted);
+}
+
+.moon-copy p,
+.moon-events {
+  margin: 0;
+}
+
+.moon-events {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.moon-events div {
+  min-width: 0;
+}
+
+.moon-events dt {
+  font-weight: 700;
+}
+
+.moon-events dd {
+  margin: 0;
+  color: var(--ink);
+  font-weight: 650;
+}
+
+.moon-tide-note {
+  padding-top: 4px;
+  border-top: 1px solid #dce8ef;
+}
+
+@media (max-width: 560px) {
+  .moon-panel {
+    grid-template-columns: 74px minmax(0, 1fr);
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .moon-visual {
+    width: 68px;
+    height: 68px;
+  }
+
+  .moon-title-row {
+    display: grid;
+    gap: 2px;
+  }
+
+  .moon-events {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
 }
 
 .tide-area {
