@@ -93,6 +93,7 @@ export default function CinemaPax({ cinema, now, rainy }: Props) {
         <ul className="cinema-sessions">
           {nextSessions.map(({ session, startsAt }) => {
             const finish = finishLabel(session);
+            const bookingUrl = session.ticket_url || cinema.cinema.tickets_url;
             return (
               <li key={`${session.date}-${session.time}-${session.film}`}>
                 <time dateTime={`${session.date}T${session.time}`}>
@@ -103,11 +104,9 @@ export default function CinemaPax({ cinema, now, rainy }: Props) {
                   <a href={session.film_url} target="_blank" rel="noreferrer">
                     {session.film}
                   </a>
-                  {session.ticket_url && (
-                    <a className="cinema-book-link" href={session.ticket_url} target="_blank" rel="noreferrer">
-                      réserver
-                    </a>
-                  )}
+                  <a className="cinema-book-link" href={bookingUrl} target="_blank" rel="noreferrer">
+                    réserver
+                  </a>
                   <p>
                     {session.version && <span>{session.version}</span>}
                     {session.duration_minutes && <span>{session.duration_minutes} min</span>}
