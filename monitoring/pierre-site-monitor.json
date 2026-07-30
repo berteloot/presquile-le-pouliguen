@@ -139,11 +139,11 @@
     },
     {
       "kind": "http",
-      "name": "Google Translate widget",
-      "url": "https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit",
+      "name": "Google Translate API",
+      "url": "https://translate.googleapis.com/translate_a/single?client=gtx&sl=fr&tl=en&dt=t&q=Plage",
       "expect_status": [200],
-      "contains": "TranslateElement",
-      "min_bytes": 1000
+      "contains": "Beach",
+      "min_bytes": 20
     }
   ]
 }
