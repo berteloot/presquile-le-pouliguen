@@ -486,20 +486,15 @@ main {
 
 .source-health {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
-  overflow-x: auto;
+  overflow: visible;
   margin: 14px 16px 0;
-  padding: 2px 0 4px;
-  scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
-}
-
-.source-health::-webkit-scrollbar {
-  display: none;
+  padding: 2px 0 0;
 }
 
 .source-health-item {
-  min-width: max-content;
+  min-width: 0;
   display: inline-flex;
   align-items: center;
   gap: 7px;
@@ -511,10 +506,30 @@ main {
   font-size: 12.5px;
   line-height: 1.2;
   text-decoration: none;
+  white-space: nowrap;
   transition:
     border-color 0.18s ease,
     box-shadow 0.18s ease,
     transform 0.18s ease;
+}
+
+@media (width <= 560px) {
+  .source-health {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .source-health::-webkit-scrollbar {
+    display: none;
+  }
+
+  .source-health::after {
+    content: "";
+    flex: 0 0 8px;
+  }
 }
 
 .source-health-item:hover {
