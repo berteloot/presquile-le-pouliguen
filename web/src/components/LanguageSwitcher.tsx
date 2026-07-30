@@ -9,7 +9,8 @@ const LANGUAGES: { code: LanguageCode; label: string }[] = [
 ];
 
 const SCRIPT_ID = "google-translate-script";
-const COOKIE_PREFIX = "googtrans=/fr/";
+const COOKIE_NAME = "googtrans";
+const COOKIE_MAX_AGE = 31_536_000;
 
 declare global {
   interface Window {
@@ -26,36 +27,64 @@ declare global {
 }
 
 function currentLanguage(): LanguageCode {
-  const match = document.cookie.match(/(?:^|;\s*)googtrans=\/fr\/(fr|en|es)(?:;|$)/);
+  const match = document.cookie.match(/(?:^|;\s*)googtrans=\/(?:fr|auto)\/(fr|en|es)(?:;|$)/);
   return (match?.[1] as LanguageCode | undefined) ?? "fr";
 }
 
-function setTranslateCookie(language: LanguageCode) {
-  document.cookie = `${COOKIE_PREFIX}${language};path=/;max-age=31536000`;
+function cookieDomains(): (string | undefined)[] {
+  const hostname = window.location.hostname;
+  const domains: (string | undefined)[] = [undefined, hostname];
+  const parts = hostname.split(".");
+
+  if (parts.length > 2) {
+    domains.push(`.${parts.slice(-2).join(".")}`);
+    domains.push(`.${parts.slice(-3).join(".")}`);
+  }
+
+  return Array.from(new Set(domains));
 }
 
-function applyGoogleLanguage(language: LanguageCode, attempt = 0) {
-  const previousLanguage = currentLanguage();
+function writeTranslateCookie(value: string, maxAge: number) {
+  for (const domain of cookieDomains()) {
+    const domainPart = domain ? `;domain=${domain}` : "";
+    document.cookie = `${COOKIE_NAME}=${value};path=/;max-age=${maxAge};SameSite=Lax${domainPart}`;
+    document.cookie = `${COOKIE_NAME}=${value};path=/;max-age=${maxAge}${domainPart}`;
+  }
+}
+
+function setTranslateCookie(language: Exclude<LanguageCode, "fr">) {
+  writeTranslateCookie(`/fr/${language}`, COOKIE_MAX_AGE);
+}
+
+function clearTranslateCookie() {
+  writeTranslateCookie("", 0);
+  writeTranslateCookie("/fr/fr", 0);
+}
+
+function reloadWithoutGoogleHash() {
+  const url = new URL(window.location.href);
+  if (url.hash.includes("googtrans")) {
+    url.hash = "";
+  }
+  window.location.replace(url.toString());
+}
+
+function applyGoogleLanguage(language: LanguageCode) {
+  try {
+    localStorage.setItem("plq.language", language);
+  } catch {
+    // Storage can be disabled in strict privacy modes; cookies drive translation.
+  }
+  document.documentElement.lang = language;
+
+  if (language === "fr") {
+    clearTranslateCookie();
+    reloadWithoutGoogleHash();
+    return;
+  }
+
   setTranslateCookie(language);
-  document.documentElement.lang = language === "fr" ? "fr" : language;
-
-  if (language === "fr" && previousLanguage !== "fr") {
-    window.location.reload();
-    return;
-  }
-
-  const combo = document.querySelector<HTMLSelectElement>(".goog-te-combo");
-  if (!combo) {
-    if (attempt < 10) {
-      window.setTimeout(() => applyGoogleLanguage(language, attempt + 1), 250);
-    }
-    return;
-  }
-
-  if (combo.value !== language) {
-    combo.value = language;
-    combo.dispatchEvent(new Event("change"));
-  }
+  window.location.reload();
 }
 
 export default function LanguageSwitcher() {
@@ -66,7 +95,6 @@ export default function LanguageSwitcher() {
       if (!window.google?.translate?.TranslateElement) return;
       const root = document.getElementById("google_translate_element");
       if (root && root.childElementCount > 0) {
-        applyGoogleLanguage(currentLanguage());
         return;
       }
       new window.google.translate.TranslateElement(
@@ -77,7 +105,6 @@ export default function LanguageSwitcher() {
         },
         "google_translate_element",
       );
-      applyGoogleLanguage(currentLanguage());
     };
 
     if (!document.getElementById(SCRIPT_ID)) {
@@ -93,6 +120,7 @@ export default function LanguageSwitcher() {
   }, []);
 
   const chooseLanguage = (language: LanguageCode) => {
+    if (language === activeLanguage && language === currentLanguage()) return;
     setActiveLanguage(language);
     applyGoogleLanguage(language);
   };
