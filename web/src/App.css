@@ -131,6 +131,58 @@ a {
   color: #fff;
 }
 
+.language-switcher {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  border: 1px solid #c8dbe6;
+  border-radius: 999px;
+  background: #f7fafc;
+  padding: 3px;
+}
+
+.language-switcher button {
+  min-width: 38px;
+  min-height: 34px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--navy);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.language-switcher button:hover {
+  background: var(--sea-soft);
+}
+
+.language-switcher .language-active {
+  background: var(--navy);
+  color: #fff;
+}
+
+.google-translate-root {
+  position: absolute;
+  left: -9999px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.goog-te-banner-frame,
+.goog-te-gadget-icon,
+.skiptranslate iframe {
+  display: none !important;
+}
+
+body {
+  top: 0 !important;
+}
+
 .menu-toggle {
   display: none;
   width: 44px;
@@ -2017,6 +2069,16 @@ footer p {
 
   .brand {
     font-size: 20px;
+  }
+
+  .language-switcher {
+    margin-left: auto;
+  }
+
+  .language-switcher button {
+    min-width: 34px;
+    min-height: 34px;
+    font-size: 11px;
   }
 
   .menu-toggle {

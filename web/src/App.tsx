@@ -5,6 +5,7 @@ import ComingDays from "./components/ComingDays";
 import DailyBriefing from "./components/DailyBriefing";
 import DateSelector from "./components/DateSelector";
 import Discover from "./components/Discover";
+import LanguageSwitcher from "./components/LanguageSwitcher";
 import PoiMap from "./components/PoiMap";
 import TideChart from "./components/TideChart";
 import VisitPlanner from "./components/VisitPlanner";
@@ -588,6 +589,7 @@ export default function App() {
         <a className="brand" href="#essentiel">
           Le Pouliguen <span>Live</span>
         </a>
+        <LanguageSwitcher />
         <button
           type="button"
           className="menu-toggle"
