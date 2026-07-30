@@ -20,7 +20,7 @@ export default function Discover() {
             <a
               href="https://rando.loire-atlantique.fr/service/189486-Manege-Magic-Mickey"
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
             >
               repère promenade du Port
             </a>
@@ -35,7 +35,7 @@ export default function Discover() {
             <a
               href="https://lecroisic.fr/fr/rb/384867/port-de-peche-criee"
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
             >
               port de pêche et criée
             </a>
@@ -47,7 +47,7 @@ export default function Discover() {
               passerelles et jeux dans les arbres, pratique quand la plage tape
               trop fort.
             </p>
-            <a href="https://www.canopyparc.com/accueil" target="_blank" rel="noreferrer">
+            <a href="https://www.canopyparc.com/accueil" target="_blank" rel="noopener noreferrer">
               réserver ou vérifier les horaires
             </a>
           </article>

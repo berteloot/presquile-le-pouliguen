@@ -74,10 +74,10 @@ export default function CinemaPax({ cinema, now, rainy }: Props) {
           </p>
         </div>
         <div className="cinema-actions">
-          <a href={cinema.cinema.tickets_url} target="_blank" rel="noreferrer">
+          <a href={cinema.cinema.tickets_url} target="_blank" rel="noopener noreferrer">
             billets
           </a>
-          <a href={cinema.cinema.source_url} target="_blank" rel="noreferrer">
+          <a href={cinema.cinema.source_url} target="_blank" rel="noopener noreferrer">
             horaires
           </a>
         </div>
@@ -101,10 +101,10 @@ export default function CinemaPax({ cinema, now, rainy }: Props) {
                   <span>{fmtDay.format(startsAt)}</span>
                 </time>
                 <div>
-                  <a href={session.film_url} target="_blank" rel="noreferrer">
+                  <a href={session.film_url} target="_blank" rel="noopener noreferrer">
                     {session.film}
                   </a>
-                  <a className="cinema-book-link" href={bookingUrl} target="_blank" rel="noreferrer">
+                  <a className="cinema-book-link" href={bookingUrl} target="_blank" rel="noopener noreferrer">
                     réserver
                   </a>
                   <p>
@@ -127,14 +127,14 @@ export default function CinemaPax({ cinema, now, rainy }: Props) {
 
       <p className="meta-line">
         Source :{" "}
-        <a href={cinema.cinema.source_url} target="_blank" rel="noreferrer">
+        <a href={cinema.cinema.source_url} target="_blank" rel="noopener noreferrer">
           site officiel du Cinéma Pax
         </a>
         {cinema.cinema.program_pdf_url && (
           <>
             {" "}
             ·{" "}
-            <a href={cinema.cinema.program_pdf_url} target="_blank" rel="noreferrer">
+            <a href={cinema.cinema.program_pdf_url} target="_blank" rel="noopener noreferrer">
               programme PDF
             </a>
           </>

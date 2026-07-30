@@ -41,7 +41,7 @@ export default function NearbyTowns() {
         <a
           href="https://www.labaule-guerande.com/explorer/agenda/"
           target="_blank"
-          rel="noreferrer"
+          rel="noopener noreferrer"
         >
           agenda destination
         </a>
@@ -62,10 +62,10 @@ export default function NearbyTowns() {
               ))}
             </ul>
             <div className="nearby-links">
-              <a href={town.agendaUrl} target="_blank" rel="noreferrer">
+              <a href={town.agendaUrl} target="_blank" rel="noopener noreferrer">
                 événements
               </a>
-              <a href={town.activityUrl} target="_blank" rel="noreferrer">
+              <a href={town.activityUrl} target="_blank" rel="noopener noreferrer">
                 activités
               </a>
             </div>

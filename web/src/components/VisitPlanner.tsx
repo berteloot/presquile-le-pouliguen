@@ -133,7 +133,7 @@ export default function VisitPlanner({
           <span>À faire</span>
           <strong>{eventText}</strong>
           <small>
-            <a href="https://www.lepouliguen.fr/evenements/" target="_blank" rel="noreferrer">
+            <a href="https://www.lepouliguen.fr/evenements/" target="_blank" rel="noopener noreferrer">
               agenda complet
             </a>
           </small>

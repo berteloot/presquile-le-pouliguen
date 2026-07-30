@@ -146,6 +146,12 @@ const NAV_LINKS = [
 type CircuitMode = "all" | "rando" | "velo";
 type SourceStatusKind = "live" | "partial" | "static" | "unavailable";
 
+function newTabProps(href: string) {
+  return /^https?:\/\//.test(href)
+    ? { target: "_blank", rel: "noopener noreferrer" }
+    : {};
+}
+
 function SourceBadge({ kind, children }: { kind: SourceStatusKind; children: string }) {
   return <span className={`source-badge source-badge-${kind}`}>{children}</span>;
 }
@@ -167,6 +173,7 @@ function SourceHealthLink({
       href={href}
       aria-label={`${label} : ${status}`}
       title={`${label} : ${status}`}
+      {...newTabProps(href)}
     >
       <SourceBadge kind={kind}>{label}</SourceBadge>
     </a>
@@ -621,7 +628,7 @@ export default function App() {
           `<div class="bus-popup"><h3>Vélo Baulois · ${escapeHtml(s.name)}</h3>` +
           `<p>${s.bikesAvailable} vélo${s.bikesAvailable > 1 ? "s" : ""} disponible${s.bikesAvailable > 1 ? "s" : ""} · ${s.docksAvailable} attaches libres</p>` +
           (s.rentalUrl
-            ? `<a href="${escapeHtml(s.rentalUrl)}" target="_blank" rel="noreferrer">ouvrir la station</a>`
+            ? `<a href="${escapeHtml(s.rentalUrl)}" target="_blank" rel="noopener noreferrer">ouvrir la station</a>`
             : "") +
           `</div>`,
       })),
@@ -732,7 +739,7 @@ export default function App() {
             <a
               href="https://vigilance.meteofrance.fr"
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
             >
               vigilance officielle
             </a>
@@ -925,7 +932,7 @@ export default function App() {
               )}
               <p className="ticket-links">
                 Billets de bus et horaires complets :{" "}
-                <a href="https://www.lilapresquile.fr" target="_blank" rel="noreferrer">
+                <a href="https://www.lilapresquile.fr" target="_blank" rel="noopener noreferrer">
                   lilapresquile.fr
                 </a>
               </p>
@@ -1003,7 +1010,7 @@ export default function App() {
               )}
               <p className="ticket-links">
                 Billets de train :{" "}
-                <a href="https://www.sncf-connect.com" target="_blank" rel="noreferrer">
+                <a href="https://www.sncf-connect.com" target="_blank" rel="noopener noreferrer">
                   SNCF Connect
                 </a>
               </p>
@@ -1088,7 +1095,7 @@ export default function App() {
           </ul>
           <p className="meta-line">
             Source officielle :{" "}
-            <a href={PARKING_URL} target="_blank" rel="noreferrer">
+            <a href={PARKING_URL} target="_blank" rel="noopener noreferrer">
               mairie du Pouliguen, se déplacer et stationner
             </a>
             .
@@ -1245,7 +1252,7 @@ export default function App() {
                       `<div class="bus-popup"><h3>${escapeHtml(b.name)}</h3>` +
                       `<p>${escapeHtml(b.description.slice(0, 120))}…</p>` +
                       (b.url
-                        ? `<a href="${escapeHtml(b.url)}" target="_blank" rel="noreferrer">En savoir plus</a>`
+                        ? `<a href="${escapeHtml(b.url)}" target="_blank" rel="noopener noreferrer">En savoir plus</a>`
                         : "") +
                       `</div>`,
                   }))}
@@ -1261,7 +1268,7 @@ export default function App() {
                         : b.description}
                     </span>
                     {b.url && (
-                      <a href={b.url} target="_blank" rel="noreferrer">
+                      <a href={b.url} target="_blank" rel="noopener noreferrer">
                         en savoir plus
                       </a>
                     )}
@@ -1273,7 +1280,7 @@ export default function App() {
                 <a
                   href="https://baignades.sante.gouv.fr"
                   target="_blank"
-                  rel="noreferrer"
+                  rel="noopener noreferrer"
                 >
                   baignades.sante.gouv.fr
                 </a>
@@ -1298,7 +1305,7 @@ export default function App() {
                   baignade, mais dans la catégorie la plus basse avant
                   “insuffisant”. Ce label concerne Baie du Guec uniquement.
                 </span>
-                <a href={BATHING_WATER_URL} target="_blank" rel="noreferrer">
+                <a href={BATHING_WATER_URL} target="_blank" rel="noopener noreferrer">
                   Voir la fiche officielle du Ministère de la Santé
                 </a>
               </div>
@@ -1345,7 +1352,7 @@ export default function App() {
                   <a
                     href="https://www.pecheapied-responsable.fr"
                     target="_blank"
-                    rel="noreferrer"
+                    rel="noopener noreferrer"
                   >
                     pecheapied-responsable.fr
                   </a>{" "}
@@ -1353,7 +1360,7 @@ export default function App() {
                   <a
                     href="https://www.loire-atlantique.gouv.fr"
                     target="_blank"
-                    rel="noreferrer"
+                    rel="noopener noreferrer"
                   >
                     préfecture de Loire-Atlantique
                   </a>
@@ -1412,20 +1419,20 @@ export default function App() {
               )}
             </div>
             <div className="event-source-links">
-              <a href={MUNICIPAL_EVENTS_URL} target="_blank" rel="noreferrer">
+              <a href={MUNICIPAL_EVENTS_URL} target="_blank" rel="noopener noreferrer">
                 Pouliguen
               </a>
               <a
                 href="https://lecroisic.fr/fr/ev/748477/agenda-578"
                 target="_blank"
-                rel="noreferrer"
+                rel="noopener noreferrer"
               >
                 Croisic
               </a>
               <a
                 href={DESTINATION_AGENDA_URL}
                 target="_blank"
-                rel="noreferrer"
+                rel="noopener noreferrer"
               >
                 destination
               </a>
@@ -1461,7 +1468,7 @@ export default function App() {
                 <li key={i}>
                   <div className="event-title-row">
                     {e.city && <span className="event-city">{e.city}</span>}
-                    <a href={safeAgendaUrl(e)} target="_blank" rel="noreferrer">
+                    <a href={safeAgendaUrl(e)} target="_blank" rel="noopener noreferrer">
                       {e.title}
                     </a>
                   </div>
@@ -1486,7 +1493,7 @@ export default function App() {
           ) : (
             <p className="placeholder">
               Aucun événement trouvé pour cette ville dans le flux actuel. Voir{" "}
-              <a href={MUNICIPAL_EVENTS_URL} target="_blank" rel="noreferrer">
+              <a href={MUNICIPAL_EVENTS_URL} target="_blank" rel="noopener noreferrer">
                 l'agenda municipal du Pouliguen
               </a>
               .
@@ -1593,7 +1600,7 @@ export default function App() {
                     (t.km != null ? ` · ${t.km} km` : "") +
                     `</p>` +
                     (t.pdf
-                      ? `<a href="${escapeHtml(t.pdf)}" target="_blank" rel="noreferrer">Fiche PDF du circuit</a>`
+                      ? `<a href="${escapeHtml(t.pdf)}" target="_blank" rel="noopener noreferrer">Fiche PDF du circuit</a>`
                       : "") +
                     `</div>`,
                 }))}
@@ -1620,7 +1627,7 @@ export default function App() {
                     </span>
                   </span>
                   {c.pdf && (
-                    <a href={c.pdf} target="_blank" rel="noreferrer">
+                    <a href={c.pdf} target="_blank" rel="noopener noreferrer">
                       fiche PDF
                     </a>
                   )}
@@ -1661,7 +1668,7 @@ export default function App() {
             <a
               href="https://www.sante.fr/centre-hospitalier-ch/saint-nazaire/ch-saint-nazaire-cite-sanitaire/urgences-medicales"
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
             >
               <strong>Urgences hospitalières</strong>
               <span>CH Saint-Nazaire · 11 bd Georges Charpak</span>
@@ -1761,7 +1768,7 @@ export default function App() {
         </p>
         <p className="footer-credits">
           Développé avec amour au Pouliguen par{" "}
-          <a href="https://www.linkedin.com/in/berteloot/" target="_blank" rel="noreferrer">
+          <a href="https://www.linkedin.com/in/berteloot/" target="_blank" rel="noopener noreferrer">
             Stan Berteloot
           </a>
           .

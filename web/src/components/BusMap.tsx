@@ -94,7 +94,8 @@ export default function BusMap({ data, delays }: Props) {
     });
     L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 19,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a>',
     }).addTo(map);
 
     // One marker per stop name, click shows the next departures there.
@@ -134,7 +135,7 @@ export default function BusMap({ data, delays }: Props) {
           (rows
             ? `<ul>${rows}</ul>`
             : `<p>Plus de passage prévu aujourd'hui.</p>`) +
-          `<a href="${TICKETS_URL}" target="_blank" rel="noreferrer">Billets et horaires complets</a></div>`
+          `<a href="${TICKETS_URL}" target="_blank" rel="noopener noreferrer">Billets et horaires complets</a></div>`
         );
       });
     }
@@ -178,7 +179,7 @@ export default function BusMap({ data, delays }: Props) {
             (v.timestamp
               ? `<p class="pop-meta">Position de ${fmtTime.format(v.timestamp)}</p>`
               : "") +
-            `<a href="${TICKETS_URL}" target="_blank" rel="noreferrer">Billets et infos ligne</a></div>`;
+            `<a href="${TICKETS_URL}" target="_blank" rel="noopener noreferrer">Billets et infos ligne</a></div>`;
           L.marker([v.lat, v.lon], { icon })
             .bindTooltip(`Ligne ${v.routeShort}${dest ? " vers " + dest : ""}`)
             .bindPopup(popup)
