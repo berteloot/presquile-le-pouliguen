@@ -128,6 +128,25 @@ function SourceBadge({ kind, children }: { kind: SourceStatusKind; children: str
   return <span className={`source-badge source-badge-${kind}`}>{children}</span>;
 }
 
+function SourceHealthLink({
+  href,
+  kind,
+  label,
+  status,
+}: {
+  href: string;
+  kind: SourceStatusKind;
+  label: string;
+  status: string;
+}) {
+  return (
+    <a className="source-health-item" href={href} aria-label={`${label} : ${status}`}>
+      <SourceBadge kind={kind}>{label}</SourceBadge>
+      <span>{status}</span>
+    </a>
+  );
+}
+
 function freshnessLabel(fetchedAt: Date | undefined): string {
   if (!fetchedAt) return "";
   const minutes = Math.floor((Date.now() - fetchedAt.getTime()) / 60_000);
@@ -699,34 +718,36 @@ export default function App() {
       )}
 
       <section className="source-health" aria-label="État des sources de données">
-        <div>
-          <SourceBadge kind={weather && marine ? "live" : "unavailable"}>
-            météo et mer
-          </SourceBadge>
-          <span>{weather && marine ? "données directes" : "source indisponible"}</span>
-        </div>
-        <div>
-          <SourceBadge kind={transit ? "live" : "unavailable"}>
-            bus
-          </SourceBadge>
-          <span>{transit ? "horaires et temps réel" : "source indisponible"}</span>
-        </div>
-        <div>
-          <SourceBadge kind={trains ? "partial" : "unavailable"}>
-            train
-          </SourceBadge>
-          <span>{trains ? "horaires, retards si publiés" : "source indisponible"}</span>
-        </div>
-        <div>
-          <SourceBadge kind={agenda.length > 0 ? "partial" : "unavailable"}>
-            agenda
-          </SourceBadge>
-          <span>{agenda.length > 0 ? "flux partiel selon les villes" : "source indisponible"}</span>
-        </div>
-        <div>
-          <SourceBadge kind="static">parking</SourceBadge>
-          <span>source municipale 2026</span>
-        </div>
+        <SourceHealthLink
+          href="#cote"
+          kind={weather && marine ? "live" : "unavailable"}
+          label="météo et mer"
+          status={weather && marine ? "données directes" : "source indisponible"}
+        />
+        <SourceHealthLink
+          href="#deplacer"
+          kind={transit ? "live" : "unavailable"}
+          label="bus"
+          status={transit ? "horaires et temps réel" : "source indisponible"}
+        />
+        <SourceHealthLink
+          href="#deplacer"
+          kind={trains ? "partial" : "unavailable"}
+          label="train"
+          status={trains ? "horaires, retards si publiés" : "source indisponible"}
+        />
+        <SourceHealthLink
+          href="#aujourdhui"
+          kind={agenda.length > 0 ? "partial" : "unavailable"}
+          label="agenda"
+          status={agenda.length > 0 ? "flux partiel selon les villes" : "source indisponible"}
+        />
+        <SourceHealthLink
+          href="#deplacer"
+          kind="static"
+          label="parking"
+          status="source municipale 2026"
+        />
       </section>
 
       <section className="essentials" id="essentiel" aria-label="L'essentiel maintenant">

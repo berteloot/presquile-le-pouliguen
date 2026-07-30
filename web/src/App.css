@@ -498,7 +498,7 @@ main {
   display: none;
 }
 
-.source-health div {
+.source-health-item {
   min-width: max-content;
   display: inline-flex;
   align-items: center;
@@ -510,6 +510,22 @@ main {
   color: var(--muted);
   font-size: 12.5px;
   line-height: 1.2;
+  text-decoration: none;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease;
+}
+
+.source-health-item:hover {
+  border-color: #9fc4d9;
+  box-shadow: 0 6px 18px rgba(20, 50, 79, 0.1);
+  transform: translateY(-1px);
+}
+
+.source-health-item:focus-visible {
+  outline: 3px solid rgba(14, 116, 163, 0.3);
+  outline-offset: 2px;
 }
 
 .source-badge {
