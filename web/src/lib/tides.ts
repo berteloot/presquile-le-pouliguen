@@ -1,5 +1,20 @@
 import type { MarineSeries, TideExtreme } from "./types";
 
+const SYNODIC_MONTH_DAYS = 29.530588853;
+const NEW_MOON_EPOCH_UTC = Date.UTC(2000, 0, 6, 18, 14);
+const DAY_MS = 86_400_000;
+
+export interface MoonInfo {
+  ageDays: number;
+  illumination: number;
+  phaseName: string;
+  phaseIcon: string;
+  nextFullMoon: Date;
+  nextNewMoon: Date;
+  nextStrongTideWindow: Date;
+  strongTideBasis: "pleine lune" | "nouvelle lune";
+}
+
 /**
  * Detect tide extrema from the modeled sea-level series (15-minute steps).
  * A point is an extreme when it is higher (or lower) than both neighbors;
@@ -52,4 +67,70 @@ export function currentTrend(
   const b = seaLevel[idx + 1];
   if (a == null || b == null) return null;
   return b > a ? "rising" : "falling";
+}
+
+function daysSinceEpoch(date: Date): number {
+  return (date.getTime() - NEW_MOON_EPOCH_UTC) / DAY_MS;
+}
+
+function normalizedMoonAge(date: Date): number {
+  const age = daysSinceEpoch(date) % SYNODIC_MONTH_DAYS;
+  return age < 0 ? age + SYNODIC_MONTH_DAYS : age;
+}
+
+function nextMoonMoment(date: Date, targetAge: number): Date {
+  const age = normalizedMoonAge(date);
+  let daysUntil = targetAge - age;
+  if (daysUntil <= 0) daysUntil += SYNODIC_MONTH_DAYS;
+  return new Date(date.getTime() + daysUntil * DAY_MS);
+}
+
+function strongTideCandidates(date: Date, targetAge: number, basis: MoonInfo["strongTideBasis"]) {
+  const age = normalizedMoonAge(date);
+  return [-1, 0, 1, 2].map((cycle) => {
+    const moonMoment = new Date(
+      date.getTime() + (targetAge - age + cycle * SYNODIC_MONTH_DAYS) * DAY_MS,
+    );
+    return {
+      basis,
+      time: new Date(moonMoment.getTime() + 36 * 60 * 60 * 1000),
+    };
+  });
+}
+
+function phaseLabel(ageDays: number): { name: string; icon: string } {
+  if (ageDays < 1.85) return { name: "nouvelle lune", icon: "●" };
+  if (ageDays < 5.54) return { name: "premier croissant", icon: "◔" };
+  if (ageDays < 9.23) return { name: "premier quartier", icon: "◐" };
+  if (ageDays < 12.92) return { name: "lune gibbeuse croissante", icon: "◕" };
+  if (ageDays < 16.61) return { name: "pleine lune", icon: "○" };
+  if (ageDays < 20.3) return { name: "lune gibbeuse décroissante", icon: "◕" };
+  if (ageDays < 23.99) return { name: "dernier quartier", icon: "◑" };
+  if (ageDays < 27.68) return { name: "dernier croissant", icon: "◔" };
+  return { name: "nouvelle lune", icon: "●" };
+}
+
+export function moonInfo(date: Date): MoonInfo {
+  const ageDays = normalizedMoonAge(date);
+  const fullAge = SYNODIC_MONTH_DAYS / 2;
+  const nextFullMoon = nextMoonMoment(date, fullAge);
+  const nextNewMoon = nextMoonMoment(date, 0);
+  const nextStrong = [
+    ...strongTideCandidates(date, fullAge, "pleine lune"),
+    ...strongTideCandidates(date, 0, "nouvelle lune"),
+  ]
+    .filter((candidate) => candidate.time.getTime() >= date.getTime())
+    .sort((a, b) => a.time.getTime() - b.time.getTime())[0];
+  const phase = phaseLabel(ageDays);
+
+  return {
+    ageDays: Math.round(ageDays * 10) / 10,
+    illumination: Math.round(((1 - Math.cos((2 * Math.PI * ageDays) / SYNODIC_MONTH_DAYS)) / 2) * 100),
+    phaseName: phase.name,
+    phaseIcon: phase.icon,
+    nextFullMoon,
+    nextNewMoon,
+    nextStrongTideWindow: nextStrong.time,
+    strongTideBasis: nextStrong.basis,
+  };
 }

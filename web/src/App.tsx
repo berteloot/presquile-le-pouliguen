@@ -50,7 +50,7 @@ import {
   windDirectionLabel,
 } from "./lib/openmeteo";
 import { escapeHtml } from "./lib/html";
-import { currentTrend, findExtrema, nextExtremes } from "./lib/tides";
+import { currentTrend, findExtrema, moonInfo, nextExtremes } from "./lib/tides";
 import {
   fetchTrainDelays,
   loadTrainsData,
@@ -85,6 +85,14 @@ const fmtDate = new Intl.DateTimeFormat("fr-FR", {
 });
 const fmtDayTime = new Intl.DateTimeFormat("fr-FR", {
   weekday: "short",
+  hour: "2-digit",
+  minute: "2-digit",
+  timeZone: "Europe/Paris",
+});
+const fmtShortDateTime = new Intl.DateTimeFormat("fr-FR", {
+  weekday: "short",
+  day: "numeric",
+  month: "short",
   hour: "2-digit",
   minute: "2-digit",
   timeZone: "Europe/Paris",
@@ -332,6 +340,7 @@ export default function App() {
   const todayValue = toDateInputValue(now);
   const selectedDateIsToday = selectedDateValue === todayValue;
   const selectedDateReference = selectedDateIsToday ? now : selectedDate;
+  const selectedMoon = useMemo(() => moonInfo(selectedDateReference), [selectedDateReference]);
 
   useEffect(() => {
     const onHash = () => setRoute(window.location.hash);
@@ -1168,11 +1177,28 @@ export default function App() {
                 )}
               </div>
               <TideChart marine={marine} extrema={extrema} now={now} date={selectedDate} />
+              <div className="moon-card">
+                <span className="moon-icon" aria-hidden="true">
+                  {selectedMoon.phaseIcon}
+                </span>
+                <div>
+                  <strong>{selectedMoon.phaseName}</strong>
+                  <span>
+                    lune éclairée à {selectedMoon.illumination} % · âge {selectedMoon.ageDays} j
+                  </span>
+                  <span>
+                    vives-eaux attendues autour du{" "}
+                    {fmtShortDateTime.format(selectedMoon.nextStrongTideWindow)}, environ 36 h
+                    après la {selectedMoon.strongTideBasis}.
+                  </span>
+                </div>
+              </div>
               <p className="meta-line">
                 {seaTempSelected != null && <>Eau {seaTempSelected.toFixed(1)}°C · </>}
                 {waveSelected != null && <>vagues {waveSelected.toFixed(1)} m · </>}
                 horaires issus d'un modèle océanique (écart possible de 30 à 45
-                minutes), ne pas utiliser pour la navigation.
+                minutes). Phase lunaire indicative, coefficients officiels à vérifier
+                sur les sources maritimes avant navigation.
               </p>
             </>
           ) : (

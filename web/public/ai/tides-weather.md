@@ -8,9 +8,12 @@ Le site présente les marées, la météo locale et les conditions de mer pour a
 - Vent, température, ciel, UV et météo du moment.
 - Température de l'eau, vagues et tendances de mer lorsque les données sont disponibles.
 - Sélecteur de date pour consulter les informations utiles autour d'une journée donnée.
+- Phase de lune approximative et prochain repère de vives-eaux, les plus forts
+  coefficients arrivant généralement environ 36 h après la pleine lune ou la
+  nouvelle lune.
 
 ## Interprétation
 
 Les marées et la météo sont utiles pour planifier, mais elles ne remplacent pas les consignes officielles de sécurité, les arrêtés municipaux, la signalisation de plage ou les bulletins nautiques spécialisés.
 
-Pour la pêche à pied, vérifier aussi les coefficients, les horaires réels sur place, la réglementation, les interdictions temporaires et les informations sanitaires.
+Pour la pêche à pied, vérifier aussi les coefficients officiels, les horaires réels sur place, la réglementation, les interdictions temporaires et les informations sanitaires.

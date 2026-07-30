@@ -25,7 +25,8 @@ address). Product research and data inventory came from Stan's ChatGPT session
 Working MVP, static-only architecture, verified running locally:
 
 - Weather now + today (Open-Meteo forecast API, no key)
-- Sea state and tide curve with next high/low water and trend
+- Sea state and tide curve with next high/low water, trend, moon phase and
+  approximate spring-tide timing
   (Open-Meteo Marine API `sea_level_height_msl`, model data, flagged as
   indicative on the page)
 - Next bus departures per stop with real-time delays
@@ -41,6 +42,8 @@ Working MVP, static-only architecture, verified running locally:
   commune from the Cap Atlantique calendar, nearest glass drop-off point
 - Fishing on foot: next low tides as favorable windows, with links to
   pecheapied-responsable.fr and the prefecture for sanitary closures
+- Discover page: local essentials such as the port carousel/niniches, the
+  Croisic fish market/criée and Canopy Parc
 - Ticket links: lilapresquile.fr (bus), SNCF Connect (train)
 - Installable PWA manifest, French UI, mobile-first
 

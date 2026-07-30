@@ -6,6 +6,55 @@ export default function Discover() {
       <NearbyTowns />
 
       <section className="card card-wide">
+        <div className="event-heading">
+          <h3>Les incontournables</h3>
+          <span className="discover-source-note">sélection famille</span>
+        </div>
+        <div className="must-see-grid">
+          <article className="must-see-card">
+            <strong>Manège, niniches et jeux du port</strong>
+            <p>
+              Le classique du Pouliguen avec les enfants : un tour de manège,
+              les jeux sur la promenade, puis une niniche en regardant le port.
+            </p>
+            <a
+              href="https://rando.loire-atlantique.fr/service/189486-Manege-Magic-Mickey"
+              target="_blank"
+              rel="noreferrer"
+            >
+              repère promenade du Port
+            </a>
+          </article>
+          <article className="must-see-card">
+            <strong>La criée du Croisic</strong>
+            <p>
+              Pour les produits de la mer et l'ambiance port de pêche : soles,
+              langoustines, crevettes roses, bars, coquilles Saint-Jacques selon
+              les arrivages et la saison.
+            </p>
+            <a
+              href="https://lecroisic.fr/fr/rb/384867/port-de-peche-criee"
+              target="_blank"
+              rel="noreferrer"
+            >
+              port de pêche et criée
+            </a>
+          </article>
+          <article className="must-see-card">
+            <strong>Canopy Parc</strong>
+            <p>
+              Une parenthèse fraîche à deux pas du Pouliguen : filets suspendus,
+              passerelles et jeux dans les arbres, pratique quand la plage tape
+              trop fort.
+            </p>
+            <a href="https://www.canopyparc.com/accueil" target="_blank" rel="noreferrer">
+              réserver ou vérifier les horaires
+            </a>
+          </article>
+        </div>
+      </section>
+
+      <section className="card card-wide">
         <h3>Un port devenu station balnéaire</h3>
         <p>
           Le Pouliguen est d'abord un village de pêcheurs et de paludiers,

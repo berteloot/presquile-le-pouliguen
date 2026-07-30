@@ -778,6 +778,47 @@ main {
   margin-top: 6px;
 }
 
+.moon-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-top: 10px;
+  padding: 12px 14px;
+  border: 1px solid #d7e4ec;
+  border-radius: 10px;
+  background: #f7fbfd;
+}
+
+.moon-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: var(--navy);
+  color: #fff;
+  font-size: 20px;
+  line-height: 1;
+  flex: 0 0 auto;
+}
+
+.moon-card div {
+  display: grid;
+  gap: 3px;
+}
+
+.moon-card strong {
+  color: var(--navy);
+  font-size: 16px;
+}
+
+.moon-card span {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.35;
+}
+
 .tide-area {
   fill: rgba(12, 93, 143, 0.13);
 }
@@ -1937,6 +1978,10 @@ main {
   .nearby-towns {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .must-see-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 /* Découvrir page */
@@ -1953,6 +1998,44 @@ main {
 
 .discover p:last-child {
   margin-bottom: 0;
+}
+
+.discover-source-note {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.must-see-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+.must-see-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 14px;
+  background: #fbfcfd;
+}
+
+.must-see-card strong {
+  color: var(--navy);
+  font-size: 17px;
+}
+
+.must-see-card p {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.must-see-card a {
+  margin-top: auto;
+  font-weight: 800;
 }
 
 .discover-list {

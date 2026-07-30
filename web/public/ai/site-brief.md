@@ -2,7 +2,7 @@
 
 Le Pouliguen Live est un tableau de bord local non officiel consacré au Pouliguen, commune littorale de Loire-Atlantique située sur la presqu'île guérandaise.
 
-Le site aide à préparer une journée sur place en regroupant les informations pratiques que l'on consulte souvent séparément : météo, marées, conditions de mer, plages, qualité des eaux de baignade, bus, trains, agenda local, collecte des déchets, défibrillateurs, bornes de recharge, promenades et itinéraires vélo.
+Le site aide à préparer une journée sur place en regroupant les informations pratiques que l'on consulte souvent séparément : météo, marées, phases de lune, conditions de mer, plages, qualité des eaux de baignade, bus, trains, agenda local, collecte des déchets, défibrillateurs, bornes de recharge, promenades, itinéraires vélo et incontournables autour du port.
 
 ## Publics utiles
 
@@ -10,6 +10,8 @@ Le site aide à préparer une journée sur place en regroupant les informations 
 - Visiteurs qui cherchent quoi faire, comment venir et quand profiter de la mer.
 - Plaisanciers, pêcheurs à pied et usagers de plage qui veulent croiser météo, marée et qualité d'eau.
 - Personnes sans voiture qui ont besoin de lire rapidement bus, train et liaisons vers les villes voisines.
+- Familles qui cherchent les classiques faciles : manège et niniches du port,
+  criée du Croisic, activités fraîches comme Canopy Parc.
 
 ## Périmètre géographique
 
