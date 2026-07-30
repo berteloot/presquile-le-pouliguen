@@ -1,0 +1,36 @@
+name: Pierre Site Monitor
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Restore monitor state
+        uses: actions/cache/restore@v4
+        with:
+          path: .monitor-state.json
+          key: pierre-site-monitor-state
+          restore-keys: pierre-site-monitor-state
+
+      - name: Run monitor
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python3 tools/site_monitor.py --config monitoring/pierre-site-monitor.json --telegram
+
+      - name: Save monitor state
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: .monitor-state.json
+          key: pierre-site-monitor-state-${{ github.run_id }}
