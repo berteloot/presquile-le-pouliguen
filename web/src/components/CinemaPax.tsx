@@ -58,7 +58,7 @@ export default function CinemaPax({ cinema, now, rainy }: Props) {
     .map((session) => ({ session, startsAt: sessionDate(session) }))
     .filter((item) => item.startsAt.getTime() >= now.getTime() - 15 * 60 * 1000)
     .sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime());
-  const nextSessions = upcoming.slice(0, 4);
+  const nextSessions = upcoming.slice(0, 5);
   const voCount = upcoming.filter((item) => item.session.version.toUpperCase().includes("VO")).length;
   const childCount = upcoming.filter((item) => isChildFriendly(item.session)).length;
   const generated = new Date(cinema.generated);
@@ -103,6 +103,11 @@ export default function CinemaPax({ cinema, now, rainy }: Props) {
                   <a href={session.film_url} target="_blank" rel="noreferrer">
                     {session.film}
                   </a>
+                  {session.ticket_url && (
+                    <a className="cinema-book-link" href={session.ticket_url} target="_blank" rel="noreferrer">
+                      réserver
+                    </a>
+                  )}
                   <p>
                     {session.version && <span>{session.version}</span>}
                     {session.duration_minutes && <span>{session.duration_minutes} min</span>}

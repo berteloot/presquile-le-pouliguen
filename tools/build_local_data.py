@@ -43,6 +43,9 @@ IRVE_DATASET_API = (
 LE_CROISIC_AGENDA_URL = "https://lecroisic.fr/fr/ev/748477/agenda-578"
 CINEMA_PAX_URL = "http://www.cinemapax.fr/films-horaires/"
 CINEMA_PAX_TICKETS_URL = "https://lepouliguencinemapax.cine.boutique/"
+CINEMA_PAX_TICKET_URLS = {
+    "LES MATINS MERVEILLEUX": "https://lepouliguencinemapax.cine.boutique/media/1489?title=LES%20MATINS%20MERVEILLEUX&visanumber=148798",
+}
 FRENCH_MONTHS = {
     "janvier": 1,
     "février": 2,
@@ -461,6 +464,7 @@ def build_cinema() -> None:
                     "time": time_match.group(1),
                     "version": strip_tags(version_match.group(1)) if version_match else "",
                     "film_url": film_url,
+                    "ticket_url": CINEMA_PAX_TICKET_URLS.get(title),
                     "special_labels": special_labels,
                 }
             )

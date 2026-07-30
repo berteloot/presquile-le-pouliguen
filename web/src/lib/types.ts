@@ -127,6 +127,7 @@ export interface CinemaPaxSession {
   time: string;
   version: string;
   film_url: string;
+  ticket_url?: string | null;
   special_labels: string[];
   duration_minutes: number | null;
   genres: string;
