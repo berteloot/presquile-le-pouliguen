@@ -107,6 +107,10 @@ const TRAIN_RT_REFRESH_MS = 120_000;
 const ROAD_INFO_REFRESH_MS = 10 * 60_000;
 const MUNICIPAL_EVENTS_URL = "https://www.lepouliguen.fr/evenements/";
 const DESTINATION_AGENDA_URL = "https://www.labaule-guerande.com/explorer/agenda/";
+const WASTE_CENTER_URL =
+  "https://www.cap-atlantique.fr/mon-quotidien/dechets/les-decheteries/";
+const WASTE_CENTER_MAP_URL =
+  "https://www.openstreetmap.org/?mlat=47.286075&mlon=-2.431703#map=18/47.286075/-2.431703";
 const AGENDA_CITY_URLS: Record<string, string> = {
   "Le Pouliguen": MUNICIPAL_EVENTS_URL,
   "Le Croisic": "https://lecroisic.fr/fr/ev/748477/agenda-578",
@@ -1538,6 +1542,36 @@ export default function App() {
           ) : (
             <p className="placeholder">Chargement du calendrier de collecte…</p>
           )}
+          <article className="waste-center">
+            <div className="event-heading">
+              <h4>Déchèterie du Pouliguen</h4>
+              <span>derrière la gare</span>
+            </div>
+            <dl>
+              <div>
+                <dt>Adresse</dt>
+                <dd>Route de la Minoterie, 44510 Le Pouliguen</dd>
+              </div>
+              <div>
+                <dt>Horaires</dt>
+                <dd>Du lundi au samedi, 9h-12h et 14h-18h</dd>
+              </div>
+            </dl>
+            <p className="meta-line">
+              Arriver au plus tard 15 minutes avant la fermeture. Fermée les
+              jours fériés et en cas de fortes intempéries.
+            </p>
+            <p className="meta-line">
+              Source :{" "}
+              <a href={WASTE_CENTER_URL} {...newTabProps(WASTE_CENTER_URL)}>
+                Cap Atlantique
+              </a>{" "}
+              ·{" "}
+              <a href={WASTE_CENTER_MAP_URL} {...newTabProps(WASTE_CENTER_MAP_URL)}>
+                ouvrir la carte
+              </a>
+            </p>
+          </article>
         </section>
 
         <section className="card">

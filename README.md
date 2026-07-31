@@ -41,7 +41,8 @@ Working MVP, static-only architecture, verified running locally:
 - Beaches: the commune's 4 official bathing sites with descriptions and links,
   plus a link to official water quality (baignades.sante.gouv.fr)
 - Waste collection: next door-to-door pickups (bac vert / bac jaune) for the
-  commune from the Cap Atlantique calendar, nearest glass drop-off point
+  commune from the Cap Atlantique calendar, nearest glass drop-off point,
+  and local waste center address/opening hours
 - Fishing on foot: next low tides as favorable windows, with links to
   pecheapied-responsable.fr and the prefecture for sanitary closures
 - Discover page: local essentials such as the port carousel/niniches, the

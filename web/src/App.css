@@ -1838,6 +1838,39 @@ main {
   color: var(--ink);
 }
 
+.waste-center {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.waste-center h4 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.waste-center dl {
+  display: grid;
+  gap: 10px;
+  margin: 14px 0 0;
+}
+
+.waste-center dl > div {
+  display: grid;
+  grid-template-columns: minmax(82px, max-content) 1fr;
+  gap: 12px;
+}
+
+.waste-center dt {
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.waste-center dd {
+  margin: 0;
+  color: var(--ink);
+}
+
 .parking-list {
   list-style: none;
   margin: 0;
