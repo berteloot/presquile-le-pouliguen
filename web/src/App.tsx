@@ -102,6 +102,16 @@ const fmtShortDateTime = new Intl.DateTimeFormat("fr-FR", {
   timeZone: "Europe/Paris",
 });
 
+declare global {
+  interface Window {
+    gtag?: (...args: unknown[]) => void;
+  }
+}
+
+// Captured before any route change rewrites it.
+const BASE_TITLE = document.title;
+const DISCOVER_TITLE = "Découvrir Le Pouliguen | Le Pouliguen Live";
+
 const STOP_STORAGE_KEY = "plq.stop";
 const TRAIN_RT_REFRESH_MS = 120_000;
 const ROAD_INFO_REFRESH_MS = 10 * 60_000;
@@ -387,6 +397,20 @@ export default function App() {
   useEffect(() => {
     setIsMobileNavOpen(false);
   }, [route]);
+
+  useEffect(() => {
+    // Analytics. The whole app lives at "/", and GA4 strips the hash from
+    // page_location, so Découvrir was invisible in reports. index.html turns
+    // the automatic view off and we send one per route instead.
+    const path = isDiscover ? "/decouvrir" : "/";
+    const title = isDiscover ? DISCOVER_TITLE : BASE_TITLE;
+    document.title = title;
+    window.gtag?.("event", "page_view", {
+      page_path: path,
+      page_location: `${window.location.origin}${window.location.pathname}${route}`,
+      page_title: title,
+    });
+  }, [route, isDiscover]);
 
   useEffect(() => {
     // Coming back from the Découvrir page to an anchor: the section only

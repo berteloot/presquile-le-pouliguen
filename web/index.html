@@ -42,15 +42,29 @@
       name="twitter:image"
       content="https://presquile-le-pouliguen.berteloot.org/images/lighthouse-hero.jpg"
     />
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-088KDJN7B7"></script>
+    <!-- Google tag (gtag.js). Skipped on dev, preview and the Render default
+         URL so local work never lands in the production property. -->
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag() {
         dataLayer.push(arguments);
       }
-      gtag("js", new Date());
-      gtag("config", "G-088KDJN7B7");
+      (function () {
+        var host = location.hostname;
+        var internal =
+          /^(localhost|127\.0\.0\.1|\[?::1\]?)$/.test(host) ||
+          /\.onrender\.com$/.test(host);
+        if (internal) return;
+        var tag = document.createElement("script");
+        tag.async = true;
+        tag.src = "https://www.googletagmanager.com/gtag/js?id=G-088KDJN7B7";
+        document.head.appendChild(tag);
+        gtag("js", new Date());
+        // page_view is sent by the app itself, on first paint and on every hash
+        // route change, so #/decouvrir is counted as its own page. GA4 strips
+        // the hash from page_location, so the automatic view cannot see it.
+        gtag("config", "G-088KDJN7B7", { send_page_view: false });
+      })();
     </script>
     <script type="application/ld+json">
       {
