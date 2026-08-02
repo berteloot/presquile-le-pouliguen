@@ -1414,8 +1414,6 @@ export default function App() {
 
         </div>
 
-        <ShipsOffshore />
-
         <h2 className="section-title" id="aujourdhui">Aujourd'hui</h2>
 
         <DailyBriefing
@@ -1821,6 +1819,8 @@ export default function App() {
           )}
         </section>
         </div>
+
+        <ShipsOffshore />
       </main>
         </>
       )}

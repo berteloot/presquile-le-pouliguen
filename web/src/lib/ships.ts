@@ -195,7 +195,7 @@ function buildFact(ship: OffshoreShip, distanceKm: number, wait: number | null) 
     return `${ship.name} est le plus impressionnant à l'oeil nu : ${ship.lengthM} m et ${ship.grossTonnage.toLocaleString("fr-FR")} GT.`;
   }
   if (wait != null && wait >= 24) {
-    return `${ship.name} est assez proche pour paraître immobile, mais son mouillage est déjà long : ${formatHours(wait)}.`;
+    return `${ship.name} attend au mouillage depuis ${formatHours(wait)}, à ${distanceKm.toFixed(1)} km du Pouliguen, avec ${ship.destination} comme destination déclarée.`;
   }
   if (ship.statusGroup === "Working") {
     return `${ship.name} raconte l'autre trafic de la baie : les navires de service liés au parc éolien.`;
