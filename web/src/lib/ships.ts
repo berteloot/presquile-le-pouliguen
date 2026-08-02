@@ -84,15 +84,43 @@ const LA_BAULE = { lat: 47.2867, lon: -2.3908 };
 const MERCHANT_NAME_HINT =
   /\b(abbey|aegean|arklow|atlantic|bomar|eagle|fighter|harbour|mimer|moraime|pioneer|tanker|uhl)\b/i;
 const MERCHANT_DESTINATION_HINT = /\b(donges|donges|nantes|montoir|stm|frdon|frsmr|fr\s?mtx)\b/i;
-const DESTINATION_LABELS = new Map([
-  ["FRDON", "Donges (FRDON)"],
-  ["FRNTE", "Nantes (FRNTE)"],
-  ["FR MTX", "Montoir-de-Bretagne (FR MTX)"],
-  ["FRMTX", "Montoir-de-Bretagne (FRMTX)"],
-  ["LOIRE ANCHORAGE", "Mouillage de Loire"],
+const AIS_LOCATION_LABELS = new Map([
+  ["NLAMS", "Amsterdam"],
+  ["FRDON", "Donges"],
+  ["FRNTE", "Nantes"],
+  ["FR MTX", "Montoir-de-Bretagne"],
+  ["FRMTX", "Montoir-de-Bretagne"],
+  ["FRSNR", "Saint-Nazaire"],
+  ["DONGES", "Donges"],
+  ["MONTOIR", "Montoir-de-Bretagne"],
   ["SAINT NAZAIRE", "Saint-Nazaire"],
+  ["SAINT-NAZAIRE", "Saint-Nazaire"],
   ["ST NAZAIRE", "Saint-Nazaire"],
+  ["BREST", "Brest"],
+  ["HOUAT", "Houat"],
+  ["LA_TURBALLE", "La Turballe"],
+  ["LOIRE ANCHORAGE", "Mouillage de Loire"],
   ["FOR ORDERS", "En attente d'ordres"],
+  ["SEA TRIAL", "Essais en mer"],
+  ["SAU", "Sauzon"],
+  ["QUIB", "Quiberon"],
+  ["HOU", "Houat"],
+  ["HOE", "Hoedic"],
+]);
+const AIS_COUNTRY_PREFIXES = new Map([
+  ["BE", "Belgique"],
+  ["DE", "Allemagne"],
+  ["DK", "Danemark"],
+  ["ES", "Espagne"],
+  ["FR", "France"],
+  ["GB", "Royaume-Uni"],
+  ["IE", "Irlande"],
+  ["IT", "Italie"],
+  ["NL", "Pays-Bas"],
+  ["NO", "Norvège"],
+  ["PT", "Portugal"],
+  ["SE", "Suède"],
+  ["US", "États-Unis"],
 ]);
 
 function toDate(value: string | null | undefined): Date | null {
@@ -160,16 +188,65 @@ function voyageLabel(hours: number | null): string {
 
 function knownText(value: string | null | undefined): boolean {
   if (!value) return false;
-  return !/^(undefined|null|non connu|non confirm|non déclar|unknown|n\/a)$/i.test(value.trim());
+  return !/^(undefined|null|non connu.*|non confirm.*|non déclar.*|unknown|n\/a)$/i.test(
+    value.trim(),
+  );
+}
+
+function normalizeAisLocation(value: string): string {
+  return value.trim().replace(/\s+/g, " ").toUpperCase();
+}
+
+function displayAisLocation(value: string): string {
+  return value.trim().replace(/_/g, " ").replace(/\s+/g, " ");
+}
+
+function decodeAisLocation(value: string): string {
+  const clean = displayAisLocation(value);
+  const normalized = normalizeAisLocation(clean);
+  const directLabel = AIS_LOCATION_LABELS.get(normalized);
+  if (directLabel) return directLabel;
+
+  const compact = normalized.replace(/[^A-Z0-9]/g, "");
+  const compactLabel = AIS_LOCATION_LABELS.get(compact);
+  if (compactLabel) return compactLabel;
+
+  if (/^[A-Z]{2}[A-Z0-9]{3}$/.test(compact)) {
+    const country = AIS_COUNTRY_PREFIXES.get(compact.slice(0, 2));
+    return country ? `${compact} (${country})` : compact;
+  }
+
+  return clean;
+}
+
+export function decodeAisRoute(destination: string): string | null {
+  const clean = destination.trim().replace(/\s+/g, " ");
+  if (!knownText(clean)) return null;
+
+  const separator = clean.includes("<>") ? "<>" : clean.includes(">") ? ">" : null;
+  if (!separator) return null;
+
+  const route = clean
+    .split(separator)
+    .map((part) => part.trim())
+    .filter(Boolean);
+  if (route.length < 2) return null;
+
+  return route.map(decodeAisLocation).join(" -> ");
+}
+
+export function decodeAisDestination(destination: string): string {
+  const clean = destination.trim().replace(/\s+/g, " ");
+  if (!knownText(clean)) return "destination non déclarée";
+  return decodeAisRoute(clean) ?? decodeAisLocation(clean);
 }
 
 function destinationLabel(destination: string): string {
-  const clean = destination.trim().replace(/\s+/g, " ");
-  if (!knownText(clean)) return "destination non déclarée";
-  return DESTINATION_LABELS.get(clean.toUpperCase()) ?? clean;
+  return decodeAisDestination(destination);
 }
 
-function destinationContext(ship: OffshoreShip): string {
+function destinationContext(ship: OffshoreShip): string | null {
+  if (!knownText(ship.destination)) return null;
   const destination = destinationLabel(ship.destination);
   if (/donges|frdon/i.test(destination)) {
     return "Donges concentre une partie des escales pétrolières de l'estuaire, avec des créneaux dépendants des quais, des marées et des pilotes.";
@@ -183,17 +260,17 @@ function destinationContext(ship: OffshoreShip): string {
   if (/saint-nazaire|nantes|mouillage de loire/i.test(destination)) {
     return "L'accès à Nantes Saint-Nazaire se fait par un chenal piloté où la météo, la marée et la disponibilité des quais rythment les entrées.";
   }
-  return "Sa position correspond à une zone d'attente ou d'approche avant entrée dans l'estuaire de la Loire.";
+  return null;
 }
 
 function buildSummary(ship: OffshoreShip, now: Date, distanceKm: number, wait: number | null) {
   const voyageHours = hoursBetween(toDate(ship.lastDeparturePort.departedAt), now);
   const departure = knownText(ship.lastDeparturePort.name)
-    ? `${voyageLabel(voyageHours)} de ${ship.lastDeparturePort.name} (${ship.lastDeparturePort.country})`
-    : "dont le dernier port n'est pas confirmé par le cache AIS gratuit";
+    ? ` ${voyageLabel(voyageHours)} de ${ship.lastDeparturePort.name} (${ship.lastDeparturePort.country}).`
+    : "";
   const destination = knownText(ship.destination)
-    ? `avec ${destinationLabel(ship.destination)} comme destination déclarée`
-    : "sans destination AIS confirmée";
+    ? `, destination AIS ${destinationLabel(ship.destination)}`
+    : "";
   const movement =
     ship.statusGroup === "Underway"
       ? `avance à ${ship.speedKnots.toFixed(1)} noeuds`
@@ -204,24 +281,36 @@ function buildSummary(ship: OffshoreShip, now: Date, distanceKm: number, wait: n
           : `attend au mouillage depuis ${formatHours(wait)}`;
   return (
     `${ship.name}, ${ship.vesselType.toLowerCase()} sous pavillon ${ship.flagCountry}, ` +
-    `${departure}. ` +
-    `Il ${movement}, cap ${Math.round(ship.headingDeg)}°, à environ ${distanceKm.toFixed(1)} km du Pouliguen, ` +
-    `${destination}.`
+    `observé par AIS à environ ${distanceKm.toFixed(1)} km du Pouliguen.` +
+    departure +
+    ` Il ${movement}, cap ${Math.round(ship.headingDeg)}°${destination}.`
   );
 }
 
 function buildWhy(ship: OffshoreShip, wait: number | null) {
+  const context = destinationContext(ship);
+  if (!context) {
+    if (ship.statusGroup === "Underway") {
+      return "L'AIS indique un navire en route, mais sa destination n'est pas assez précise pour expliquer son passage avec certitude.";
+    }
+    if (ship.statusGroup === "Working") {
+      return "L'AIS indique une opération dans la zone, sans destination ou mission assez détaillée pour confirmer le contexte.";
+    }
+    const waitText =
+      wait != null ? ` depuis ${formatHours(wait)}` : "";
+    return `L'AIS le montre au mouillage${waitText}, mais sans destination déclarée fiable. Le motif exact reste donc non confirmé.`;
+  }
   const action =
     ship.statusGroup === "Underway"
       ? "Il est en approche et suit probablement la file d'entrée vers l'estuaire."
       : ship.statusGroup === "Working"
         ? "Il ne fait pas une simple escale commerciale : son statut indique une opération ou une manoeuvre spécialisée."
-        : "Il attend probablement une autorisation, un pilote, un quai disponible ou une fenêtre de marée favorable.";
+        : "";
   const waitText =
     wait != null && wait >= 12
       ? ` Son attente de ${formatHours(wait)} suggère une planification portuaire plutôt qu'un simple passage rapide.`
       : "";
-  return `${action} ${destinationContext(ship)}${waitText}`;
+  return `${action ? `${action} ` : ""}${context}${waitText}`;
 }
 
 function buildFact(ship: OffshoreShip, distanceKm: number, wait: number | null) {
@@ -230,14 +319,17 @@ function buildFact(ship: OffshoreShip, distanceKm: number, wait: number | null) 
   }
   if (wait != null && wait >= 24) {
     const destination = knownText(ship.destination)
-      ? `, avec ${destinationLabel(ship.destination)} comme destination déclarée`
+      ? `, destination AIS ${destinationLabel(ship.destination)}`
       : "";
     return `${ship.name} attend au mouillage depuis ${formatHours(wait)}, à ${distanceKm.toFixed(1)} km du Pouliguen${destination}.`;
   }
   if (ship.statusGroup === "Working") {
     return `${ship.name} raconte l'autre trafic de la baie : les navires de service liés au parc éolien.`;
   }
-  return `${ship.name} se trouve à ${distanceKm.toFixed(1)} km du centre du Pouliguen.`;
+  if (!knownText(ship.destination)) {
+    return `${ship.name} n'émet pas de destination AIS exploitable ; son contexte reste donc à confirmer.`;
+  }
+  return `${ship.name} déclare ${destinationLabel(ship.destination)} côté AIS, à ${distanceKm.toFixed(1)} km du Pouliguen.`;
 }
 
 function horizonScore(ship: OffshoreShip, distanceKm: number, distanceFromLaBauleKm: number): number {

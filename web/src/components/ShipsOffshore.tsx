@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import ShipMap from "./ShipMap";
 import {
+  decodeAisRoute,
   enrichShipCache,
   fetchOffshoreShips,
   formatDateTime,
@@ -40,7 +41,9 @@ function numberLabel(value: number): string {
 
 function knownValue(value: string | null | undefined): boolean {
   if (!value) return false;
-  return !/^(undefined|null|non connu|non confirm|non déclar|unknown|n\/a)$/i.test(value.trim());
+  return !/^(undefined|null|non connu.*|non confirm.*|non déclar.*|unknown|n\/a)$/i.test(
+    value.trim(),
+  );
 }
 
 function dimensionLabel(value: number, unit: string): string {
@@ -79,6 +82,92 @@ function matchesShipSearch(ship: EnrichedShip, searchTerm: string): boolean {
   ]
     .filter((value): value is string => typeof value === "string" && knownValue(value))
     .some((value) => normalizeSearch(value).includes(query));
+}
+
+function shipNames(ships: EnrichedShip[], max = 2): string {
+  const names = ships.slice(0, max).map((ship) => ship.name);
+  if (ships.length > max) names.push(`+${ships.length - max}`);
+  return names.join(", ");
+}
+
+function plural(count: number, singular: string, pluralLabel: string): string {
+  return count > 1 ? pluralLabel : singular;
+}
+
+function buildInterestingFacts(ships: EnrichedShip[]): string[] {
+  const facts: string[] = [];
+  const addFact = (fact: string | null | undefined) => {
+    if (fact && !facts.includes(fact)) facts.push(fact);
+  };
+
+  const anchored = ships.filter((ship) => ship.statusGroup === "Anchored");
+  const tankers = ships.filter((ship) => ship.vesselTypeGroup === "Tanker");
+  const cargoes = ships.filter((ship) => ship.vesselTypeGroup === "Cargo");
+  const dongesShips = ships.filter((ship) => /donges|frdon/i.test(ship.destinationLabel));
+  const routeShip = ships.find((ship) => knownValue(ship.destination) && decodeAisRoute(ship.destination));
+  const largestShip = ships
+    .filter((ship) => ship.lengthM > 0)
+    .sort((a, b) => b.lengthM - a.lengthM)[0];
+  const longestWait = anchored
+    .filter((ship) => ship.timeAtAnchorHours != null)
+    .sort((a, b) => (b.timeAtAnchorHours ?? 0) - (a.timeAtAnchorHours ?? 0))[0];
+  const foreignShips = ships.filter((ship) => ship.flagCode !== "FR");
+  const missingDestinations = ships.filter((ship) => !knownValue(ship.destination));
+
+  if (dongesShips.length > 0) {
+    addFact(
+      dongesShips.length === 1
+        ? `${dongesShips[0].name} déclare Donges comme destination AIS, typique des escales pétrolières de l'estuaire.`
+        : `${dongesShips.length} ${plural(dongesShips.length, "navire déclare", "navires déclarent")} Donges côté AIS : ${shipNames(dongesShips, 3)}.`,
+    );
+  } else if (tankers.length > 0) {
+    addFact(
+      `${tankers.length} ${plural(tankers.length, "tanker est", "tankers sont")} dans la sélection : ${shipNames(tankers, 3)}.`,
+    );
+  }
+
+  if (routeShip) {
+    const route = decodeAisRoute(routeShip.destination);
+    if (route) {
+      addFact(
+        /donges/i.test(route)
+          ? `${routeShip.name} affiche une route AIS ${route}, un indice fort vers le terminal pétrolier de l'estuaire.`
+          : `${routeShip.name} affiche une route AIS ${route}, ce qui donne un indice rare sur son voyage.`,
+      );
+    }
+  }
+
+  if (largestShip) {
+    addFact(
+      `${largestShip.name} est la plus grande silhouette AIS ici : ${largestShip.lengthM} m à ${largestShip.distanceFromLePouliguenKm.toFixed(1)} km du Pouliguen.`,
+    );
+  }
+
+  if (longestWait?.timeAtAnchorHours != null && longestWait.timeAtAnchorHours >= 1) {
+    addFact(
+      `${longestWait.name} a le mouillage le plus long mesuré dans ce cache : ${formatHours(longestWait.timeAtAnchorHours)}.`,
+    );
+  }
+
+  if (cargoes.length > 0 && tankers.length === 0) {
+    addFact(
+      `${cargoes.length} ${plural(cargoes.length, "cargo ressort", "cargos ressortent")} dans la sélection : ${shipNames(cargoes, 3)}.`,
+    );
+  }
+
+  if (foreignShips.length >= 2) {
+    addFact(
+      `${foreignShips.length} pavillons non français apparaissent dans ce filtre, surtout ${shipNames(foreignShips, 3)}.`,
+    );
+  }
+
+  if (missingDestinations.length >= Math.max(3, Math.ceil(ships.length / 2))) {
+    addFact(
+      `${missingDestinations.length} AIS sur ${ships.length} ne déclarent pas de destination exploitable ; les explications restent donc volontairement prudentes.`,
+    );
+  }
+
+  return facts.slice(0, 4);
 }
 
 function StatCard({
@@ -296,18 +385,7 @@ export default function ShipsOffshore() {
   const stats = useMemo(() => offshoreShipStats(filteredShips), [filteredShips]);
   const selectedShip =
     filteredShips.find((ship) => ship.mmsi === selectedMmsi) ?? filteredShips[0] ?? null;
-  const interestingFacts = useMemo(
-    () =>
-      filteredShips
-        .slice()
-        .sort((a, b) => {
-          const waitA = a.timeAtAnchorHours ?? -1;
-          const waitB = b.timeAtAnchorHours ?? -1;
-          return waitB - waitA || b.grossTonnage - a.grossTonnage;
-        })
-        .slice(0, 3),
-    [filteredShips],
-  );
+  const interestingFacts = useMemo(() => buildInterestingFacts(filteredShips), [filteredShips]);
   const generatedAt = cache ? formatDateTime(cache.generatedAt) : "";
   const isDemoCache = cache?.sourceMode !== "api-cache";
 
@@ -543,12 +621,12 @@ export default function ShipsOffshore() {
               {interestingFacts.length > 0 && (
                 <section className="interesting-facts">
                   <div className="event-heading">
-                    <h3>Interesting Facts</h3>
+                    <h3>À remarquer</h3>
                     <span>{filteredShips.length} navires filtrés</span>
                   </div>
                   <ul>
-                    {interestingFacts.map((ship) => (
-                      <li key={ship.mmsi}>{ship.fact}</li>
+                    {interestingFacts.map((fact) => (
+                      <li key={fact}>{fact}</li>
                     ))}
                   </ul>
                 </section>
