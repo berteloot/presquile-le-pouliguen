@@ -1,0 +1,60 @@
+name: AIS Offshore Cache
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: ais-offshore-cache
+  cancel-in-progress: true
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install web dependencies
+        working-directory: web
+        run: npm ci
+
+      - name: Refresh AIS cache
+        env:
+          AISSTREAM_API_KEY: ${{ secrets.AISSTREAM_API_KEY }}
+          AISSTREAM_SECONDS: "210"
+        run: |
+          if [ -z "$AISSTREAM_API_KEY" ]; then
+            echo "AISSTREAM_API_KEY secret is missing; skipping AIS cache refresh."
+            exit 0
+          fi
+          node tools/build_ais_cache.mjs
+
+      - name: Verify build
+        working-directory: web
+        run: |
+          npm run lint
+          npm run build
+
+      - name: Commit cache update
+        run: |
+          if git diff --quiet -- web/public/data/offshore-ships.json; then
+            echo "AIS cache unchanged."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add web/public/data/offshore-ships.json
+          git commit -m "Refresh AIS offshore cache"
+          git push

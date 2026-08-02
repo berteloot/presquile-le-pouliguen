@@ -102,6 +102,11 @@ needed for verified previous ports and full time-at-anchor history; this app
 only preserves anchor duration across successive cache refreshes for the same
 MMSI.
 
+GitHub Actions: `.github/workflows/ais-cache.yml` refreshes the offshore AIS
+cache every 30 minutes when the repository secret `AISSTREAM_API_KEY` is set.
+The workflow listens for a short window, writes the static JSON cache, verifies
+the web build and commits only when the cache changed.
+
 ## Layout
 
 ```
