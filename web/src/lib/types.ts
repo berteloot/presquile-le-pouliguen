@@ -100,6 +100,10 @@ export interface MarineSeries {
   hourlyTimes: Date[];
   waveHeight: (number | null)[];
   seaTemp: (number | null)[];
+  tideSource: "open-meteo" | "shom";
+  tideSourceLabel: string;
+  tideGeneratedAt?: Date;
+  tideExtrema?: TideExtreme[];
   fetchedAt: Date;
 }
 
@@ -107,6 +111,9 @@ export interface TideExtreme {
   type: "high" | "low";
   time: Date;
   level: number;
+  coefficient?: number | null;
+  officialHeightM?: number | null;
+  source?: "open-meteo" | "shom";
 }
 
 export interface LocalEvent {

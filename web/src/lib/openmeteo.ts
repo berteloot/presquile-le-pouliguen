@@ -1,5 +1,27 @@
-import { OPEN_METEO_FORECAST, OPEN_METEO_MARINE, openMeteoMarineForDate } from "../config";
-import type { MarineSeries, WeatherNow } from "./types";
+import {
+  OPEN_METEO_FORECAST,
+  OPEN_METEO_MARINE,
+  SHOM_TIDES_DATA_URL,
+  openMeteoMarineForDate,
+} from "../config";
+import type { MarineSeries, TideExtreme, WeatherNow } from "./types";
+
+interface ShomTideCache {
+  generatedAt: string;
+  sourceMode: "not-configured" | "shom-cache";
+  harbor: {
+    cst: string;
+    name: string;
+  };
+  events: {
+    type: "high" | "low";
+    time: string;
+    heightM?: number | null;
+    coefficient?: number | null;
+  }[];
+}
+
+let shomCachePromise: Promise<ShomTideCache | null> | null = null;
 
 export async function fetchWeather(): Promise<WeatherNow> {
   const res = await fetch(OPEN_METEO_FORECAST);
@@ -38,14 +60,17 @@ async function fetchMarineUrl(url: string): Promise<MarineSeries> {
   if (j.error) throw new Error(`marine API ${j.reason ?? "error"}`);
   // Sea level rides on the 15-minute series for tide-time precision; waves
   // and water temperature stay hourly. Both series carry their own times.
-  return {
+  const series: MarineSeries = {
     times: j.minutely_15.time.map((t: string) => new Date(t)),
     seaLevel: j.minutely_15.sea_level_height_msl,
     hourlyTimes: j.hourly.time.map((t: string) => new Date(t)),
     waveHeight: j.hourly.wave_height,
     seaTemp: j.hourly.sea_surface_temperature,
+    tideSource: "open-meteo",
+    tideSourceLabel: "Open-Meteo Marine",
     fetchedAt: new Date(),
   };
+  return applyShomTideCache(series);
 }
 
 export async function fetchMarine(): Promise<MarineSeries> {
@@ -105,4 +130,71 @@ const DIRECTIONS = [
 
 export function windDirectionLabel(deg: number): string {
   return DIRECTIONS[Math.round(deg / 22.5) % 16];
+}
+
+async function fetchShomTideCache(): Promise<ShomTideCache | null> {
+  if (!shomCachePromise) {
+    shomCachePromise = fetch(`${SHOM_TIDES_DATA_URL}?t=${Date.now()}`, { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .catch(() => null);
+  }
+  return shomCachePromise;
+}
+
+function parisDateKey(date: Date): string {
+  const parts = new Intl.DateTimeFormat("fr-CA", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    timeZone: "Europe/Paris",
+  }).formatToParts(date);
+  const year = parts.find((part) => part.type === "year")?.value ?? "1970";
+  const month = parts.find((part) => part.type === "month")?.value ?? "01";
+  const day = parts.find((part) => part.type === "day")?.value ?? "01";
+  return `${year}-${month}-${day}`;
+}
+
+function interpolateSeaLevel(series: MarineSeries, time: Date): number | null {
+  const target = time.getTime();
+  for (let i = 0; i < series.times.length - 1; i++) {
+    const aTime = series.times[i].getTime();
+    const bTime = series.times[i + 1].getTime();
+    if (target < aTime || target > bTime) continue;
+    const a = series.seaLevel[i];
+    const b = series.seaLevel[i + 1];
+    if (a == null || b == null) return null;
+    const ratio = (target - aTime) / (bTime - aTime || 1);
+    return a + (b - a) * ratio;
+  }
+  return null;
+}
+
+async function applyShomTideCache(series: MarineSeries): Promise<MarineSeries> {
+  const cache = await fetchShomTideCache();
+  if (!cache || cache.sourceMode !== "shom-cache") return series;
+
+  const availableDays = new Set(series.times.map(parisDateKey));
+  const tideExtrema: TideExtreme[] = cache.events
+    .map((event) => {
+      const time = new Date(event.time);
+      return {
+        type: event.type,
+        time,
+        level: interpolateSeaLevel(series, time) ?? event.heightM ?? 0,
+        coefficient: event.coefficient ?? null,
+        officialHeightM: event.heightM ?? null,
+        source: "shom" as const,
+      };
+    })
+    .filter((event) => availableDays.has(parisDateKey(event.time)))
+    .sort((a, b) => a.time.getTime() - b.time.getTime());
+
+  if (tideExtrema.length === 0) return series;
+  return {
+    ...series,
+    tideSource: "shom",
+    tideSourceLabel: `SHOM ${cache.harbor.name}`,
+    tideGeneratedAt: new Date(cache.generatedAt),
+    tideExtrema,
+  };
 }

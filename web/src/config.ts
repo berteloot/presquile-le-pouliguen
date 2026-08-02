@@ -36,6 +36,7 @@ export const GTFS_RT_ALERTS = `${RT_BASE}/lila-presquile-cap-atlantique-gtfs-rt-
 export const TRANSIT_DATA_URL = `${import.meta.env.BASE_URL}data/transit.json`;
 export const EVENTS_DATA_URL = `${import.meta.env.BASE_URL}data/events.json`;
 export const CINEMA_PAX_DATA_URL = `${import.meta.env.BASE_URL}data/cinema-pax.json`;
+export const SHOM_TIDES_DATA_URL = `${import.meta.env.BASE_URL}data/shom-tides.json`;
 
 export const VEHICLES_REFRESH_MS = 20_000;
 export const TRIP_UPDATES_REFRESH_MS = 30_000;

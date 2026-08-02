@@ -1,0 +1,59 @@
+name: SHOM Tide Cache
+
+on:
+  schedule:
+    - cron: "13 2 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: shom-tide-cache
+  cancel-in-progress: true
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install web dependencies
+        working-directory: web
+        run: npm ci
+
+      - name: Refresh SHOM tide cache
+        env:
+          SHOM_ACCESS_KEY: ${{ secrets.SHOM_ACCESS_KEY }}
+          SHOM_USERNAME: ${{ secrets.SHOM_USERNAME }}
+          SHOM_PASSWORD: ${{ secrets.SHOM_PASSWORD }}
+          SHOM_HARBOR: LE_POULIGUEN
+          SHOM_HARBOR_NAME: Le Pouliguen
+          SHOM_DURATION_DAYS: "4"
+        run: node tools/build_shom_tide_cache.mjs
+
+      - name: Verify build
+        working-directory: web
+        run: |
+          npm run lint
+          npm run build
+
+      - name: Commit cache update
+        run: |
+          if git diff --quiet -- web/public/data/shom-tides.json; then
+            echo "SHOM tide cache unchanged."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add web/public/data/shom-tides.json
+          git commit -m "Refresh SHOM tide cache"
+          git push

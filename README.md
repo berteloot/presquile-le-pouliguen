@@ -28,7 +28,8 @@ Working MVP, static-only architecture, verified running locally:
 - Sea state and tide curve with next high/low water, trend, moon phase and
   approximate spring-tide timing
   (Open-Meteo Marine API `sea_level_height_msl`, model data, flagged as
-  indicative on the page)
+  indicative on the page; optional SHOM static tide cache for official harbor
+  high/low water and coefficients)
 - Next bus departures per stop with real-time delays
   (Lila Presqu'île static GTFS preprocessed at build time + GTFS-RT TripUpdate)
 - Live bus map (Leaflet + GTFS-RT VehiclePosition, 20 s refresh)
@@ -97,6 +98,12 @@ AIS provider/export. Most other operational data is queried live from the
 browser. The Cinéma Pax cache also has a scheduled GitHub Actions refresh
 workflow.
 
+SHOM tide cache: `node tools/build_shom_tide_cache.mjs` writes
+`web/public/data/shom-tides.json` for `LE_POULIGUEN` when `SHOM_ACCESS_KEY`,
+`SHOM_USERNAME` and `SHOM_PASSWORD` are available. The browser never calls SHOM
+directly; it reads the public JSON cache and falls back to Open-Meteo Marine
+when the licensed SHOM cache is absent.
+
 AIS note: the deployed app remains a free static page. AISstream is consumed
 only during cache generation, then the browser reads
 `web/public/data/offshore-ships.json`. A longer historical AIS archive is still
@@ -108,6 +115,9 @@ GitHub Actions: `.github/workflows/ais-cache.yml` refreshes the offshore AIS
 cache every 30 minutes when the repository secret `AISSTREAM_API_KEY` is set.
 The workflow listens for a six-minute window, writes the static JSON cache,
 verifies the web build and commits only when the cache changed.
+`.github/workflows/shom-tide-cache.yml` refreshes the SHOM tide cache daily
+when the repository secrets `SHOM_ACCESS_KEY`, `SHOM_USERNAME` and
+`SHOM_PASSWORD` are set.
 
 ## Layout
 
@@ -116,6 +126,9 @@ tools/build_transit_data.py   Downloads the Lila GTFS zip, keeps stops inside
                               the Le Pouliguen bounding box, writes compact
                               web/public/data/transit.json (~440 KB).
                               Re-run when the operator updates the feed.
+tools/build_shom_tide_cache.mjs
+                              Generates the optional SHOM SUP Marée cache from
+                              GitHub secrets; never used from the browser.
 web/                          Vite + React + TypeScript PWA.
   src/lib/openmeteo.ts        Weather + marine fetchers, WMO labels (French).
   src/lib/tides.ts            Tide extrema from hourly sea level (parabolic
@@ -127,6 +140,8 @@ web/                          Vite + React + TypeScript PWA.
   public/data/transit.json    Generated, committed.
   public/data/events.json     Curated/snapshotted events merged into agenda.
   public/data/cinema-pax.json Generated, committed Cinéma Pax schedule cache.
+  public/data/shom-tides.json Optional official tide cache, empty until SHOM
+                              secrets are configured.
 ```
 
 ## Run
@@ -146,7 +161,7 @@ python3 ../tools/build_local_data.py cinema # refresh Cinéma Pax cache
 | Domain | Source | Access |
 |---|---|---|
 | Weather | Open-Meteo forecast API | keyless, CORS open |
-| Sea, tides | Open-Meteo Marine API | keyless, CORS open; model data, not SHOM official predictions |
+| Sea, tides | Open-Meteo Marine API + optional SHOM SUP Marée cache | Open-Meteo is keyless/CORS open; SHOM is licensed and cached server-side |
 | Bus schedules | Lila Presqu'île GTFS, transport.data.gouv.fr resource 83762 | keyless download |
 | Bus real time | GTFS-RT vehicle-position / trip-update / service-alert via proxy.transport.data.gouv.fr (lila-presquile-cap-atlantique-*) | keyless, CORS open |
 | Events | lepouliguen.fr (manual for now) | scrape or feed later |
@@ -154,7 +169,8 @@ python3 ../tools/build_local_data.py cinema # refresh Cinéma Pax cache
 ## Phase 2 candidates (from the research)
 
 - Trains: SNCF GTFS + GTFS-RT (next TER at Le Pouliguen station, delays)
-- Official SHOM tide predictions (licensed API) to replace model sea level
+- Full SHOM water-level curve if the licensed API output is available in a
+  stable parseable format
 - Bathing-water quality results in-app (baignades.sante.gouv.fr has no clean
   API; needs a scraper or the annual data.gouv dataset)
 - Shellfish closure status in-app (prefecture arrêtés are PDFs; needs parsing)

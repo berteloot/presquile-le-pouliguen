@@ -562,7 +562,10 @@ export default function App() {
       .slice(0, 3);
   }, [trains, trainDelays, selectedDateIsToday, selectedDateReference]);
 
-  const extrema = useMemo(() => (marine ? findExtrema(marine) : []), [marine]);
+  const extrema = useMemo(
+    () => (marine ? (marine.tideExtrema ?? findExtrema(marine)) : []),
+    [marine],
+  );
   const upcoming = useMemo(() => nextExtremes(extrema, now).slice(0, 2), [extrema, now]);
 
   const selectedDayExtrema = useMemo(
@@ -1233,6 +1236,9 @@ export default function App() {
                         {e.type === "high" ? "Marée haute" : "Marée basse"}
                       </span>
                       <span className="tide-time">{fmtTime.format(e.time)}</span>
+                      {e.coefficient != null && (
+                        <small className="tide-coeff">coef. {Math.round(e.coefficient)}</small>
+                      )}
                     </div>
                   ))
                 ) : (
@@ -1254,9 +1260,11 @@ export default function App() {
               <p className="meta-line">
                 {seaTempSelected != null && <>Eau {seaTempSelected.toFixed(1)}°C · </>}
                 {waveSelected != null && <>vagues {waveSelected.toFixed(1)} m · </>}
-                horaires issus d'un modèle océanique (écart possible de 30 à 45
-                minutes). Phase lunaire indicative, coefficients officiels à vérifier
-                sur les sources maritimes avant navigation.
+                marées : {marine.tideSourceLabel}
+                {marine.tideSource === "open-meteo"
+                  ? " (modèle océanique, écart possible de 30 à 45 minutes)"
+                  : " (cache officiel SHOM)"}
+                . Phase lunaire indicative ; vérifier les avis officiels avant navigation.
               </p>
             </>
           ) : (
