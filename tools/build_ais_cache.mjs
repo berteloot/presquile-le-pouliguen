@@ -473,13 +473,11 @@ function buildAisstreamCache(records, existing, seconds, boundingBoxes) {
 
       return {
         mmsi: String(record.mmsi),
-        imo: String(
-          firstDefined(
-            knownText(record.imo) ? record.imo : undefined,
-            knownText(previousShip?.imo) ? previousShip.imo : undefined,
-            "",
-          ),
-        ),
+        imo: knownText(record.imo)
+          ? String(record.imo).trim()
+          : knownText(previousShip?.imo)
+            ? String(previousShip.imo).trim()
+            : "",
         name,
         callSign: firstDefined(
           knownText(record.callSign) ? record.callSign : undefined,
