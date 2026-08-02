@@ -1345,6 +1345,47 @@ main {
   font-weight: 750;
 }
 
+.ship-search {
+  grid-column: 1 / -1;
+}
+
+.ship-search span {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.ship-search input {
+  min-height: 44px;
+  width: 100%;
+  border: 1px solid #c8dbe6;
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 750;
+}
+
+.ship-search input::placeholder {
+  color: #6c7a86;
+  font-weight: 700;
+}
+
+.ship-search button {
+  min-height: 44px;
+  border: 1px solid var(--navy);
+  border-radius: 8px;
+  padding: 8px 12px;
+  background: var(--navy);
+  color: #fff;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
 .ship-stats {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

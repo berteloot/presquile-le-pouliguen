@@ -51,6 +51,36 @@ function optionalText(value: string | null | undefined, fallback = "non transmis
   return knownValue(value) ? (value ?? fallback) : fallback;
 }
 
+function normalizeSearch(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+function matchesShipSearch(ship: EnrichedShip, searchTerm: string): boolean {
+  const query = normalizeSearch(searchTerm);
+  if (!query) return true;
+
+  return [
+    ship.name,
+    ship.mmsi,
+    ship.imo,
+    ship.callSign,
+    ship.flagCountry,
+    ship.vesselType,
+    ship.vesselTypeGroup,
+    ship.navStatus,
+    ship.destination,
+    ship.destinationLabel,
+    ship.lastDeparturePort.name,
+    ship.lastDeparturePort.country,
+  ]
+    .filter((value): value is string => typeof value === "string" && knownValue(value))
+    .some((value) => normalizeSearch(value).includes(query));
+}
+
 function StatCard({
   label,
   value,
@@ -216,6 +246,7 @@ function ShipDetail({
 export default function ShipsOffshore() {
   const [cache, setCache] = useState<OffshoreShipCache | null>(null);
   const [shipScope, setShipScope] = useState<ShipScope>("horizon");
+  const [shipSearch, setShipSearch] = useState("");
   const [selectedType, setSelectedType] = useState<ShipTypeGroup | "all">("all");
   const [selectedStatus, setSelectedStatus] = useState<ShipStatusGroup | "all">("all");
   const [selectedMmsi, setSelectedMmsi] = useState<string | null>(null);
@@ -256,10 +287,11 @@ export default function ShipsOffshore() {
     () =>
       scopedShips.filter(
         (ship) =>
+          matchesShipSearch(ship, shipSearch) &&
           (selectedType === "all" || ship.vesselTypeGroup === selectedType) &&
           (selectedStatus === "all" || ship.statusGroup === selectedStatus),
       ),
-    [scopedShips, selectedType, selectedStatus],
+    [scopedShips, shipSearch, selectedType, selectedStatus],
   );
   const stats = useMemo(() => offshoreShipStats(filteredShips), [filteredShips]);
   const selectedShip =
@@ -375,6 +407,32 @@ export default function ShipsOffshore() {
               </div>
 
               <div className="ship-controls" aria-label="Filtres navires">
+                <label className="ship-search">
+                  Recherche
+                  <span>
+                    <input
+                      type="search"
+                      value={shipSearch}
+                      onChange={(event) => {
+                        setShipSearch(event.target.value);
+                        setSelectedMmsi(null);
+                      }}
+                      placeholder="Nom, MMSI, IMO, destination..."
+                      aria-label="Rechercher un navire"
+                    />
+                    {shipSearch && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShipSearch("");
+                          setSelectedMmsi(null);
+                        }}
+                      >
+                        Effacer
+                      </button>
+                    )}
+                  </span>
+                </label>
                 <label>
                   Type
                   <select
@@ -474,7 +532,9 @@ export default function ShipsOffshore() {
                 </div>
               ) : (
                 <p className="placeholder">
-                  {shipScope === "horizon"
+                  {shipSearch
+                    ? `Aucun navire ne correspond à "${shipSearch}".`
+                    : shipScope === "horizon"
                     ? "Aucun gros navire au mouillage détecté dans la fenêtre AIS actuelle. Essayez Tout AIS ou attendez le prochain rafraîchissement."
                     : "Aucun navire ne correspond aux filtres."}
                 </p>
