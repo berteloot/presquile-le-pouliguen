@@ -1135,6 +1135,377 @@ main {
   box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
 }
 
+/* Offshore ships */
+.ships-card {
+  scroll-margin-top: 82px;
+}
+
+.ships-header {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+@media (min-width: 760px) {
+  .ships-header {
+    grid-template-columns: 1fr auto;
+    align-items: start;
+  }
+}
+
+.section-eyebrow {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--sea-link);
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.ships-card h2 {
+  margin: 0;
+  font-size: 30px;
+}
+
+.ships-header p {
+  margin: 6px 0 0;
+  color: var(--muted);
+}
+
+.ship-source {
+  display: inline-grid;
+  gap: 2px;
+  justify-items: start;
+  border: 1px solid #c8dbe6;
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: #f7fafc;
+  color: var(--navy);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.ship-source small {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.ship-controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.ship-controls label {
+  display: grid;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.ship-controls select {
+  min-height: 44px;
+  width: 100%;
+  border: 1px solid #c8dbe6;
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 750;
+}
+
+.ship-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.ship-stat {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px;
+  background: #f9fbfc;
+}
+
+.ship-stat span,
+.ship-stat small {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.ship-stat span {
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.ship-stat strong {
+  display: block;
+  margin: 4px 0;
+  color: var(--navy);
+  font-size: 24px;
+  line-height: 1.1;
+}
+
+.ship-layout {
+  display: grid;
+  gap: 14px;
+}
+
+@media (min-width: 860px) {
+  .ship-layout {
+    grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+    align-items: start;
+  }
+}
+
+.ship-map {
+  height: 430px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.ship-marker-wrap {
+  background: none;
+  border: none;
+}
+
+.ship-marker {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 2px solid #fff;
+  border-radius: 999px;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(10, 33, 53, 0.35);
+  cursor: pointer;
+}
+
+.ship-marker span {
+  display: inline-block;
+  font-size: 15px;
+  line-height: 1;
+  transform: rotate(var(--ship-heading));
+}
+
+.ship-marker-anchored {
+  background: #7b6413;
+}
+
+.ship-marker-underway {
+  background: var(--sea);
+}
+
+.ship-marker-working {
+  background: var(--alert);
+}
+
+.ship-marker-active {
+  box-shadow: 0 0 0 4px rgba(10, 107, 171, 0.24), 0 2px 8px rgba(10, 33, 53, 0.4);
+}
+
+.ship-list {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 10px 0 0;
+  padding: 0;
+}
+
+.ship-row {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 8px;
+  row-gap: 2px;
+  width: 100%;
+  min-height: 58px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ship-row:hover,
+.ship-row-active {
+  border-color: var(--sea);
+  background: var(--sea-soft);
+}
+
+.ship-row span {
+  grid-row: span 2;
+}
+
+.ship-row strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 14px;
+  line-height: 1.25;
+}
+
+.ship-row small {
+  grid-column: 2;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.ship-detail {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px;
+  background: #fff;
+}
+
+.ship-detail-head {
+  display: grid;
+  gap: 10px;
+}
+
+.ship-kicker {
+  display: block;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.ship-detail h3 {
+  margin: 2px 0 8px;
+  color: var(--navy);
+  font-size: 25px;
+}
+
+.ship-detail p {
+  margin: 0;
+  color: var(--ink);
+  line-height: 1.55;
+}
+
+.ship-status-pill {
+  justify-self: start;
+  border-radius: 999px;
+  padding: 5px 9px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.ship-status-anchored {
+  background: #7b6413;
+}
+
+.ship-status-underway {
+  background: var(--sea);
+}
+
+.ship-status-working {
+  background: var(--alert);
+}
+
+.ship-status-moored {
+  background: var(--navy);
+}
+
+.ship-tabs {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 6px;
+  margin: 14px 0;
+}
+
+.ship-tab {
+  min-height: 42px;
+  border: 1px solid #c8dbe6;
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: #fff;
+  color: var(--navy);
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.ship-tab-active {
+  border-color: var(--navy);
+  background: var(--navy);
+  color: #fff;
+}
+
+.ship-facts,
+.ship-why dl {
+  display: grid;
+  gap: 9px;
+  margin: 0;
+}
+
+.ship-facts div,
+.ship-why dl div {
+  display: grid;
+  grid-template-columns: minmax(96px, max-content) 1fr;
+  gap: 10px;
+  border-top: 1px solid var(--line);
+  padding-top: 9px;
+}
+
+.ship-facts dt,
+.ship-why dt {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.ship-facts dd,
+.ship-why dd {
+  margin: 0;
+  min-width: 0;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.ship-why {
+  display: grid;
+  gap: 13px;
+}
+
+.interesting-facts {
+  margin-top: 16px;
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+}
+
+.interesting-facts h3 {
+  margin: 0;
+}
+
+.interesting-facts ul {
+  margin: 10px 0 0;
+  padding-left: 20px;
+}
+
+.interesting-facts li {
+  margin: 7px 0;
+}
+
 /* Map popups */
 .leaflet-popup-content {
   font-family: inherit;
@@ -1142,7 +1513,8 @@ main {
 }
 
 .stop-popup h3,
-.bus-popup h3 {
+.bus-popup h3,
+.ship-popup h3 {
   margin: 0 0 8px;
   font-size: 17px;
   color: var(--navy);
@@ -2624,6 +2996,30 @@ footer p {
 
   .bus-map {
     height: 320px;
+  }
+
+  .ship-controls,
+  .ship-stats,
+  .ship-list {
+    grid-template-columns: 1fr;
+  }
+
+  .ships-card h2 {
+    font-size: 24px;
+  }
+
+  .ship-map {
+    height: 310px;
+  }
+
+  .ship-facts div,
+  .ship-why dl div {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+
+  .ship-tabs {
+    grid-template-columns: 1fr;
   }
 
   .poi-map {

@@ -40,6 +40,9 @@ Working MVP, static-only architecture, verified running locally:
   with VO / young-audience hints, running time and direct ticket/source links
 - Beaches: the commune's 4 official bathing sites with descriptions and links,
   plus a link to official water quality (baignades.sante.gouv.fr)
+- Offshore ships: static AIS-ready cache for vessels off Le Pouliguen / La
+  Baule, with map, filters, wait-time estimates, origin/previous-port context
+  and generated natural-language explanations
 - Waste collection: next door-to-door pickups (bac vert / bac jaune) for the
   commune from the Cap Atlantique calendar, nearest glass drop-off point,
   and local waste center address/opening hours
@@ -83,9 +86,16 @@ directly. No backend is required for Phase 1, which means free static hosting.
 
 Data refresh: `python3 tools/build_transit_data.py` (bus GTFS) and
 `python3 tools/build_local_data.py all` (trains, DAE, chargers, curated
-agenda snapshot, Cinéma Pax cache). Most other operational data is queried live
-from the browser. The Cinéma Pax cache also has a scheduled GitHub Actions
-refresh workflow.
+agenda snapshot, Cinéma Pax cache). `node tools/build_ais_cache.mjs` refreshes
+the offshore-ship cache; set `AIS_CACHE_SOURCE_URL` and optionally
+`AIS_API_KEY` to point it at a real AIS provider/export. Most other operational
+data is queried live from the browser. The Cinéma Pax cache also has a
+scheduled GitHub Actions refresh workflow.
+
+AIS note: the deployed app remains a free static page. Real-time AIS and
+historical port calls usually require an API key, paid archive, or contributed
+receiver feed, so this project keeps AIS behind a replaceable static cache
+instead of requiring a Node server at runtime.
 
 ## Layout
 

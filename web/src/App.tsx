@@ -9,6 +9,7 @@ import Discover from "./components/Discover";
 import LanguageSwitcher from "./components/LanguageSwitcher";
 import MoonPhase from "./components/MoonPhase";
 import PoiMap from "./components/PoiMap";
+import ShipsOffshore from "./components/ShipsOffshore";
 import TideChart from "./components/TideChart";
 import VisitPlanner from "./components/VisitPlanner";
 import {
@@ -153,6 +154,7 @@ const NAV_LINKS = [
   { href: "#essentiel", label: "L'essentiel" },
   { href: "#deplacer", label: "Se déplacer" },
   { href: "#cote", label: "La côte" },
+  { href: "#navires", label: "Navires" },
   { href: "#aujourdhui", label: "Aujourd'hui" },
   { href: "#pratique", label: "Vie pratique" },
   { href: "#/decouvrir", label: "Découvrir" },
@@ -822,6 +824,12 @@ export default function App() {
           label="parking"
           status="source municipale 2026"
         />
+        <SourceHealthLink
+          href="#navires"
+          kind="static"
+          label="navires"
+          status="cache AIS statique"
+        />
       </section>
 
       <section className="essentials" id="essentiel" aria-label="L'essentiel maintenant">
@@ -1406,6 +1414,8 @@ export default function App() {
 
         </div>
 
+        <ShipsOffshore />
+
         <h2 className="section-title" id="aujourdhui">Aujourd'hui</h2>
 
         <DailyBriefing
@@ -1834,7 +1844,7 @@ export default function App() {
           transport.data.gouv.fr (bus, trains, temps réel), Cap Atlantique
           (plages, déchets, circuits, agenda), Département de
           Loire-Atlantique (info routes), OpenStreetMap (défibrillateurs),
-          fichier national IRVE (bornes de recharge).
+          fichier national IRVE (bornes de recharge), cache AIS navires.
         </p>
       </footer>
     </div>

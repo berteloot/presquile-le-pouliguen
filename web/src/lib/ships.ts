@@ -1,0 +1,271 @@
+import { LAT, LON } from "../config";
+
+const SHIPS_DATA_URL = "/data/offshore-ships.json";
+
+export type ShipStatusGroup = "Anchored" | "Underway" | "Working" | "Moored";
+export type ShipTypeGroup = "Cargo" | "Tanker" | "Passenger" | "Fishing" | "Service" | "Other";
+
+export interface ShipPortCall {
+  name: string;
+  country: string;
+  unlocode?: string;
+  departedAt?: string;
+}
+
+export interface OffshoreShip {
+  mmsi: string;
+  imo: string;
+  name: string;
+  callSign?: string;
+  flagCountry: string;
+  flagCode: string;
+  vesselType: string;
+  vesselTypeGroup: ShipTypeGroup;
+  lengthM: number;
+  beamM?: number;
+  grossTonnage: number;
+  deadweightTons?: number;
+  speedKnots: number;
+  headingDeg: number;
+  courseDeg?: number;
+  navStatus: string;
+  statusGroup: ShipStatusGroup;
+  destination: string;
+  lastDeparturePort: ShipPortCall;
+  eta?: string;
+  anchorStartedAt?: string | null;
+  position: {
+    lat: number;
+    lon: number;
+  };
+  updatedAt: string;
+  areaName: string;
+  cargoContext?: string;
+  sourceConfidence: "high" | "medium" | "low";
+}
+
+export interface OffshoreShipCache {
+  generatedAt: string;
+  sourceMode: "static-cache" | "api-cache";
+  coverageLabel: string;
+  center: {
+    lat: number;
+    lon: number;
+  };
+  notes: string[];
+  ships: OffshoreShip[];
+}
+
+export interface EnrichedShip extends OffshoreShip {
+  flagEmoji: string;
+  distanceFromLePouliguenKm: number;
+  distanceFromLaBauleKm: number;
+  timeAtAnchorHours: number | null;
+  voyageHours: number | null;
+  aiSummary: string;
+  whyHere: string;
+  fact: string;
+  coordinateLabel: string;
+}
+
+export interface OffshoreShipStats {
+  count: number;
+  anchoredCount: number;
+  movingCount: number;
+  averageWaitHours: number | null;
+  largestShip: EnrichedShip | null;
+  biggestTonnage: EnrichedShip | null;
+}
+
+const LA_BAULE = { lat: 47.2867, lon: -2.3908 };
+
+function toDate(value: string | null | undefined): Date | null {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function hoursBetween(start: Date | null, end: Date): number | null {
+  if (!start) return null;
+  return Math.max(0, (end.getTime() - start.getTime()) / 3_600_000);
+}
+
+function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number) {
+  const rad = Math.PI / 180;
+  const a =
+    Math.sin(((lat2 - lat1) * rad) / 2) ** 2 +
+    Math.cos(lat1 * rad) *
+      Math.cos(lat2 * rad) *
+      Math.sin(((lon2 - lon1) * rad) / 2) ** 2;
+  return 2 * 6371 * Math.asin(Math.sqrt(a));
+}
+
+function flagEmoji(code: string): string {
+  const cc = code.trim().toUpperCase();
+  if (!/^[A-Z]{2}$/.test(cc)) return "⚑";
+  return String.fromCodePoint(
+    ...cc.split("").map((char) => 127397 + char.charCodeAt(0)),
+  );
+}
+
+export function formatHours(hours: number | null): string {
+  if (hours == null) return "non connu";
+  if (hours < 1) return `${Math.round(hours * 60)} min`;
+  const days = Math.floor(hours / 24);
+  const rest = Math.round(hours % 24);
+  if (days <= 0) return `${Math.round(hours)} h`;
+  if (rest === 0) return `${days} j`;
+  return `${days} j ${rest} h`;
+}
+
+export function formatDateTime(value: string | null | undefined): string {
+  const date = toDate(value);
+  if (!date) return "non connue";
+  return date.toLocaleString("fr-FR", {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Europe/Paris",
+  });
+}
+
+export function statusLabel(status: ShipStatusGroup): string {
+  if (status === "Anchored") return "au mouillage";
+  if (status === "Underway") return "en route";
+  if (status === "Working") return "en opération";
+  return "à quai";
+}
+
+function voyageLabel(hours: number | null): string {
+  if (hours == null) return "depuis un port non confirmé";
+  return `parti il y a ${formatHours(hours)}`;
+}
+
+function destinationContext(ship: OffshoreShip): string {
+  if (/donges/i.test(ship.destination)) {
+    return "Donges concentre une partie des escales pétrolières de l'estuaire, avec des créneaux dépendants des quais, des marées et des pilotes.";
+  }
+  if (/montoir/i.test(ship.destination)) {
+    return "Montoir reçoit du vrac, du fret industriel et des marchandises spécialisées ; les navires attendent souvent leur fenêtre d'entrée dans l'estuaire.";
+  }
+  if (/éolien|eolien|wind/i.test(ship.destination)) {
+    return "Le parc éolien en mer de Saint-Nazaire crée un trafic de service : relève d'équipes, maintenance, matériel et inspections.";
+  }
+  if (/saint-nazaire|nantes/i.test(ship.destination)) {
+    return "L'accès à Nantes Saint-Nazaire se fait par un chenal piloté où la météo, la marée et la disponibilité des quais rythment les entrées.";
+  }
+  return "Sa position correspond à une zone d'attente ou d'approche avant entrée dans l'estuaire de la Loire.";
+}
+
+function buildSummary(ship: OffshoreShip, now: Date, distanceKm: number, wait: number | null) {
+  const voyageHours = hoursBetween(toDate(ship.lastDeparturePort.departedAt), now);
+  const waitClause =
+    wait == null
+      ? "son temps d'attente au mouillage n'est pas confirmé"
+      : `il attend au mouillage depuis ${formatHours(wait)}`;
+  const movement =
+    ship.statusGroup === "Underway"
+      ? `avance à ${ship.speedKnots.toFixed(1)} noeuds`
+      : waitClause;
+  return (
+    `${ship.name}, ${ship.vesselType.toLowerCase()} sous pavillon ${ship.flagCountry}, ` +
+    `${voyageLabel(voyageHours)} de ${ship.lastDeparturePort.name} (${ship.lastDeparturePort.country}). ` +
+    `Il ${movement}, cap ${Math.round(ship.headingDeg)}°, à environ ${distanceKm.toFixed(1)} km du Pouliguen, ` +
+    `avec ${ship.destination} comme destination déclarée.`
+  );
+}
+
+function buildWhy(ship: OffshoreShip, wait: number | null) {
+  const action =
+    ship.statusGroup === "Underway"
+      ? "Il est en approche et suit probablement la file d'entrée vers l'estuaire."
+      : ship.statusGroup === "Working"
+        ? "Il ne fait pas une simple escale commerciale : son statut indique une opération ou une manoeuvre spécialisée."
+        : "Il attend probablement une autorisation, un pilote, un quai disponible ou une fenêtre de marée favorable.";
+  const waitText =
+    wait != null && wait >= 12
+      ? ` Son attente de ${formatHours(wait)} suggère une planification portuaire plutôt qu'un simple passage rapide.`
+      : "";
+  return `${action} ${destinationContext(ship)}${waitText}`;
+}
+
+function buildFact(ship: OffshoreShip, distanceKm: number, wait: number | null) {
+  if (ship.grossTonnage >= 40000) {
+    return `${ship.name} est le plus impressionnant à l'oeil nu : ${ship.lengthM} m et ${ship.grossTonnage.toLocaleString("fr-FR")} GT.`;
+  }
+  if (wait != null && wait >= 24) {
+    return `${ship.name} est assez proche pour paraître immobile, mais son mouillage est déjà long : ${formatHours(wait)}.`;
+  }
+  if (ship.statusGroup === "Working") {
+    return `${ship.name} raconte l'autre trafic de la baie : les navires de service liés au parc éolien.`;
+  }
+  return `${ship.name} se trouve à ${distanceKm.toFixed(1)} km du centre du Pouliguen.`;
+}
+
+export function enrichShip(ship: OffshoreShip, cacheTime: Date): EnrichedShip {
+  const wait = hoursBetween(toDate(ship.anchorStartedAt), cacheTime);
+  const voyageHours = hoursBetween(toDate(ship.lastDeparturePort.departedAt), cacheTime);
+  const distanceFromLePouliguenKm = haversineKm(
+    LAT,
+    LON,
+    ship.position.lat,
+    ship.position.lon,
+  );
+  const distanceFromLaBauleKm = haversineKm(
+    LA_BAULE.lat,
+    LA_BAULE.lon,
+    ship.position.lat,
+    ship.position.lon,
+  );
+  return {
+    ...ship,
+    flagEmoji: flagEmoji(ship.flagCode),
+    distanceFromLePouliguenKm,
+    distanceFromLaBauleKm,
+    timeAtAnchorHours: wait,
+    voyageHours,
+    aiSummary: buildSummary(ship, cacheTime, distanceFromLePouliguenKm, wait),
+    whyHere: buildWhy(ship, wait),
+    fact: buildFact(ship, distanceFromLePouliguenKm, wait),
+    coordinateLabel: `${ship.position.lat.toFixed(4)}, ${ship.position.lon.toFixed(4)}`,
+  };
+}
+
+export function enrichShipCache(cache: OffshoreShipCache): EnrichedShip[] {
+  const cacheTime = toDate(cache.generatedAt) ?? new Date();
+  return cache.ships.map((ship) => enrichShip(ship, cacheTime));
+}
+
+export function offshoreShipStats(ships: EnrichedShip[]): OffshoreShipStats {
+  const anchored = ships.filter((ship) => ship.statusGroup === "Anchored");
+  const moving = ships.filter((ship) => ship.statusGroup === "Underway");
+  const waits = anchored
+    .map((ship) => ship.timeAtAnchorHours)
+    .filter((value): value is number => value != null);
+  return {
+    count: ships.length,
+    anchoredCount: anchored.length,
+    movingCount: moving.length,
+    averageWaitHours:
+      waits.length > 0 ? waits.reduce((sum, value) => sum + value, 0) / waits.length : null,
+    largestShip:
+      ships.slice().sort((a, b) => b.lengthM - a.lengthM)[0] ?? null,
+    biggestTonnage:
+      ships.slice().sort((a, b) => b.grossTonnage - a.grossTonnage)[0] ?? null,
+  };
+}
+
+export function uniqueShipTypes(ships: EnrichedShip[]): ShipTypeGroup[] {
+  return Array.from(new Set(ships.map((ship) => ship.vesselTypeGroup))).sort();
+}
+
+export function uniqueShipStatuses(ships: EnrichedShip[]): ShipStatusGroup[] {
+  return Array.from(new Set(ships.map((ship) => ship.statusGroup))).sort();
+}
+
+export async function fetchOffshoreShips(): Promise<OffshoreShipCache> {
+  const response = await fetch(SHIPS_DATA_URL);
+  if (!response.ok) throw new Error(`offshore ships HTTP ${response.status}`);
+  return (await response.json()) as OffshoreShipCache;
+}
