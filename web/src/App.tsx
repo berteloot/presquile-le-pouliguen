@@ -1260,11 +1260,12 @@ export default function App() {
               <p className="meta-line">
                 {seaTempSelected != null && <>Eau {seaTempSelected.toFixed(1)}°C · </>}
                 {waveSelected != null && <>vagues {waveSelected.toFixed(1)} m · </>}
-                marées : {marine.tideSourceLabel}
+                marées {marine.tideSource === "shom" ? "officielles" : "indicatives"} :{" "}
+                {marine.tideSourceLabel}
                 {marine.tideSource === "open-meteo"
-                  ? " (modèle océanique, écart possible de 30 à 45 minutes)"
-                  : " (cache officiel SHOM)"}
-                . Phase lunaire indicative ; vérifier les avis officiels avant navigation.
+                  ? " (modèle marin, à comparer avec SHOM pour la navigation)"
+                  : " (cache quotidien)"}
+                .
               </p>
             </>
           ) : (
