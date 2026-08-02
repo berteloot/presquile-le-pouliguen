@@ -70,15 +70,6 @@ export default function ShipMap({ ships, selectedShip, onSelect }: Props) {
       .addTo(map);
     shore.bindPopup("Repère côtier : Le Pouliguen et La Baule");
 
-    L.circle([47.24, -2.55], {
-      radius: 18000,
-      color: "#0a6bab",
-      weight: 1.5,
-      fillOpacity: 0.04,
-    })
-      .bindTooltip("Zone offshore suivie")
-      .addTo(map);
-
     shipLayerRef.current = L.layerGroup().addTo(map);
     mapRef.current = map;
     return () => {

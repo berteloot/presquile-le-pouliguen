@@ -142,6 +142,11 @@ function voyageLabel(hours: number | null): string {
   return `parti il y a ${formatHours(hours)}`;
 }
 
+function knownText(value: string | null | undefined): boolean {
+  if (!value) return false;
+  return !/^(non connu|non confirm|non déclar|unknown|n\/a)$/i.test(value.trim());
+}
+
 function destinationContext(ship: OffshoreShip): string {
   if (/donges/i.test(ship.destination)) {
     return "Donges concentre une partie des escales pétrolières de l'estuaire, avec des créneaux dépendants des quais, des marées et des pilotes.";
@@ -160,19 +165,25 @@ function destinationContext(ship: OffshoreShip): string {
 
 function buildSummary(ship: OffshoreShip, now: Date, distanceKm: number, wait: number | null) {
   const voyageHours = hoursBetween(toDate(ship.lastDeparturePort.departedAt), now);
-  const waitClause =
-    wait == null
-      ? "son temps d'attente au mouillage n'est pas confirmé"
-      : `il attend au mouillage depuis ${formatHours(wait)}`;
+  const departure = knownText(ship.lastDeparturePort.name)
+    ? `${voyageLabel(voyageHours)} de ${ship.lastDeparturePort.name} (${ship.lastDeparturePort.country})`
+    : "dont le dernier port n'est pas confirmé par le cache AIS gratuit";
+  const destination = knownText(ship.destination)
+    ? `avec ${ship.destination} comme destination déclarée`
+    : "sans destination AIS confirmée";
   const movement =
     ship.statusGroup === "Underway"
       ? `avance à ${ship.speedKnots.toFixed(1)} noeuds`
-      : waitClause;
+      : ship.statusGroup === "Working"
+        ? `opère à ${ship.speedKnots.toFixed(1)} noeuds dans la zone`
+        : wait == null
+          ? "a un temps d'attente au mouillage non confirmé"
+          : `attend au mouillage depuis ${formatHours(wait)}`;
   return (
     `${ship.name}, ${ship.vesselType.toLowerCase()} sous pavillon ${ship.flagCountry}, ` +
-    `${voyageLabel(voyageHours)} de ${ship.lastDeparturePort.name} (${ship.lastDeparturePort.country}). ` +
+    `${departure}. ` +
     `Il ${movement}, cap ${Math.round(ship.headingDeg)}°, à environ ${distanceKm.toFixed(1)} km du Pouliguen, ` +
-    `avec ${ship.destination} comme destination déclarée.`
+    `${destination}.`
   );
 }
 
@@ -195,7 +206,10 @@ function buildFact(ship: OffshoreShip, distanceKm: number, wait: number | null) 
     return `${ship.name} est le plus impressionnant à l'oeil nu : ${ship.lengthM} m et ${ship.grossTonnage.toLocaleString("fr-FR")} GT.`;
   }
   if (wait != null && wait >= 24) {
-    return `${ship.name} attend au mouillage depuis ${formatHours(wait)}, à ${distanceKm.toFixed(1)} km du Pouliguen, avec ${ship.destination} comme destination déclarée.`;
+    const destination = knownText(ship.destination)
+      ? `, avec ${ship.destination} comme destination déclarée`
+      : "";
+    return `${ship.name} attend au mouillage depuis ${formatHours(wait)}, à ${distanceKm.toFixed(1)} km du Pouliguen${destination}.`;
   }
   if (ship.statusGroup === "Working") {
     return `${ship.name} raconte l'autre trafic de la baie : les navires de service liés au parc éolien.`;
@@ -250,9 +264,13 @@ export function offshoreShipStats(ships: EnrichedShip[]): OffshoreShipStats {
     averageWaitHours:
       waits.length > 0 ? waits.reduce((sum, value) => sum + value, 0) / waits.length : null,
     largestShip:
-      ships.slice().sort((a, b) => b.lengthM - a.lengthM)[0] ?? null,
+      ships
+        .filter((ship) => ship.lengthM > 0)
+        .sort((a, b) => b.lengthM - a.lengthM)[0] ?? null,
     biggestTonnage:
-      ships.slice().sort((a, b) => b.grossTonnage - a.grossTonnage)[0] ?? null,
+      ships
+        .filter((ship) => ship.grossTonnage > 0)
+        .sort((a, b) => b.grossTonnage - a.grossTonnage)[0] ?? null,
   };
 }
 

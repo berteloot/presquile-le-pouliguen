@@ -40,9 +40,11 @@ Working MVP, static-only architecture, verified running locally:
   with VO / young-audience hints, running time and direct ticket/source links
 - Beaches: the commune's 4 official bathing sites with descriptions and links,
   plus a link to official water quality (baignades.sante.gouv.fr)
-- Offshore ships: static AIS-ready cache for vessels off Le Pouliguen / La
-  Baule, with map, filters, wait-time estimates, origin/previous-port context
-  and generated natural-language explanations
+- Offshore ships: static AIS cache for the Le Pouliguen / La Baule offshore
+  feature, with map, filters, wait-time estimates, destination context and
+  generated natural-language explanations. It can be generated for free from
+  AISstream with an API key; without that key, the local file is treated as a
+  non-GPS demo and the live map is hidden.
 - Waste collection: next door-to-door pickups (bac vert / bac jaune) for the
   commune from the Cap Atlantique calendar, nearest glass drop-off point,
   and local waste center address/opening hours
@@ -87,15 +89,18 @@ directly. No backend is required for Phase 1, which means free static hosting.
 Data refresh: `python3 tools/build_transit_data.py` (bus GTFS) and
 `python3 tools/build_local_data.py all` (trains, DAE, chargers, curated
 agenda snapshot, Cinéma Pax cache). `node tools/build_ais_cache.mjs` refreshes
-the offshore-ship cache; set `AIS_CACHE_SOURCE_URL` and optionally
-`AIS_API_KEY` to point it at a real AIS provider/export. Most other operational
-data is queried live from the browser. The Cinéma Pax cache also has a
-scheduled GitHub Actions refresh workflow.
+the offshore-ship cache; set `AISSTREAM_API_KEY` for a free AISstream capture,
+or `AIS_CACHE_SOURCE_URL` and optionally `AIS_API_KEY` to point it at another
+AIS provider/export. Most other operational data is queried live from the
+browser. The Cinéma Pax cache also has a scheduled GitHub Actions refresh
+workflow.
 
-AIS note: the deployed app remains a free static page. Real-time AIS and
-historical port calls usually require an API key, paid archive, or contributed
-receiver feed, so this project keeps AIS behind a replaceable static cache
-instead of requiring a Node server at runtime.
+AIS note: the deployed app remains a free static page. AISstream is consumed
+only during cache generation, then the browser reads
+`web/public/data/offshore-ships.json`. A longer historical AIS archive is still
+needed for verified previous ports and full time-at-anchor history; this app
+only preserves anchor duration across successive cache refreshes for the same
+MMSI.
 
 ## Layout
 

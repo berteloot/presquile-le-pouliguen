@@ -37,6 +37,19 @@ function numberLabel(value: number): string {
   return value.toLocaleString("fr-FR");
 }
 
+function knownValue(value: string | null | undefined): boolean {
+  if (!value) return false;
+  return !/^(non connu|non confirm|non déclar|unknown|n\/a)$/i.test(value.trim());
+}
+
+function dimensionLabel(value: number, unit: string): string {
+  return value > 0 ? `${numberLabel(value)} ${unit}` : "non transmise";
+}
+
+function optionalText(value: string | null | undefined, fallback = "non transmis"): string {
+  return knownValue(value) ? (value ?? fallback) : fallback;
+}
+
 function StatCard({
   label,
   value,
@@ -109,7 +122,9 @@ function ShipDetail({
             <div>
               <dt>Origine estimée</dt>
               <dd>
-                {ship.lastDeparturePort.country}, via {ship.lastDeparturePort.name}
+                {knownValue(ship.lastDeparturePort.name)
+                  ? `${ship.lastDeparturePort.country}, via ${ship.lastDeparturePort.name}`
+                  : "non confirmée par le cache AIS"}
               </dd>
             </div>
             <div>
@@ -122,7 +137,7 @@ function ShipDetail({
         <dl className="ship-facts">
           <div>
             <dt>IMO</dt>
-            <dd>{ship.imo}</dd>
+            <dd>{optionalText(ship.imo)}</dd>
           </div>
           <div>
             <dt>Type</dt>
@@ -130,11 +145,11 @@ function ShipDetail({
           </div>
           <div>
             <dt>Longueur</dt>
-            <dd>{ship.lengthM} m</dd>
+            <dd>{dimensionLabel(ship.lengthM, "m")}</dd>
           </div>
           <div>
             <dt>Tonnage</dt>
-            <dd>{numberLabel(ship.grossTonnage)} GT</dd>
+            <dd>{dimensionLabel(ship.grossTonnage, "GT")}</dd>
           </div>
           <div>
             <dt>Vitesse</dt>
@@ -150,13 +165,11 @@ function ShipDetail({
           </div>
           <div>
             <dt>Destination</dt>
-            <dd>{ship.destination}</dd>
+            <dd>{optionalText(ship.destination, "non déclarée")}</dd>
           </div>
           <div>
             <dt>Dernier port</dt>
-            <dd>
-              {ship.lastDeparturePort.name}, {ship.lastDeparturePort.country}
-            </dd>
+            <dd>{optionalText(ship.lastDeparturePort.name, "non connu")}</dd>
           </div>
           <div>
             <dt>Départ</dt>
@@ -237,6 +250,7 @@ export default function ShipsOffshore() {
     [filteredShips],
   );
   const generatedAt = cache ? formatDateTime(cache.generatedAt) : "";
+  const isDemoCache = cache?.sourceMode !== "api-cache";
 
   const selectShip = useCallback((ship: EnrichedShip) => {
     setSelectedMmsi(ship.mmsi);
@@ -255,7 +269,9 @@ export default function ShipsOffshore() {
     <section className="card card-wide ships-card" id="navires">
       <div className="ships-header">
         <div>
-          <span className="section-eyebrow">AIS offshore</span>
+          <span className="section-eyebrow">
+            {isDemoCache ? "Démo AIS offshore" : "AIS offshore"}
+          </span>
           <h2>Navires au large</h2>
           <p>
             {cache?.coverageLabel ?? "Chargement des navires..."}
@@ -266,119 +282,147 @@ export default function ShipsOffshore() {
 
       {cache ? (
         <>
-          <div className="ship-controls" aria-label="Filtres navires">
-            <label>
-              Type
-              <select
-                value={selectedType}
-                onChange={(event) => setSelectedType(event.target.value as ShipTypeGroup | "all")}
-              >
-                <option value="all">Tous</option>
-                {shipTypes.map((type) => (
-                  <option key={type} value={type}>
-                    {TYPE_LABELS[type]}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Statut
-              <select
-                value={selectedStatus}
-                onChange={(event) =>
-                  setSelectedStatus(event.target.value as ShipStatusGroup | "all")
-                }
-              >
-                <option value="all">Tous</option>
-                {shipStatuses.map((status) => (
-                  <option key={status} value={status}>
-                    {STATUS_LABELS[status]}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-
-          <div className="ship-stats">
-            <StatCard
-              label="Navires"
-              value={String(stats.count)}
-              note={`${stats.anchoredCount} au mouillage · ${stats.movingCount} en route`}
-            />
-            <StatCard
-              label="Attente moyenne"
-              value={formatHours(stats.averageWaitHours)}
-              note="navires au mouillage"
-            />
-            <StatCard
-              label="Plus grand"
-              value={stats.largestShip ? `${stats.largestShip.lengthM} m` : "n/a"}
-              note={stats.largestShip?.name ?? "aucun navire"}
-            />
-            <StatCard
-              label="Plus lourd"
-              value={stats.biggestTonnage ? `${numberLabel(stats.biggestTonnage.grossTonnage)} GT` : "n/a"}
-              note={stats.biggestTonnage?.name ?? "aucun navire"}
-            />
-          </div>
-
-          {filteredShips.length > 0 ? (
-            <div className="ship-layout">
-              <div>
-                <ShipMap
-                  ships={filteredShips}
-                  selectedShip={selectedShip}
-                  onSelect={selectShip}
-                />
-                <ul className="ship-list" aria-label="Navires détectés">
-                  {filteredShips.map((ship) => (
-                    <li key={ship.mmsi}>
-                      <button
-                        type="button"
-                        className={selectedShip?.mmsi === ship.mmsi ? "ship-row ship-row-active" : "ship-row"}
-                        onClick={() => selectShip(ship)}
-                      >
-                        <span>{ship.flagEmoji}</span>
-                        <strong>{ship.name}</strong>
-                        <small>
-                          {ship.vesselType} · {statusLabel(ship.statusGroup)} ·{" "}
-                          {ship.distanceFromLePouliguenKm.toFixed(1)} km
-                        </small>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              {selectedShip && (
-                <ShipDetail
-                  ship={selectedShip}
-                  tab={detailTab}
-                  onTabChange={setDetailTab}
-                />
-              )}
+          {isDemoCache && (
+            <div className="ship-live-missing">
+              <strong>AIS réel non connecté</strong>
+              <p>
+                Les noms et positions du cache local sont une maquette, pas des
+                navires observés maintenant au large du Pouliguen. Pour éviter
+                toute confusion, la carte live est masquée tant qu'un vrai flux
+                AIS n'alimente pas le cache.
+              </p>
+              <ul>
+                <li>AISstream : flux WebSocket temps réel avec clé API.</li>
+                <li>VesselAPI : requête par zone avec positions, statut, cap et ETA.</li>
+                <li>AISHub : accès au flux agrégé si une station AIS locale est partagée.</li>
+              </ul>
+              <p className="meta-line">
+                Renseigner ensuite <code>AISSTREAM_API_KEY</code> puis lancer{" "}
+                <code>tools/build_ais_cache.mjs</code> pour publier un cache
+                statique réellement rafraîchi, sans serveur payant en continu.
+              </p>
             </div>
-          ) : (
-            <p className="placeholder">Aucun navire ne correspond aux filtres.</p>
           )}
 
-          {interestingFacts.length > 0 && (
-            <section className="interesting-facts">
-              <div className="event-heading">
-                <h3>Interesting Facts</h3>
-                <span>{filteredShips.length} navires filtrés</span>
+          {!isDemoCache && (
+            <>
+              <div className="ship-controls" aria-label="Filtres navires">
+                <label>
+                  Type
+                  <select
+                    value={selectedType}
+                    onChange={(event) =>
+                      setSelectedType(event.target.value as ShipTypeGroup | "all")
+                    }
+                  >
+                    <option value="all">Tous</option>
+                    {shipTypes.map((type) => (
+                      <option key={type} value={type}>
+                        {TYPE_LABELS[type]}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Statut
+                  <select
+                    value={selectedStatus}
+                    onChange={(event) =>
+                      setSelectedStatus(event.target.value as ShipStatusGroup | "all")
+                    }
+                  >
+                    <option value="all">Tous</option>
+                    {shipStatuses.map((status) => (
+                      <option key={status} value={status}>
+                        {STATUS_LABELS[status]}
+                      </option>
+                    ))}
+                  </select>
+                </label>
               </div>
-              <ul>
-                {interestingFacts.map((ship) => (
-                  <li key={ship.mmsi}>{ship.fact}</li>
-                ))}
-              </ul>
-            </section>
+
+              <div className="ship-stats">
+                <StatCard
+                  label="Navires"
+                  value={String(stats.count)}
+                  note={`${stats.anchoredCount} au mouillage · ${stats.movingCount} en route`}
+                />
+                <StatCard
+                  label="Attente moyenne"
+                  value={formatHours(stats.averageWaitHours)}
+                  note="mouillages mesurés"
+                />
+                <StatCard
+                  label="Plus grand"
+                  value={stats.largestShip ? `${stats.largestShip.lengthM} m` : "n/a"}
+                  note={stats.largestShip?.name ?? "aucun navire"}
+                />
+                <StatCard
+                  label="Plus lourd"
+                  value={stats.biggestTonnage ? `${numberLabel(stats.biggestTonnage.grossTonnage)} GT` : "n/a"}
+                  note={stats.biggestTonnage?.name ?? "aucun navire"}
+                />
+              </div>
+
+              {filteredShips.length > 0 ? (
+                <div className="ship-layout">
+                  <div>
+                    <ShipMap
+                      ships={filteredShips}
+                      selectedShip={selectedShip}
+                      onSelect={selectShip}
+                    />
+                    <ul className="ship-list" aria-label="Navires détectés">
+                      {filteredShips.map((ship) => (
+                        <li key={ship.mmsi}>
+                          <button
+                            type="button"
+                            className={selectedShip?.mmsi === ship.mmsi ? "ship-row ship-row-active" : "ship-row"}
+                            onClick={() => selectShip(ship)}
+                          >
+                            <span>{ship.flagEmoji}</span>
+                            <strong>{ship.name}</strong>
+                            <small>
+                              {ship.vesselType} · {statusLabel(ship.statusGroup)} ·{" "}
+                              {ship.distanceFromLePouliguenKm.toFixed(1)} km
+                            </small>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  {selectedShip && (
+                    <ShipDetail
+                      ship={selectedShip}
+                      tab={detailTab}
+                      onTabChange={setDetailTab}
+                    />
+                  )}
+                </div>
+              ) : (
+                <p className="placeholder">Aucun navire ne correspond aux filtres.</p>
+              )}
+
+              {interestingFacts.length > 0 && (
+                <section className="interesting-facts">
+                  <div className="event-heading">
+                    <h3>Interesting Facts</h3>
+                    <span>{filteredShips.length} navires filtrés</span>
+                  </div>
+                  <ul>
+                    {interestingFacts.map((ship) => (
+                      <li key={ship.mmsi}>{ship.fact}</li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+            </>
           )}
 
           <p className="meta-line">
-            Données : cache AIS statique, architecture prête pour un rafraîchissement
-            par API. Les origines, ports précédents et explications sont estimés
-            quand l'historique AIS complet manque.
+            {isDemoCache
+              ? "Données : cache de démonstration. Les positions, ports précédents et explications ne doivent pas être interprétés comme des observations AIS réelles."
+              : "Données : cache AIS API. Les origines, ports précédents et explications restent estimés quand l'historique AIS complet manque."}
           </p>
         </>
       ) : (
@@ -397,7 +441,7 @@ function SourceStamp({
 }) {
   return (
     <div className="ship-source">
-      <span>{sourceMode === "api-cache" ? "cache API" : "cache statique"}</span>
+      <span>{sourceMode === "api-cache" ? "cache API AIS" : "démo non GPS"}</span>
       {generatedAt && <small>{generatedAt}</small>}
     </div>
   );
