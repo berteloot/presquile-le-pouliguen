@@ -333,9 +333,9 @@ export default function ShipsOffshore() {
                   <span>Vue par défaut</span>
                   <strong>Gros navires au mouillage visibles depuis la côte</strong>
                   <p>
-                    Tankers, cargos et grands navires marchands immobiles dans la
-                    zone que l'on voit sur l'horizon. Les petits AIS restent
-                    accessibles dans la vue complète.
+                    Tankers, cargos et autres grandes silhouettes AIS immobiles
+                    dans la zone que l'on voit sur l'horizon. Les petits AIS
+                    restent accessibles dans la vue complète.
                   </p>
                 </div>
                 <div className="ship-scope" role="tablist" aria-label="Vue navires">

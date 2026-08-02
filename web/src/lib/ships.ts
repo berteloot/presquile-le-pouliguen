@@ -228,7 +228,8 @@ function horizonScore(ship: OffshoreShip, distanceKm: number, distanceFromLaBaul
   if (ship.vesselTypeGroup === "Fishing" || ship.vesselTypeGroup === "Passenger") return 0;
   if (/sailing|pleasure/i.test(ship.vesselType)) return 0;
 
-  let score = 0;
+  let score = 30;
+  if (distanceKm >= 12 && distanceKm <= 30) score += 10;
   if (ship.vesselTypeGroup === "Tanker") score += 80;
   if (ship.vesselTypeGroup === "Cargo") score += 58;
   if (ship.lengthM >= 140) score += 55;
@@ -236,7 +237,7 @@ function horizonScore(ship: OffshoreShip, distanceKm: number, distanceFromLaBaul
   else if (ship.lengthM === 0 && ship.flagCode !== "FR") score += 22;
   if (MERCHANT_NAME_HINT.test(ship.name)) score += 24;
   if (MERCHANT_DESTINATION_HINT.test(ship.destination)) score += 20;
-  if (distanceFromLaBauleKm >= 8) score += 8;
+  score += Math.min(10, Math.max(0, Math.round(distanceFromLaBauleKm / 4)));
   if (ship.speedKnots <= 0.5) score += 10;
   return score;
 }
@@ -264,7 +265,7 @@ export function enrichShip(ship: OffshoreShip, cacheTime: Date): EnrichedShip {
     distanceFromLaBauleKm,
     timeAtAnchorHours: wait,
     voyageHours,
-    isHorizonTarget: score >= 50,
+    isHorizonTarget: score >= 45,
     horizonScore: score,
     aiSummary: buildSummary(ship, cacheTime, distanceFromLePouliguenKm, wait),
     whyHere: buildWhy(ship, wait),
@@ -310,7 +311,7 @@ export function uniqueShipStatuses(ships: EnrichedShip[]): ShipStatusGroup[] {
 }
 
 export async function fetchOffshoreShips(): Promise<OffshoreShipCache> {
-  const response = await fetch(SHIPS_DATA_URL);
+  const response = await fetch(`${SHIPS_DATA_URL}?t=${Date.now()}`, { cache: "no-store" });
   if (!response.ok) throw new Error(`offshore ships HTTP ${response.status}`);
   return (await response.json()) as OffshoreShipCache;
 }
