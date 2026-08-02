@@ -40,7 +40,7 @@ function numberLabel(value: number): string {
 
 function knownValue(value: string | null | undefined): boolean {
   if (!value) return false;
-  return !/^(non connu|non confirm|non déclar|unknown|n\/a)$/i.test(value.trim());
+  return !/^(undefined|null|non connu|non confirm|non déclar|unknown|n\/a)$/i.test(value.trim());
 }
 
 function dimensionLabel(value: number, unit: string): string {
@@ -137,8 +137,16 @@ function ShipDetail({
       ) : (
         <dl className="ship-facts">
           <div>
+            <dt>MMSI</dt>
+            <dd>{ship.mmsi}</dd>
+          </div>
+          <div>
             <dt>IMO</dt>
             <dd>{optionalText(ship.imo)}</dd>
+          </div>
+          <div>
+            <dt>Indicatif</dt>
+            <dd>{optionalText(ship.callSign)}</dd>
           </div>
           <div>
             <dt>Type</dt>
@@ -147,6 +155,10 @@ function ShipDetail({
           <div>
             <dt>Longueur</dt>
             <dd>{dimensionLabel(ship.lengthM, "m")}</dd>
+          </div>
+          <div>
+            <dt>Largeur</dt>
+            <dd>{dimensionLabel(ship.beamM ?? 0, "m")}</dd>
           </div>
           <div>
             <dt>Tonnage</dt>
@@ -166,7 +178,7 @@ function ShipDetail({
           </div>
           <div>
             <dt>Destination</dt>
-            <dd>{optionalText(ship.destination, "non déclarée")}</dd>
+            <dd>{ship.destinationLabel}</dd>
           </div>
           <div>
             <dt>Dernier port</dt>

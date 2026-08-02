@@ -156,7 +156,7 @@ function firstDefined(...values) {
 
 function knownText(value) {
   if (!value) return false;
-  return !/^(non connu|non confirm|non déclar|unknown|n\/a)$/i.test(String(value).trim());
+  return !/^(undefined|null|non connu|non confirm|non déclar|unknown|n\/a)$/i.test(String(value).trim());
 }
 
 function parseCsvEnv(name, fallback) {
@@ -473,9 +473,18 @@ function buildAisstreamCache(records, existing, seconds, boundingBoxes) {
 
       return {
         mmsi: String(record.mmsi),
-        imo: String(firstDefined(record.imo, previousShip?.imo, "")),
+        imo: String(
+          firstDefined(
+            knownText(record.imo) ? record.imo : undefined,
+            knownText(previousShip?.imo) ? previousShip.imo : undefined,
+            "",
+          ),
+        ),
         name,
-        callSign: firstDefined(record.callSign, previousShip?.callSign),
+        callSign: firstDefined(
+          knownText(record.callSign) ? record.callSign : undefined,
+          knownText(previousShip?.callSign) ? previousShip.callSign : undefined,
+        ),
         flagCountry: country,
         flagCode,
         vesselType: type.vesselType,

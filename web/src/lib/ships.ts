@@ -64,6 +64,7 @@ export interface EnrichedShip extends OffshoreShip {
   voyageHours: number | null;
   isHorizonTarget: boolean;
   horizonScore: number;
+  destinationLabel: string;
   aiSummary: string;
   whyHere: string;
   fact: string;
@@ -83,6 +84,16 @@ const LA_BAULE = { lat: 47.2867, lon: -2.3908 };
 const MERCHANT_NAME_HINT =
   /\b(abbey|aegean|arklow|atlantic|bomar|eagle|fighter|harbour|mimer|moraime|pioneer|tanker|uhl)\b/i;
 const MERCHANT_DESTINATION_HINT = /\b(donges|donges|nantes|montoir|stm|frdon|frsmr|fr\s?mtx)\b/i;
+const DESTINATION_LABELS = new Map([
+  ["FRDON", "Donges (FRDON)"],
+  ["FRNTE", "Nantes (FRNTE)"],
+  ["FR MTX", "Montoir-de-Bretagne (FR MTX)"],
+  ["FRMTX", "Montoir-de-Bretagne (FRMTX)"],
+  ["LOIRE ANCHORAGE", "Mouillage de Loire"],
+  ["SAINT NAZAIRE", "Saint-Nazaire"],
+  ["ST NAZAIRE", "Saint-Nazaire"],
+  ["FOR ORDERS", "En attente d'ordres"],
+]);
 
 function toDate(value: string | null | undefined): Date | null {
   if (!value) return null;
@@ -149,20 +160,27 @@ function voyageLabel(hours: number | null): string {
 
 function knownText(value: string | null | undefined): boolean {
   if (!value) return false;
-  return !/^(non connu|non confirm|non déclar|unknown|n\/a)$/i.test(value.trim());
+  return !/^(undefined|null|non connu|non confirm|non déclar|unknown|n\/a)$/i.test(value.trim());
+}
+
+function destinationLabel(destination: string): string {
+  const clean = destination.trim().replace(/\s+/g, " ");
+  if (!knownText(clean)) return "destination non déclarée";
+  return DESTINATION_LABELS.get(clean.toUpperCase()) ?? clean;
 }
 
 function destinationContext(ship: OffshoreShip): string {
-  if (/donges/i.test(ship.destination)) {
+  const destination = destinationLabel(ship.destination);
+  if (/donges|frdon/i.test(destination)) {
     return "Donges concentre une partie des escales pétrolières de l'estuaire, avec des créneaux dépendants des quais, des marées et des pilotes.";
   }
-  if (/montoir/i.test(ship.destination)) {
+  if (/montoir/i.test(destination)) {
     return "Montoir reçoit du vrac, du fret industriel et des marchandises spécialisées ; les navires attendent souvent leur fenêtre d'entrée dans l'estuaire.";
   }
-  if (/éolien|eolien|wind/i.test(ship.destination)) {
+  if (/éolien|eolien|wind/i.test(destination)) {
     return "Le parc éolien en mer de Saint-Nazaire crée un trafic de service : relève d'équipes, maintenance, matériel et inspections.";
   }
-  if (/saint-nazaire|nantes/i.test(ship.destination)) {
+  if (/saint-nazaire|nantes|mouillage de loire/i.test(destination)) {
     return "L'accès à Nantes Saint-Nazaire se fait par un chenal piloté où la météo, la marée et la disponibilité des quais rythment les entrées.";
   }
   return "Sa position correspond à une zone d'attente ou d'approche avant entrée dans l'estuaire de la Loire.";
@@ -174,7 +192,7 @@ function buildSummary(ship: OffshoreShip, now: Date, distanceKm: number, wait: n
     ? `${voyageLabel(voyageHours)} de ${ship.lastDeparturePort.name} (${ship.lastDeparturePort.country})`
     : "dont le dernier port n'est pas confirmé par le cache AIS gratuit";
   const destination = knownText(ship.destination)
-    ? `avec ${ship.destination} comme destination déclarée`
+    ? `avec ${destinationLabel(ship.destination)} comme destination déclarée`
     : "sans destination AIS confirmée";
   const movement =
     ship.statusGroup === "Underway"
@@ -212,7 +230,7 @@ function buildFact(ship: OffshoreShip, distanceKm: number, wait: number | null) 
   }
   if (wait != null && wait >= 24) {
     const destination = knownText(ship.destination)
-      ? `, avec ${ship.destination} comme destination déclarée`
+      ? `, avec ${destinationLabel(ship.destination)} comme destination déclarée`
       : "";
     return `${ship.name} attend au mouillage depuis ${formatHours(wait)}, à ${distanceKm.toFixed(1)} km du Pouliguen${destination}.`;
   }
@@ -267,6 +285,7 @@ export function enrichShip(ship: OffshoreShip, cacheTime: Date): EnrichedShip {
     voyageHours,
     isHorizonTarget: score >= 45,
     horizonScore: score,
+    destinationLabel: destinationLabel(ship.destination),
     aiSummary: buildSummary(ship, cacheTime, distanceFromLePouliguenKm, wait),
     whyHere: buildWhy(ship, wait),
     fact: buildFact(ship, distanceFromLePouliguenKm, wait),
