@@ -62,6 +62,8 @@ export interface EnrichedShip extends OffshoreShip {
   distanceFromLaBauleKm: number;
   timeAtAnchorHours: number | null;
   voyageHours: number | null;
+  isHorizonTarget: boolean;
+  horizonScore: number;
   aiSummary: string;
   whyHere: string;
   fact: string;
@@ -78,6 +80,9 @@ export interface OffshoreShipStats {
 }
 
 const LA_BAULE = { lat: 47.2867, lon: -2.3908 };
+const MERCHANT_NAME_HINT =
+  /\b(abbey|aegean|arklow|atlantic|bomar|eagle|fighter|harbour|mimer|moraime|pioneer|tanker|uhl)\b/i;
+const MERCHANT_DESTINATION_HINT = /\b(donges|donges|nantes|montoir|stm|frdon|frsmr|fr\s?mtx)\b/i;
 
 function toDate(value: string | null | undefined): Date | null {
   if (!value) return null;
@@ -217,6 +222,25 @@ function buildFact(ship: OffshoreShip, distanceKm: number, wait: number | null) 
   return `${ship.name} se trouve à ${distanceKm.toFixed(1)} km du centre du Pouliguen.`;
 }
 
+function horizonScore(ship: OffshoreShip, distanceKm: number, distanceFromLaBauleKm: number): number {
+  if (ship.statusGroup !== "Anchored") return 0;
+  if (distanceKm < 8 || distanceKm > 32) return 0;
+  if (ship.vesselTypeGroup === "Fishing" || ship.vesselTypeGroup === "Passenger") return 0;
+  if (/sailing|pleasure/i.test(ship.vesselType)) return 0;
+
+  let score = 0;
+  if (ship.vesselTypeGroup === "Tanker") score += 80;
+  if (ship.vesselTypeGroup === "Cargo") score += 58;
+  if (ship.lengthM >= 140) score += 55;
+  else if (ship.lengthM >= 100) score += 42;
+  else if (ship.lengthM === 0 && ship.flagCode !== "FR") score += 22;
+  if (MERCHANT_NAME_HINT.test(ship.name)) score += 24;
+  if (MERCHANT_DESTINATION_HINT.test(ship.destination)) score += 20;
+  if (distanceFromLaBauleKm >= 8) score += 8;
+  if (ship.speedKnots <= 0.5) score += 10;
+  return score;
+}
+
 export function enrichShip(ship: OffshoreShip, cacheTime: Date): EnrichedShip {
   const wait = hoursBetween(toDate(ship.anchorStartedAt), cacheTime);
   const voyageHours = hoursBetween(toDate(ship.lastDeparturePort.departedAt), cacheTime);
@@ -232,6 +256,7 @@ export function enrichShip(ship: OffshoreShip, cacheTime: Date): EnrichedShip {
     ship.position.lat,
     ship.position.lon,
   );
+  const score = horizonScore(ship, distanceFromLePouliguenKm, distanceFromLaBauleKm);
   return {
     ...ship,
     flagEmoji: flagEmoji(ship.flagCode),
@@ -239,6 +264,8 @@ export function enrichShip(ship: OffshoreShip, cacheTime: Date): EnrichedShip {
     distanceFromLaBauleKm,
     timeAtAnchorHours: wait,
     voyageHours,
+    isHorizonTarget: score >= 50,
+    horizonScore: score,
     aiSummary: buildSummary(ship, cacheTime, distanceFromLePouliguenKm, wait),
     whyHere: buildWhy(ship, wait),
     fact: buildFact(ship, distanceFromLePouliguenKm, wait),

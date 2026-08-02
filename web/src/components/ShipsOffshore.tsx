@@ -16,6 +16,7 @@ import {
 } from "../lib/ships";
 
 type DetailTab = "ais" | "why";
+type ShipScope = "horizon" | "all";
 
 const TYPE_LABELS: Record<ShipTypeGroup, string> = {
   Cargo: "Cargo",
@@ -202,6 +203,7 @@ function ShipDetail({
 
 export default function ShipsOffshore() {
   const [cache, setCache] = useState<OffshoreShipCache | null>(null);
+  const [shipScope, setShipScope] = useState<ShipScope>("horizon");
   const [selectedType, setSelectedType] = useState<ShipTypeGroup | "all">("all");
   const [selectedStatus, setSelectedStatus] = useState<ShipStatusGroup | "all">("all");
   const [selectedMmsi, setSelectedMmsi] = useState<string | null>(null);
@@ -223,16 +225,29 @@ export default function ShipsOffshore() {
   }, []);
 
   const ships = useMemo(() => (cache ? enrichShipCache(cache) : []), [cache]);
-  const shipTypes = useMemo(() => uniqueShipTypes(ships), [ships]);
-  const shipStatuses = useMemo(() => uniqueShipStatuses(ships), [ships]);
+  const horizonShips = useMemo(
+    () =>
+      ships
+        .filter((ship) => ship.isHorizonTarget)
+        .sort(
+          (a, b) =>
+            b.horizonScore - a.horizonScore ||
+            (b.lengthM || 0) - (a.lengthM || 0) ||
+            a.distanceFromLePouliguenKm - b.distanceFromLePouliguenKm,
+        ),
+    [ships],
+  );
+  const scopedShips = shipScope === "horizon" ? horizonShips : ships;
+  const shipTypes = useMemo(() => uniqueShipTypes(scopedShips), [scopedShips]);
+  const shipStatuses = useMemo(() => uniqueShipStatuses(scopedShips), [scopedShips]);
   const filteredShips = useMemo(
     () =>
-      ships.filter(
+      scopedShips.filter(
         (ship) =>
           (selectedType === "all" || ship.vesselTypeGroup === selectedType) &&
           (selectedStatus === "all" || ship.statusGroup === selectedStatus),
       ),
-    [ships, selectedType, selectedStatus],
+    [scopedShips, selectedType, selectedStatus],
   );
   const stats = useMemo(() => offshoreShipStats(filteredShips), [filteredShips]);
   const selectedShip =
@@ -254,6 +269,13 @@ export default function ShipsOffshore() {
 
   const selectShip = useCallback((ship: EnrichedShip) => {
     setSelectedMmsi(ship.mmsi);
+  }, []);
+
+  const changeScope = useCallback((scope: ShipScope) => {
+    setShipScope(scope);
+    setSelectedType("all");
+    setSelectedStatus("all");
+    setSelectedMmsi(null);
   }, []);
 
   if (failed) {
@@ -306,6 +328,40 @@ export default function ShipsOffshore() {
 
           {!isDemoCache && (
             <>
+              <div className="ship-focus">
+                <div>
+                  <span>Vue par défaut</span>
+                  <strong>Gros navires au mouillage visibles depuis la côte</strong>
+                  <p>
+                    Tankers, cargos et grands navires marchands immobiles dans la
+                    zone que l'on voit sur l'horizon. Les petits AIS restent
+                    accessibles dans la vue complète.
+                  </p>
+                </div>
+                <div className="ship-scope" role="tablist" aria-label="Vue navires">
+                  <button
+                    type="button"
+                    className={shipScope === "horizon" ? "ship-scope-active" : ""}
+                    onClick={() => changeScope("horizon")}
+                    role="tab"
+                    aria-selected={shipScope === "horizon"}
+                  >
+                    Horizon
+                    <small>{horizonShips.length}</small>
+                  </button>
+                  <button
+                    type="button"
+                    className={shipScope === "all" ? "ship-scope-active" : ""}
+                    onClick={() => changeScope("all")}
+                    role="tab"
+                    aria-selected={shipScope === "all"}
+                  >
+                    Tout AIS
+                    <small>{ships.length}</small>
+                  </button>
+                </div>
+              </div>
+
               <div className="ship-controls" aria-label="Filtres navires">
                 <label>
                   Type
@@ -343,9 +399,13 @@ export default function ShipsOffshore() {
 
               <div className="ship-stats">
                 <StatCard
-                  label="Navires"
+                  label={shipScope === "horizon" ? "À l'horizon" : "Navires"}
                   value={String(stats.count)}
-                  note={`${stats.anchoredCount} au mouillage · ${stats.movingCount} en route`}
+                  note={
+                    shipScope === "horizon"
+                      ? "gros navires au mouillage"
+                      : `${stats.anchoredCount} au mouillage · ${stats.movingCount} en route`
+                  }
                 />
                 <StatCard
                   label="Attente moyenne"
@@ -385,6 +445,7 @@ export default function ShipsOffshore() {
                             <small>
                               {ship.vesselType} · {statusLabel(ship.statusGroup)} ·{" "}
                               {ship.distanceFromLePouliguenKm.toFixed(1)} km
+                              {shipScope === "horizon" ? " · horizon" : ""}
                             </small>
                           </button>
                         </li>
@@ -400,7 +461,11 @@ export default function ShipsOffshore() {
                   )}
                 </div>
               ) : (
-                <p className="placeholder">Aucun navire ne correspond aux filtres.</p>
+                <p className="placeholder">
+                  {shipScope === "horizon"
+                    ? "Aucun gros navire au mouillage détecté dans la fenêtre AIS actuelle. Essayez Tout AIS ou attendez le prochain rafraîchissement."
+                    : "Aucun navire ne correspond aux filtres."}
+                </p>
               )}
 
               {interestingFacts.length > 0 && (

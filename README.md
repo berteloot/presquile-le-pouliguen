@@ -41,10 +41,12 @@ Working MVP, static-only architecture, verified running locally:
 - Beaches: the commune's 4 official bathing sites with descriptions and links,
   plus a link to official water quality (baignades.sante.gouv.fr)
 - Offshore ships: static AIS cache for the Le Pouliguen / La Baule offshore
-  feature, with map, filters, wait-time estimates, destination context and
-  generated natural-language explanations. It can be generated for free from
-  AISstream with an API key; without that key, the local file is treated as a
-  non-GPS demo and the live map is hidden.
+  feature, focused by default on tankers, cargo vessels and other large
+  merchant ships anchored on the horizon, with a separate full-AIS view for
+  smaller traffic. It includes map, filters, wait-time estimates, destination
+  context and generated natural-language explanations. It can be generated for
+  free from AISstream with an API key; without that key, the local file is
+  treated as a non-GPS demo and the live map is hidden.
 - Waste collection: next door-to-door pickups (bac vert / bac jaune) for the
   commune from the Cap Atlantique calendar, nearest glass drop-off point,
   and local waste center address/opening hours
