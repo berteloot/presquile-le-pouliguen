@@ -101,13 +101,13 @@ AIS note: the deployed app remains a free static page. AISstream is consumed
 only during cache generation, then the browser reads
 `web/public/data/offshore-ships.json`. A longer historical AIS archive is still
 needed for verified previous ports and full time-at-anchor history; this app
-only preserves anchor duration across successive cache refreshes for the same
-MMSI.
+preserves anchor duration and static AIS details across successive cache
+refreshes for the same MMSI when AISstream has transmitted them.
 
 GitHub Actions: `.github/workflows/ais-cache.yml` refreshes the offshore AIS
 cache every 30 minutes when the repository secret `AISSTREAM_API_KEY` is set.
-The workflow listens for a short window, writes the static JSON cache, verifies
-the web build and commits only when the cache changed.
+The workflow listens for a six-minute window, writes the static JSON cache,
+verifies the web build and commits only when the cache changed.
 
 ## Layout
 

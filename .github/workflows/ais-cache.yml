@@ -33,7 +33,7 @@ jobs:
       - name: Refresh AIS cache
         env:
           AISSTREAM_API_KEY: ${{ secrets.AISSTREAM_API_KEY }}
-          AISSTREAM_SECONDS: "210"
+          AISSTREAM_SECONDS: "360"
         run: |
           if [ -z "$AISSTREAM_API_KEY" ]; then
             echo "AISSTREAM_API_KEY secret is missing; skipping AIS cache refresh."

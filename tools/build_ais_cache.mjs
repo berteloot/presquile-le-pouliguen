@@ -154,6 +154,11 @@ function firstDefined(...values) {
   return values.find((value) => value !== undefined && value !== null && value !== "");
 }
 
+function knownText(value) {
+  if (!value) return false;
+  return !/^(non connu|non confirm|non déclar|unknown|n\/a)$/i.test(String(value).trim());
+}
+
 function parseCsvEnv(name, fallback) {
   const raw = process.env[name];
   if (!raw) return fallback;
@@ -430,10 +435,33 @@ function buildAisstreamCache(records, existing, seconds, boundingBoxes) {
     .filter((record) => record.position)
     .map((record) => {
       const { country, flagCode } = countryFromMmsi(record.mmsi);
-      const type = typeFromCode(record.shipTypeCode);
       const speedKnots = record.speedKnots ?? 0;
       const status = statusFromCode(record.navStatusCode, speedKnots);
       const previousShip = previous.get(String(record.mmsi));
+      const currentType = typeFromCode(record.shipTypeCode);
+      const type =
+        currentType.vesselType === "Navire AIS" &&
+        previousShip?.vesselType &&
+        previousShip.vesselType !== "Navire AIS"
+          ? {
+              vesselType: previousShip.vesselType,
+              vesselTypeGroup: previousShip.vesselTypeGroup,
+            }
+          : currentType;
+      const name = String(
+        firstDefined(
+          record.name,
+          previousShip && !/^MMSI\s/i.test(previousShip.name) ? previousShip.name : undefined,
+          `MMSI ${record.mmsi}`,
+        ),
+      ).trim();
+      const destination = String(
+        firstDefined(
+          knownText(record.destination) ? record.destination : undefined,
+          knownText(previousShip?.destination) ? previousShip.destination : undefined,
+          "Non déclarée",
+        ),
+      ).trim();
       const isStillAnchored =
         status.statusGroup === "Anchored" && previousShip?.statusGroup === "Anchored";
       const anchorStartedAt =
@@ -445,33 +473,34 @@ function buildAisstreamCache(records, existing, seconds, boundingBoxes) {
 
       return {
         mmsi: String(record.mmsi),
-        imo: String(record.imo ?? ""),
-        name: String(record.name ?? `MMSI ${record.mmsi}`).trim(),
-        callSign: record.callSign,
+        imo: String(firstDefined(record.imo, previousShip?.imo, "")),
+        name,
+        callSign: firstDefined(record.callSign, previousShip?.callSign),
         flagCountry: country,
         flagCode,
         vesselType: type.vesselType,
         vesselTypeGroup: type.vesselTypeGroup,
-        lengthM: record.lengthM ?? 0,
-        beamM: record.beamM,
-        grossTonnage: record.grossTonnage ?? 0,
+        lengthM: record.lengthM ?? previousShip?.lengthM ?? 0,
+        beamM: record.beamM ?? previousShip?.beamM,
+        grossTonnage: record.grossTonnage ?? previousShip?.grossTonnage ?? 0,
+        deadweightTons: previousShip?.deadweightTons,
         speedKnots,
         headingDeg: normalizeHeading(record.headingDeg ?? record.courseDeg),
         courseDeg: record.courseDeg,
         navStatus: status.navStatus,
         statusGroup: status.statusGroup,
-        destination: String(record.destination ?? "Non déclarée").trim(),
-        lastDeparturePort: {
+        destination,
+        lastDeparturePort: previousShip?.lastDeparturePort ?? {
           name: "Non connu",
           country: "non confirmé",
         },
-        eta: record.eta,
+        eta: record.eta ?? previousShip?.eta,
         anchorStartedAt,
         position: record.position,
         updatedAt: record.updatedAt ?? generatedAt,
         areaName: positionArea(record.position.lat, record.position.lon),
         cargoContext:
-          "Position AIS réelle captée en direct ; port précédent et historique long non disponibles dans le flux gratuit.",
+          "Position AIS réelle captée en direct ; détails statiques conservés par MMSI quand AISstream les transmet.",
         sourceConfidence: "high",
       };
     })
@@ -490,7 +519,8 @@ function buildAisstreamCache(records, existing, seconds, boundingBoxes) {
       `Cache AISstream généré depuis une capture WebSocket de ${seconds} s.`,
       `Zone AISstream: ${JSON.stringify(boundingBoxes)}.`,
       "Positions, vitesse, cap et statut proviennent du flux AIS live lorsque transmis.",
-      "IMO, destination, dimensions, port précédent et temps d'ancre dépendent des messages statiques ou de l'historique local disponible.",
+      "IMO, destination, dimensions et ETA sont conservés par MMSI dès qu'un message statique AIS les fournit.",
+      "Port précédent et historique long nécessitent toujours une source AIS historique externe.",
     ],
     ships,
   };
