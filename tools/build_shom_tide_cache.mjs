@@ -9,12 +9,14 @@ process.env.TZ = "Europe/Paris";
 const here = dirname(fileURLToPath(import.meta.url));
 const outPath = resolve(here, "../web/public/data/shom-tides.json");
 const baseUrl = "https://services.data.shom.fr/spm";
+const publicHdmBaseUrl = "https://services.data.shom.fr/b2q8lrcdl4s04cbabsj4nhcb/hdm";
+const publicReferer = "https://maree.shom.fr/harbor/LE_POULIGUEN/hlt";
 const accessKey = process.env.SHOM_ACCESS_KEY ?? process.env.SHOM_KEY ?? "";
 const username = process.env.SHOM_USERNAME ?? "";
 const password = process.env.SHOM_PASSWORD ?? "";
 const harbor = process.env.SHOM_HARBOR ?? "LE_POULIGUEN";
 const harborName = process.env.SHOM_HARBOR_NAME ?? "Le Pouliguen";
-const durationDays = Number.parseInt(process.env.SHOM_DURATION_DAYS ?? "4", 10);
+const durationDays = Number.parseInt(process.env.SHOM_DURATION_DAYS ?? "7", 10);
 
 function parisDateYmd(date = new Date()) {
   const parts = new Intl.DateTimeFormat("fr-CA", {
@@ -60,6 +62,24 @@ async function keepExistingCacheOrEmpty(note) {
   } catch {
     return emptyCache(note);
   }
+}
+
+async function publicHdmFetch(pathname, params = {}) {
+  const url = new URL(`${publicHdmBaseUrl}${pathname}`);
+  for (const [key, value] of Object.entries(params)) {
+    if (value != null && value !== "") url.searchParams.set(key, String(value));
+  }
+  const res = await fetch(url, {
+    headers: {
+      Accept: "application/json",
+      Referer: publicReferer,
+    },
+  });
+  const body = await res.text();
+  if (!res.ok) {
+    throw new Error(`SHOM public tide HTTP ${res.status}: ${body.slice(0, 240)}`);
+  }
+  return JSON.parse(body);
 }
 
 function authHeaders() {
@@ -161,6 +181,29 @@ function parseEventsFromText(text) {
     .sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime());
 }
 
+function parsePublicHdmEvents(data) {
+  const events = [];
+  for (const [localDate, rows] of Object.entries(data)) {
+    if (!Array.isArray(rows)) continue;
+    for (const row of rows) {
+      if (!Array.isArray(row) || row.length < 3) continue;
+      const [kind, localTime, height, coefficient] = row;
+      if (localTime === "--:--") continue;
+      const type = kind === "tide.high" ? "high" : kind === "tide.low" ? "low" : null;
+      if (!type) continue;
+      events.push({
+        type,
+        time: localIso(localDate, localTime),
+        localDate,
+        localTime,
+        heightM: parseNumber(String(height)),
+        coefficient: coefficient === "---" ? null : parseNumber(String(coefficient)),
+      });
+    }
+  }
+  return events.sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime());
+}
+
 async function extractZipText(zipBuffer) {
   const tempDir = await mkdtemp(join(tmpdir(), "shom-tides-"));
   const zipPath = join(tempDir, "commande.zip");
@@ -194,9 +237,38 @@ async function downloadOrder(orderId) {
 
 async function buildCache() {
   if (!accessKey || !username || !password) {
-    return keepExistingCacheOrEmpty(
-      "SHOM credentials are missing; Open-Meteo Marine fallback remains active.",
-    );
+    const startDate = parisDateYmd();
+    const data = await publicHdmFetch("/spm/hlt", {
+      harborName: harbor,
+      duration: durationDays,
+      date: startDate,
+      utc: "standard",
+      correlation: 1,
+    });
+    const events = parsePublicHdmEvents(data);
+    if (events.length === 0) {
+      return keepExistingCacheOrEmpty(
+        "SHOM public tide endpoint returned no events; Open-Meteo Marine fallback remains active.",
+      );
+    }
+    return {
+      generatedAt: new Date().toISOString(),
+      sourceMode: "shom-cache",
+      provider: "SHOM horaires des marees gratuits",
+      harbor: {
+        cst: harbor,
+        name: harborName,
+      },
+      coverage: {
+        startDate,
+        durationDays,
+      },
+      notes: [
+        "Static cache generated from the public SHOM tide table portal.",
+        "No SHOM credential is stored in this public JSON file.",
+      ],
+      events,
+    };
   }
 
   await shomFetch(`/${accessKey}/spm/checkaccess`);

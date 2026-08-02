@@ -99,10 +99,11 @@ browser. The Cinéma Pax cache also has a scheduled GitHub Actions refresh
 workflow.
 
 SHOM tide cache: `node tools/build_shom_tide_cache.mjs` writes
-`web/public/data/shom-tides.json` for `LE_POULIGUEN` when `SHOM_ACCESS_KEY`,
-`SHOM_USERNAME` and `SHOM_PASSWORD` are available. The browser never calls SHOM
-directly; it reads the public JSON cache and falls back to Open-Meteo Marine
-when the licensed SHOM cache is absent.
+`web/public/data/shom-tides.json` for `LE_POULIGUEN` from the free SHOM tide
+table portal. The browser never calls SHOM directly; it reads the public JSON
+cache and falls back to Open-Meteo Marine only if the SHOM cache cannot be
+generated. If licensed SUP Marée credentials are supplied later, the same
+script can use the authenticated prediction service.
 
 AIS note: the deployed app remains a free static page. AISstream is consumed
 only during cache generation, then the browser reads
@@ -115,9 +116,9 @@ GitHub Actions: `.github/workflows/ais-cache.yml` refreshes the offshore AIS
 cache every 30 minutes when the repository secret `AISSTREAM_API_KEY` is set.
 The workflow listens for a six-minute window, writes the static JSON cache,
 verifies the web build and commits only when the cache changed.
-`.github/workflows/shom-tide-cache.yml` refreshes the SHOM tide cache daily
-when the repository secrets `SHOM_ACCESS_KEY`, `SHOM_USERNAME` and
-`SHOM_PASSWORD` are set.
+`.github/workflows/shom-tide-cache.yml` refreshes the SHOM tide cache daily.
+It works without secrets through the public SHOM tide table portal; licensed
+SUP Marée secrets remain optional for a future authenticated mode.
 
 ## Layout
 
@@ -127,8 +128,8 @@ tools/build_transit_data.py   Downloads the Lila GTFS zip, keeps stops inside
                               web/public/data/transit.json (~440 KB).
                               Re-run when the operator updates the feed.
 tools/build_shom_tide_cache.mjs
-                              Generates the optional SHOM SUP Marée cache from
-                              GitHub secrets; never used from the browser.
+                              Generates the SHOM tide cache for Le Pouliguen;
+                              never used from the browser.
 web/                          Vite + React + TypeScript PWA.
   src/lib/openmeteo.ts        Weather + marine fetchers, WMO labels (French).
   src/lib/tides.ts            Tide extrema from hourly sea level (parabolic
@@ -140,8 +141,7 @@ web/                          Vite + React + TypeScript PWA.
   public/data/transit.json    Generated, committed.
   public/data/events.json     Curated/snapshotted events merged into agenda.
   public/data/cinema-pax.json Generated, committed Cinéma Pax schedule cache.
-  public/data/shom-tides.json Optional official tide cache, empty until SHOM
-                              secrets are configured.
+  public/data/shom-tides.json Generated official SHOM tide cache.
 ```
 
 ## Run

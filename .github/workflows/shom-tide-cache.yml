@@ -37,7 +37,7 @@ jobs:
           SHOM_PASSWORD: ${{ secrets.SHOM_PASSWORD }}
           SHOM_HARBOR: LE_POULIGUEN
           SHOM_HARBOR_NAME: Le Pouliguen
-          SHOM_DURATION_DAYS: "4"
+          SHOM_DURATION_DAYS: "7"
         run: node tools/build_shom_tide_cache.mjs
 
       - name: Verify build
