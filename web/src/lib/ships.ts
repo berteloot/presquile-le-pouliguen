@@ -58,6 +58,7 @@ export interface OffshoreShipCache {
 
 export interface EnrichedShip extends OffshoreShip {
   flagEmoji: string;
+  flagCountryLabel: string;
   distanceFromLePouliguenKm: number;
   distanceFromLaBauleKm: number;
   timeAtAnchorHours: number | null;
@@ -65,6 +66,7 @@ export interface EnrichedShip extends OffshoreShip {
   isHorizonTarget: boolean;
   horizonScore: number;
   destinationLabel: string;
+  destinationCodeLabel: string;
   aiSummary: string;
   whyHere: string;
   fact: string;
@@ -86,6 +88,7 @@ const MERCHANT_NAME_HINT =
 const MERCHANT_DESTINATION_HINT = /\b(donges|donges|nantes|montoir|stm|frdon|frsmr|fr\s?mtx)\b/i;
 const AIS_LOCATION_LABELS = new Map([
   ["NLAMS", "Amsterdam"],
+  ["FRBOD", "Bordeaux"],
   ["FRDON", "Donges"],
   ["FRNTE", "Nantes"],
   ["FR MTX", "Montoir-de-Bretagne"],
@@ -93,12 +96,19 @@ const AIS_LOCATION_LABELS = new Map([
   ["FRSNR", "Saint-Nazaire"],
   ["DONGES", "Donges"],
   ["MONTOIR", "Montoir-de-Bretagne"],
+  ["NANTES", "Nantes"],
   ["SAINT NAZAIRE", "Saint-Nazaire"],
   ["SAINT-NAZAIRE", "Saint-Nazaire"],
+  ["SAINTNAZAIRE", "Saint-Nazaire"],
   ["ST NAZAIRE", "Saint-Nazaire"],
+  ["STNAZAIRE", "Saint-Nazaire"],
+  ["STNAZ", "Saint-Nazaire"],
   ["BREST", "Brest"],
   ["HOUAT", "Houat"],
   ["LA_TURBALLE", "La Turballe"],
+  ["PBG OWF", "Parc éolien du banc de Guérande"],
+  ["PBG WIND FARM", "Parc éolien du banc de Guérande"],
+  ["PBG WINDFARM", "Parc éolien du banc de Guérande"],
   ["LOIRE ANCHORAGE", "Mouillage de Loire"],
   ["FOR ORDERS", "En attente d'ordres"],
   ["SEA TRIAL", "Essais en mer"],
@@ -121,6 +131,20 @@ const AIS_COUNTRY_PREFIXES = new Map([
   ["PT", "Portugal"],
   ["SE", "Suède"],
   ["US", "États-Unis"],
+]);
+const FLAG_COUNTRY_LABELS = new Map([
+  ["Belgium", "Belgique"],
+  ["Finland", "Finlande"],
+  ["France", "France"],
+  ["Germany", "Allemagne"],
+  ["Greece", "Grèce"],
+  ["Inconnu", "non transmis"],
+  ["Ireland", "Irlande"],
+  ["Malta", "Malte"],
+  ["Netherlands", "Pays-Bas"],
+  ["Portugal", "Portugal"],
+  ["Singapore", "Singapour"],
+  ["United Kingdom", "Royaume-Uni"],
 ]);
 
 function toDate(value: string | null | undefined): Date | null {
@@ -150,6 +174,10 @@ function flagEmoji(code: string): string {
   return String.fromCodePoint(
     ...cc.split("").map((char) => 127397 + char.charCodeAt(0)),
   );
+}
+
+function flagCountryLabel(country: string): string {
+  return FLAG_COUNTRY_LABELS.get(country.trim()) ?? country;
 }
 
 export function formatHours(hours: number | null): string {
@@ -223,7 +251,14 @@ export function decodeAisRoute(destination: string): string | null {
   const clean = destination.trim().replace(/\s+/g, " ");
   if (!knownText(clean)) return null;
 
-  const separator = clean.includes("<>") ? "<>" : clean.includes(">") ? ">" : null;
+  const separator =
+    clean.includes("<>")
+      ? "<>"
+      : clean.includes(">")
+        ? ">"
+        : /^[A-Z0-9]{3,5}(?:-[A-Z0-9]{3,5})+$/.test(clean)
+          ? "-"
+          : null;
   if (!separator) return null;
 
   const route = clean
@@ -239,6 +274,17 @@ export function decodeAisDestination(destination: string): string {
   const clean = destination.trim().replace(/\s+/g, " ");
   if (!knownText(clean)) return "destination non déclarée";
   return decodeAisRoute(clean) ?? decodeAisLocation(clean);
+}
+
+export function decodeAisDestinationWithCode(destination: string): string {
+  const clean = destination.trim().replace(/\s+/g, " ");
+  if (!knownText(clean)) return "destination non déclarée";
+
+  const decoded = decodeAisDestination(clean);
+  const readableCode = displayAisLocation(clean);
+  if (decoded.toUpperCase() === readableCode.toUpperCase()) return decoded;
+
+  return `${decoded} (${readableCode})`;
 }
 
 function destinationLabel(destination: string): string {
@@ -280,7 +326,7 @@ function buildSummary(ship: OffshoreShip, now: Date, distanceKm: number, wait: n
           ? "a un temps d'attente au mouillage non confirmé"
           : `attend au mouillage depuis ${formatHours(wait)}`;
   return (
-    `${ship.name}, ${ship.vesselType.toLowerCase()} sous pavillon ${ship.flagCountry}, ` +
+    `${ship.name}, ${ship.vesselType.toLowerCase()} sous pavillon ${flagCountryLabel(ship.flagCountry)}, ` +
     `observé par AIS à environ ${distanceKm.toFixed(1)} km du Pouliguen.` +
     departure +
     ` Il ${movement}, cap ${Math.round(ship.headingDeg)}°${destination}.`
@@ -371,6 +417,7 @@ export function enrichShip(ship: OffshoreShip, cacheTime: Date): EnrichedShip {
   return {
     ...ship,
     flagEmoji: flagEmoji(ship.flagCode),
+    flagCountryLabel: flagCountryLabel(ship.flagCountry),
     distanceFromLePouliguenKm,
     distanceFromLaBauleKm,
     timeAtAnchorHours: wait,
@@ -378,6 +425,7 @@ export function enrichShip(ship: OffshoreShip, cacheTime: Date): EnrichedShip {
     isHorizonTarget: score >= 45,
     horizonScore: score,
     destinationLabel: destinationLabel(ship.destination),
+    destinationCodeLabel: decodeAisDestinationWithCode(ship.destination),
     aiSummary: buildSummary(ship, cacheTime, distanceFromLePouliguenKm, wait),
     whyHere: buildWhy(ship, wait),
     fact: buildFact(ship, distanceFromLePouliguenKm, wait),

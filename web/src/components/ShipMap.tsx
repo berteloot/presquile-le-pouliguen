@@ -32,9 +32,10 @@ function popupHtml(ship: EnrichedShip): string {
   return (
     `<div class="ship-popup">` +
     `<h3>${esc(ship.flagEmoji)} ${esc(ship.name)}</h3>` +
+    `<p>Pavillon : ${esc(ship.flagCountryLabel)}</p>` +
     `<p><strong>${esc(ship.vesselType)}</strong> · ${esc(statusLabel(ship.statusGroup))}</p>` +
     `<p>${ship.speedKnots.toFixed(1)} nd · cap ${Math.round(ship.headingDeg)}° · ${ship.coordinateLabel}</p>` +
-    `<p>Destination : ${esc(ship.destination)}</p>` +
+    `<p>Destination AIS : ${esc(ship.destinationCodeLabel)}</p>` +
     `<p>Mouillage : ${esc(formatHours(ship.timeAtAnchorHours))}</p>` +
     `</div>`
   );

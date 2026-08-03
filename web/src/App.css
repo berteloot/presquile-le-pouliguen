@@ -1521,8 +1521,25 @@ main {
   background: var(--sea-soft);
 }
 
-.ship-row span {
+.ship-row-flag {
   grid-row: span 2;
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 2px;
+  min-width: 32px;
+}
+
+.ship-row-flag em {
+  max-width: 48px;
+  color: var(--muted);
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 800;
+  line-height: 1.05;
+  text-align: center;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
 }
 
 .ship-row strong {

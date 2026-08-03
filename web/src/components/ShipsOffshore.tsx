@@ -72,11 +72,13 @@ function matchesShipSearch(ship: EnrichedShip, searchTerm: string): boolean {
     ship.imo,
     ship.callSign,
     ship.flagCountry,
+    ship.flagCountryLabel,
     ship.vesselType,
     ship.vesselTypeGroup,
     ship.navStatus,
     ship.destination,
     ship.destinationLabel,
+    ship.destinationCodeLabel,
     ship.lastDeparturePort.name,
     ship.lastDeparturePort.country,
   ]
@@ -201,7 +203,7 @@ function ShipDetail({
     <section className="ship-detail" aria-label={`Détail ${ship.name}`}>
       <div className="ship-detail-head">
         <div>
-          <span className="ship-kicker">{ship.flagEmoji} {ship.flagCountry}</span>
+          <span className="ship-kicker">{ship.flagEmoji} Pavillon : {ship.flagCountryLabel}</span>
           <h3>{ship.name}</h3>
           <p>{ship.aiSummary}</p>
         </div>
@@ -297,7 +299,7 @@ function ShipDetail({
           </div>
           <div>
             <dt>Destination</dt>
-            <dd>{ship.destinationLabel}</dd>
+            <dd>{ship.destinationCodeLabel}</dd>
           </div>
           <div>
             <dt>Dernier port</dt>
@@ -551,24 +553,24 @@ export default function ShipsOffshore() {
                   value={String(stats.count)}
                   note={
                     shipScope === "horizon"
-                      ? "gros navires au mouillage"
+                      ? "grandes silhouettes au mouillage"
                       : `${stats.anchoredCount} au mouillage · ${stats.movingCount} en route`
                   }
                 />
                 <StatCard
                   label="Attente moyenne"
                   value={formatHours(stats.averageWaitHours)}
-                  note="mouillages mesurés"
+                  note="mouillages AIS mesurés"
                 />
                 <StatCard
                   label="Plus grand"
-                  value={stats.largestShip ? `${stats.largestShip.lengthM} m` : "n/a"}
-                  note={stats.largestShip?.name ?? "aucun navire"}
+                  value={stats.largestShip ? `${stats.largestShip.lengthM} m` : "non transmis"}
+                  note={stats.largestShip?.name ?? "longueur AIS manquante"}
                 />
                 <StatCard
                   label="Plus lourd"
-                  value={stats.biggestTonnage ? `${numberLabel(stats.biggestTonnage.grossTonnage)} GT` : "n/a"}
-                  note={stats.biggestTonnage?.name ?? "aucun navire"}
+                  value={stats.biggestTonnage ? `${numberLabel(stats.biggestTonnage.grossTonnage)} GT` : "non transmis"}
+                  note={stats.biggestTonnage?.name ?? "tonnage AIS manquant"}
                 />
               </div>
 
@@ -588,7 +590,10 @@ export default function ShipsOffshore() {
                             className={selectedShip?.mmsi === ship.mmsi ? "ship-row ship-row-active" : "ship-row"}
                             onClick={() => selectShip(ship)}
                           >
-                            <span>{ship.flagEmoji}</span>
+                            <span className="ship-row-flag">
+                              <span aria-hidden="true">{ship.flagEmoji}</span>
+                              <em>{ship.flagCountryLabel}</em>
+                            </span>
                             <strong>{ship.name}</strong>
                             <small>
                               {ship.vesselType} · {statusLabel(ship.statusGroup)} ·{" "}
