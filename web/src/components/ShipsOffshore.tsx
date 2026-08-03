@@ -318,6 +318,10 @@ function ShipDetail({
             <dd>{formatHours(ship.timeAtAnchorHours)}</dd>
           </div>
           <div>
+            <dt>Dernier captage AIS</dt>
+            <dd>{formatDateTime(ship.updatedAt)}</dd>
+          </div>
+          <div>
             <dt>Coordonnées</dt>
             <dd>{ship.coordinateLabel}</dd>
           </div>
@@ -599,6 +603,8 @@ export default function ShipsOffshore() {
                               {ship.vesselType} · {statusLabel(ship.statusGroup)} ·{" "}
                               {ship.distanceFromLePouliguenKm.toFixed(1)} km
                               {shipScope === "horizon" ? " · horizon" : ""}
+                              <br />
+                              Dernier captage AIS : {formatDateTime(ship.updatedAt)}
                             </small>
                           </button>
                         </li>

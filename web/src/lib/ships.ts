@@ -168,6 +168,20 @@ function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number) {
   return 2 * 6371 * Math.asin(Math.sqrt(a));
 }
 
+function positionArea(lat: number, lon: number): string {
+  if (lat >= 47.45 && lon <= -2.55) return "Mor Braz / baie de Quiberon";
+  if (lat >= 47.35 && lon <= -2.45) return "Secteur Vilaine - Morbihan";
+  if (lon <= -2.75) return "Au large du Croisic / plateau du Four";
+  if (lat < 47.18 && lon < -2.5) return "Sud-ouest de la baie du Pouliguen";
+  if (lat < 47.18) return "Mouillage extérieur sud Loire";
+  if (lon > -2.25) return "Estuaire de la Loire / Saint-Nazaire";
+  if (lon > -2.35) return "Approche Saint-Nazaire";
+  if (lat >= 47.2 && lat <= 47.31 && lon >= -2.5) {
+    return "Baie du Pouliguen / La Baule";
+  }
+  return "Mouillage extérieur au large de La Baule";
+}
+
 function flagEmoji(code: string): string {
   const cc = code.trim().toUpperCase();
   if (!/^[A-Z]{2}$/.test(cc)) return "⚑";
@@ -416,6 +430,7 @@ export function enrichShip(ship: OffshoreShip, cacheTime: Date): EnrichedShip {
   const score = horizonScore(ship, distanceFromLePouliguenKm, distanceFromLaBauleKm);
   return {
     ...ship,
+    areaName: positionArea(ship.position.lat, ship.position.lon),
     flagEmoji: flagEmoji(ship.flagCode),
     flagCountryLabel: flagCountryLabel(ship.flagCountry),
     distanceFromLePouliguenKm,

@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import type { EnrichedShip } from "../lib/ships";
-import { formatHours, statusLabel } from "../lib/ships";
+import { formatDateTime, formatHours, statusLabel } from "../lib/ships";
 
 interface Props {
   ships: EnrichedShip[];
@@ -37,6 +37,7 @@ function popupHtml(ship: EnrichedShip): string {
     `<p>${ship.speedKnots.toFixed(1)} nd · cap ${Math.round(ship.headingDeg)}° · ${ship.coordinateLabel}</p>` +
     `<p>Destination AIS : ${esc(ship.destinationCodeLabel)}</p>` +
     `<p>Mouillage : ${esc(formatHours(ship.timeAtAnchorHours))}</p>` +
+    `<p>Dernier captage AIS : ${esc(formatDateTime(ship.updatedAt))}</p>` +
     `</div>`
   );
 }

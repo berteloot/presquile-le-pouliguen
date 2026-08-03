@@ -248,10 +248,17 @@ function normalizeHeading(value) {
 }
 
 function positionArea(lat, lon) {
-  if (lon < -2.85) return "Au large du Croisic";
-  if (lat < 47.18 && lon < -2.45) return "Approche sud de la baie";
+  if (lat >= 47.45 && lon <= -2.55) return "Mor Braz / baie de Quiberon";
+  if (lat >= 47.35 && lon <= -2.45) return "Secteur Vilaine - Morbihan";
+  if (lon <= -2.75) return "Au large du Croisic / plateau du Four";
+  if (lat < 47.18 && lon < -2.5) return "Sud-ouest de la baie du Pouliguen";
+  if (lat < 47.18) return "Mouillage extérieur sud Loire";
+  if (lon > -2.25) return "Estuaire de la Loire / Saint-Nazaire";
   if (lon > -2.35) return "Approche Saint-Nazaire";
-  return "Baie du Pouliguen et rade de Saint-Nazaire";
+  if (lat >= 47.2 && lat <= 47.31 && lon >= -2.5) {
+    return "Baie du Pouliguen / La Baule";
+  }
+  return "Mouillage extérieur au large de La Baule";
 }
 
 function dimensionSum(dimension, aKey, bKey) {
