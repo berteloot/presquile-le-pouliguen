@@ -14,6 +14,12 @@ const DEFAULT_BBOX = [
     [47.56, -2.02],
   ],
 ];
+const SAINT_NAZAIRE_BAY_BOUNDS = {
+  minLat: 47.03,
+  maxLat: 47.32,
+  minLon: -2.66,
+  maxLon: -2.02,
+};
 const DEFAULT_MESSAGE_TYPES = [
   "PositionReport",
   "StandardClassBPositionReport",
@@ -157,6 +163,18 @@ function firstDefined(...values) {
 function knownText(value) {
   if (!value) return false;
   return !/^(undefined|null|non connu|non confirm|non déclar|unknown|n\/a)$/i.test(String(value).trim());
+}
+
+function isInSaintNazaireBay(position) {
+  const lat = Number(position?.lat);
+  const lon = Number(position?.lon);
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return false;
+  return (
+    lat >= SAINT_NAZAIRE_BAY_BOUNDS.minLat &&
+    lat <= SAINT_NAZAIRE_BAY_BOUNDS.maxLat &&
+    lon >= SAINT_NAZAIRE_BAY_BOUNDS.minLon &&
+    lon <= SAINT_NAZAIRE_BAY_BOUNDS.maxLon
+  );
 }
 
 function parseCsvEnv(name, fallback) {
@@ -440,6 +458,7 @@ function buildAisstreamCache(records, existing, seconds, boundingBoxes) {
 
   const ships = Array.from(records.values())
     .filter((record) => record.position)
+    .filter((record) => isInSaintNazaireBay(record.position))
     .map((record) => {
       const { country, flagCode } = countryFromMmsi(record.mmsi);
       const speedKnots = record.speedKnots ?? 0;
@@ -527,11 +546,12 @@ function buildAisstreamCache(records, existing, seconds, boundingBoxes) {
   return {
     generatedAt,
     sourceMode: "api-cache",
-    coverageLabel: "Baie du Pouliguen, Le Croisic, La Baule, rade de Saint-Nazaire et approche Donges",
-    center: { lat: 47.255, lon: -2.49 },
+    coverageLabel: "Baie de Saint-Nazaire : La Baule, Le Pouliguen, mouillages Loire/Donges",
+    center: { lat: 47.21, lon: -2.36 },
     notes: [
       `Cache AISstream généré depuis une capture WebSocket de ${seconds} s.`,
       `Zone AISstream: ${JSON.stringify(boundingBoxes)}.`,
+      "Affichage filtré à la baie de Saint-Nazaire ; Mor Braz, Vilaine, Houat et Quiberon sont exclus.",
       "Positions, vitesse, cap et statut proviennent du flux AIS live lorsque transmis.",
       "IMO, destination, dimensions et ETA sont conservés par MMSI dès qu'un message statique AIS les fournit.",
       "Port précédent et historique long nécessitent toujours une source AIS historique externe.",
@@ -561,10 +581,13 @@ async function loadFromUrl(url) {
   return {
     generatedAt: isoParisNow(),
     sourceMode: "api-cache",
-    coverageLabel: "Baie du Pouliguen, rade de Saint-Nazaire et approche Donges",
-    center: { lat: 47.255, lon: -2.49 },
-    notes: ["Cache AIS généré automatiquement depuis AIS_CACHE_SOURCE_URL."],
-    ships: rows,
+    coverageLabel: "Baie de Saint-Nazaire : La Baule, Le Pouliguen, mouillages Loire/Donges",
+    center: { lat: 47.21, lon: -2.36 },
+    notes: [
+      "Cache AIS généré automatiquement depuis AIS_CACHE_SOURCE_URL.",
+      "Affichage filtré à la baie de Saint-Nazaire ; Mor Braz, Vilaine, Houat et Quiberon sont exclus.",
+    ],
+    ships: rows.filter((ship) => isInSaintNazaireBay(ship.position)),
   };
 }
 

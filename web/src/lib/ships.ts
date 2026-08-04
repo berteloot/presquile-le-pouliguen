@@ -83,6 +83,12 @@ export interface OffshoreShipStats {
 }
 
 const LA_BAULE = { lat: 47.2867, lon: -2.3908 };
+const SAINT_NAZAIRE_BAY_BOUNDS = {
+  minLat: 47.03,
+  maxLat: 47.32,
+  minLon: -2.66,
+  maxLon: -2.02,
+};
 const MERCHANT_NAME_HINT =
   /\b(abbey|aegean|arklow|atlantic|bomar|eagle|fighter|harbour|mimer|moraime|pioneer|tanker|uhl)\b/i;
 const MERCHANT_DESTINATION_HINT = /\b(donges|donges|nantes|montoir|stm|frdon|frsmr|fr\s?mtx)\b/i;
@@ -166,6 +172,17 @@ function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number) {
       Math.cos(lat2 * rad) *
       Math.sin(((lon2 - lon1) * rad) / 2) ** 2;
   return 2 * 6371 * Math.asin(Math.sqrt(a));
+}
+
+export function isInSaintNazaireBay(ship: OffshoreShip): boolean {
+  const { lat, lon } = ship.position;
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return false;
+  return (
+    lat >= SAINT_NAZAIRE_BAY_BOUNDS.minLat &&
+    lat <= SAINT_NAZAIRE_BAY_BOUNDS.maxLat &&
+    lon >= SAINT_NAZAIRE_BAY_BOUNDS.minLon &&
+    lon <= SAINT_NAZAIRE_BAY_BOUNDS.maxLon
+  );
 }
 
 function positionArea(lat: number, lon: number): string {
@@ -450,7 +467,9 @@ export function enrichShip(ship: OffshoreShip, cacheTime: Date): EnrichedShip {
 
 export function enrichShipCache(cache: OffshoreShipCache): EnrichedShip[] {
   const cacheTime = toDate(cache.generatedAt) ?? new Date();
-  return cache.ships.map((ship) => enrichShip(ship, cacheTime));
+  return cache.ships
+    .filter(isInSaintNazaireBay)
+    .map((ship) => enrichShip(ship, cacheTime));
 }
 
 export function offshoreShipStats(ships: EnrichedShip[]): OffshoreShipStats {
