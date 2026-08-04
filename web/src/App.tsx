@@ -158,6 +158,7 @@ const NAV_LINKS = [
   { href: "#navires", label: "Navires" },
   { href: "#aujourdhui", label: "Aujourd'hui" },
   { href: "#pratique", label: "Vie pratique" },
+  { href: "#sport-resa", label: "Sport résa" },
   { href: "#/decouvrir", label: "Découvrir" },
 ];
 type CircuitMode = "all" | "rando" | "velo";
