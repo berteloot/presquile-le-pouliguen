@@ -44,6 +44,12 @@ function telHref(phone: string): string {
   return `tel:${phone.replace(/\D/g, "")}`;
 }
 
+function highlightLinkLabel(title: string): string {
+  if (/p500/i.test(title)) return "formulaire P500";
+  if (/tournoi/i.test(title)) return "page tournoi interne";
+  return "voir l'info officielle";
+}
+
 export default function SportsBookings() {
   const [padel, setPadel] = useState<PadelCache | null>(null);
   const [failed, setFailed] = useState(false);
@@ -108,7 +114,7 @@ export default function SportsBookings() {
                   <strong>{event.title}</strong>
                   <span>{event.when} · {event.note}</span>
                   <a href={event.sourceUrl} target="_blank" rel="noopener noreferrer">
-                    source
+                    {highlightLinkLabel(event.title)}
                   </a>
                 </li>
               ))}
@@ -135,7 +141,7 @@ export default function SportsBookings() {
           {padel.restrictedPages.length > 0 && (
             <p className="meta-line">
               Certaines pages de planning demandent un compte Padel La Baule ;
-              la page d'accueil source a été modifiée le{" "}
+              la page d'accueil officielle a été modifiée le{" "}
               {dateLabel(padel.source.homePageModifiedAt)}.
             </p>
           )}

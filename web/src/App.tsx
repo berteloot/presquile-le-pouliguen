@@ -134,6 +134,8 @@ const AGENDA_CITY_URLS: Record<string, string> = {
 };
 const BATHING_WATER_URL =
   "https://baignades.sante.gouv.fr/baignades/consultSite.do?annee=2025&dptddass=044&impression=yes&isite=044001738&modeDetailImp=3&plv=04400157991&site=044001738";
+const DOGS_BEACH_RULES_URL =
+  "https://www.labaule-guerande.com/decouvrir/la-destination/le-pouliguen/";
 const PARKING_URL =
   "https://www.lepouliguen.fr/decouvrir/se-deplacer-et-stationner-au-pouliguen/";
 const MONITORED_BEACHES = [
@@ -151,27 +153,51 @@ const AGENDA_CITY_FILTERS = [
   "Pornichet",
   "Saint-Nazaire",
 ];
+const CURRENT_AGENDA_DAYS = 7;
+const CURRENT_AGENDA_LIMIT = 8;
+const TOURISM_EVENT_HINT =
+  /\b(march[ée]|nocturne|concert|visite|expo|exposition|balade|festival|spectacle|patrimoine|atelier|animation|moulin|mus[ée]e|port|plage|feu|sortie)\b/i;
+const NON_TOURISM_EVENT_HINT = /\b(stage|cours particulier|tennis|cin[ée]ma|fitness|tonic)\b/i;
 const NAV_LINKS = [
-  { href: "#essentiel", label: "L'essentiel" },
-  { href: "#deplacer", label: "Se déplacer" },
-  { href: "#cote", label: "La côte" },
+  { href: "#essentiel", label: "Essentiel" },
+  { href: "#cote", label: "Côte" },
+  { href: "#deplacer", label: "Déplacements" },
   { href: "#navires", label: "Navires" },
-  { href: "#aujourdhui", label: "Aujourd'hui" },
-  { href: "#pratique", label: "Vie pratique" },
+  { href: "#aujourdhui", label: "Sorties" },
+  { href: "#pratique", label: "Pratique" },
   { href: "#sport-resa", label: "Sport résa" },
   { href: "#/decouvrir", label: "Découvrir" },
 ];
 type CircuitMode = "all" | "rando" | "velo";
 type SourceStatusKind = "live" | "partial" | "static" | "unavailable";
+type SearchLanguage = "fr" | "en" | "es";
+interface SiteSearchResult {
+  title: string;
+  detail: string;
+  href: string;
+  tag: string;
+  keywords?: string;
+}
+
+const SEARCH_COPY: Record<SearchLanguage, { placeholder: string; empty: string }> = {
+  fr: {
+    placeholder: "Plage, chien, bus, padel, navire...",
+    empty: "Aucun résultat direct. Essayez plage, bus, navire, padel ou déchèterie.",
+  },
+  en: {
+    placeholder: "Beach, dog, bus, padel, ship...",
+    empty: "No direct result. Try beach, bus, ship, padel or recycling centre.",
+  },
+  es: {
+    placeholder: "Playa, perro, bus, padel, barco...",
+    empty: "Sin resultado directo. Prueba playa, bus, barco, padel o punto limpio.",
+  },
+};
 
 function newTabProps(href: string) {
   return /^https?:\/\//.test(href)
     ? { target: "_blank", rel: "noopener noreferrer" }
     : {};
-}
-
-function SourceBadge({ kind, children }: { kind: SourceStatusKind; children: string }) {
-  return <span className={`source-badge source-badge-${kind}`}>{children}</span>;
 }
 
 function SourceHealthLink({
@@ -193,7 +219,8 @@ function SourceHealthLink({
       title={`${label} : ${status}`}
       {...newTabProps(href)}
     >
-      <SourceBadge kind={kind}>{label}</SourceBadge>
+      <span className={`source-dot source-dot-${kind}`} aria-hidden="true" />
+      <span>{label}</span>
     </a>
   );
 }
@@ -219,6 +246,20 @@ function fluxBadgeClass(flux: string): string {
   if (/jaune/i.test(flux)) return "flux-badge flux-jaune";
   if (/vert/i.test(flux)) return "flux-badge flux-vert";
   return "flux-badge";
+}
+
+function dogBeachRule(date: Date): { label: string; note: string } {
+  const monthDay = (date.getMonth() + 1) * 100 + date.getDate();
+  if (monthDay >= 630 && monthDay <= 915) {
+    return {
+      label: "Saison : restrictions chiens",
+      note: "Plage du Nau interdite aux chiens ; autres plages accessibles avant 9h et après 21h.",
+    };
+  }
+  return {
+    label: "Hors saison : chiens autorisés",
+    note: "Toutes les plages du Pouliguen sont accessibles aux chiens, sans restriction horaire annoncée.",
+  };
 }
 
 function initialRoute(): string {
@@ -324,6 +365,126 @@ function curatedEventToAgenda(event: LocalEvent): AgendaEvent | null {
   };
 }
 
+function normalizedText(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
+function matchesSiteSearch(result: SiteSearchResult, query: string): boolean {
+  const terms = normalizedText(query).trim().split(/\s+/).filter(Boolean);
+  if (terms.length === 0) return false;
+  const haystack = normalizedText(
+    `${result.tag} ${result.title} ${result.detail} ${result.keywords ?? ""}`,
+  );
+  return terms.every((term) => haystack.includes(term));
+}
+
+function currentSearchLanguage(): SearchLanguage {
+  const params = new URLSearchParams(window.location.search);
+  const lang = params.get("lang") ?? params.get("tl") ?? params.get("_x_tr_tl");
+  return lang === "en" || lang === "es" ? lang : "fr";
+}
+
+const FRENCH_MONTHS = new Map([
+  ["janvier", 0],
+  ["fevrier", 1],
+  ["mars", 2],
+  ["avril", 3],
+  ["mai", 4],
+  ["juin", 5],
+  ["juillet", 6],
+  ["aout", 7],
+  ["septembre", 8],
+  ["octobre", 9],
+  ["novembre", 10],
+  ["decembre", 11],
+]);
+
+const FRENCH_WEEKDAYS = new Map([
+  ["lundi", 1],
+  ["mardi", 2],
+  ["mercredi", 3],
+  ["jeudi", 4],
+  ["vendredi", 5],
+  ["samedi", 6],
+  ["dimanche", 0],
+]);
+
+function parseFrenchDayMonth(day: string, month: string, year: number): Date | null {
+  const monthIndex = FRENCH_MONTHS.get(normalizedText(month));
+  if (monthIndex == null) return null;
+  return new Date(year, monthIndex, Number(day));
+}
+
+function agendaBoundsFromText(event: AgendaEvent, ref: Date): { start: Date; end: Date } | null {
+  const text = normalizedText(`${event.dateRange} ${event.title}`);
+  const explicitRange = text.match(/(\d{1,2})\s+([a-z]+)\s*[-–]\s*(\d{1,2})\s+([a-z]+)\s+(\d{4})/);
+  if (explicitRange) {
+    const start = parseFrenchDayMonth(explicitRange[1], explicitRange[2], Number(explicitRange[5]));
+    const end = parseFrenchDayMonth(explicitRange[3], explicitRange[4], Number(explicitRange[5]));
+    if (start && end) return { start, end };
+  }
+
+  const seasonalRange = text.match(/du\s+(\d{1,2})\s+([a-z]+)\s+au\s+(\d{1,2})\s+([a-z]+)/);
+  if (seasonalRange) {
+    const start = parseFrenchDayMonth(seasonalRange[1], seasonalRange[2], ref.getFullYear());
+    const end = parseFrenchDayMonth(seasonalRange[3], seasonalRange[4], ref.getFullYear());
+    if (start && end) return { start, end };
+  }
+
+  return null;
+}
+
+function agendaBounds(event: AgendaEvent, ref: Date): { start: Date; end: Date } | null {
+  const start = event.startAt ? new Date(event.startAt) : null;
+  const end = event.endAt ? new Date(event.endAt) : null;
+  if (start && end && !Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime())) {
+    return { start, end };
+  }
+  return agendaBoundsFromText(event, ref);
+}
+
+function hasOccurrenceInWindow(event: AgendaEvent, start: Date, end: Date): boolean {
+  const text = normalizedText(event.dateRange);
+  const weekday = Array.from(FRENCH_WEEKDAYS.entries()).find(([label]) => text.includes(label));
+  if (!weekday) return false;
+  const [, targetDay] = weekday;
+  const cursor = new Date(start);
+  cursor.setHours(12, 0, 0, 0);
+  while (cursor <= end) {
+    if (cursor.getDay() === targetDay) return true;
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return false;
+}
+
+function isCurrentTourismEvent(event: AgendaEvent, ref: Date): boolean {
+  const text = `${event.title} ${event.location} ${event.dateRange}`;
+  if (NON_TOURISM_EVENT_HINT.test(text) && !TOURISM_EVENT_HINT.test(text)) return false;
+
+  const windowStart = startOfDay(ref);
+  const windowEnd = addDays(windowStart, CURRENT_AGENDA_DAYS);
+  const bounds = agendaBounds(event, ref);
+  if (!bounds) return TOURISM_EVENT_HINT.test(text);
+
+  if (bounds.end < windowStart || bounds.start > windowEnd) return false;
+  if (hasOccurrenceInWindow(event, windowStart, windowEnd)) return true;
+
+  const durationDays = Math.max(1, (bounds.end.getTime() - bounds.start.getTime()) / 86_400_000);
+  const startsSoon = bounds.start >= windowStart && bounds.start <= windowEnd;
+  const endsSoon = bounds.end >= windowStart && bounds.end <= windowEnd;
+  return startsSoon || endsSoon || (durationDays <= CURRENT_AGENDA_DAYS && TOURISM_EVENT_HINT.test(text));
+}
+
+function agendaSortValue(event: AgendaEvent, ref: Date): number {
+  const bounds = agendaBounds(event, ref);
+  if (!bounds) return Number.MAX_SAFE_INTEGER;
+  if (bounds.start < ref && bounds.end >= ref) return bounds.end.getTime();
+  return bounds.start.getTime();
+}
+
 function mergeAgendaEvents(live: AgendaEvent[], curated: LocalEvent[]): AgendaEvent[] {
   const seen = new Set<string>();
   const out: AgendaEvent[] = [];
@@ -389,16 +550,33 @@ export default function App() {
   const [route, setRoute] = useState<string>(initialRoute);
   const [openMaps, setOpenMaps] = useState<Record<string, boolean>>({});
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const [siteSearch, setSiteSearch] = useState("");
+  const [searchLanguage, setSearchLanguage] = useState<SearchLanguage>(() => currentSearchLanguage());
   const selectedDateValue = toDateInputValue(selectedDate);
   const todayValue = toDateInputValue(now);
   const selectedDateIsToday = selectedDateValue === todayValue;
   const selectedDateReference = selectedDateIsToday ? now : selectedDate;
   const selectedMoon = useMemo(() => moonInfo(selectedDateReference), [selectedDateReference]);
+  const dogRule = useMemo(() => dogBeachRule(selectedDate), [selectedDate]);
 
   useEffect(() => {
     const onHash = () => setRoute(window.location.hash);
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
+  }, []);
+
+  useEffect(() => {
+    const syncLanguage = () => setSearchLanguage(currentSearchLanguage());
+    const onLanguageChange = (event: Event) => {
+      const language = (event as CustomEvent<{ language?: string }>).detail?.language;
+      setSearchLanguage(language === "en" || language === "es" ? language : "fr");
+    };
+    window.addEventListener("popstate", syncLanguage);
+    window.addEventListener("plq:languagechange", onLanguageChange);
+    return () => {
+      window.removeEventListener("popstate", syncLanguage);
+      window.removeEventListener("plq:languagechange", onLanguageChange);
+    };
   }, []);
 
   useLayoutEffect(() => {
@@ -698,19 +876,166 @@ export default function App() {
     ],
     [bikeParking, bikeShareStations],
   );
+  const currentAgenda = useMemo(
+    () =>
+      agenda
+        .filter((event) => isCurrentTourismEvent(event, now))
+        .sort((a, b) => agendaSortValue(a, now) - agendaSortValue(b, now))
+        .slice(0, CURRENT_AGENDA_LIMIT),
+    [agenda, now],
+  );
   const agendaCounts = useMemo(() => {
     const counts = new Map<string, number>();
-    counts.set("Tous", agenda.length);
-    for (const event of agenda) {
+    counts.set("Tous", currentAgenda.length);
+    for (const event of currentAgenda) {
       if (!event.city) continue;
       counts.set(event.city, (counts.get(event.city) ?? 0) + 1);
     }
     return counts;
-  }, [agenda]);
+  }, [currentAgenda]);
   const visibleAgenda = useMemo(
-    () => (agendaCity === "Tous" ? agenda : agenda.filter((event) => event.city === agendaCity)),
-    [agenda, agendaCity],
+    () =>
+      agendaCity === "Tous"
+        ? currentAgenda
+        : currentAgenda.filter((event) => event.city === agendaCity),
+    [currentAgenda, agendaCity],
   );
+  const siteSearchResults = useMemo(() => {
+    const baseResults: SiteSearchResult[] = [
+      {
+        tag: "Section",
+        title: "L'essentiel",
+        detail: "Météo, mer, marée, bus, train, cinéma, agenda, parking, navires.",
+        href: "#essentiel",
+        keywords:
+          "essentials essential now today basics weather sea tide tides bus train cinema movies events parking ships barcos barcos barco tren autobus autobus cine hoy tiempo météo mareas marea",
+      },
+      {
+        tag: "Section",
+        title: "Se déplacer",
+        detail: "Bus Lila Presqu'île, trains, vélo, parking, route et circulation.",
+        href: "#deplacer",
+        keywords:
+          "transport move travel bus train bike bicycle cycling parking traffic road route mobility desplazarse transporte tren bici bicicleta aparcamiento estacionamiento trafico carretera movilidad",
+      },
+      {
+        tag: "Section",
+        title: "La côte",
+        detail: "Météo marine, marées, plages, qualité de l'eau, chiens et pêche à pied.",
+        href: "#cote",
+        keywords:
+          "coast sea seaside marine weather tide tides beach beaches water quality swimming bathing dogs dog fishing shoreline costa mar playa playas mareas marea calidad agua baño bano perros perro pesca costa litoral",
+      },
+      {
+        tag: "Section",
+        title: "Navires au large",
+        detail: "AIS, bateaux, tankers, mouillage, destination et dernier captage connu.",
+        href: "#navires",
+        keywords:
+          "ships vessels boats ais tanker tankers offshore anchored anchorage destination capture last seen live position cargos barcos buques navios petroleros fondeo anclados anclaje destino posicion ultima captura",
+      },
+      {
+        tag: "Section",
+        title: "Aujourd'hui",
+        detail: "Sorties actuelles, agenda touristique, cinéma et briefing du jour.",
+        href: "#aujourdhui",
+        keywords:
+          "today now events agenda outings tourism cinema movie movies visit concert market exhibition things to do hoy ahora eventos agenda salidas turismo cine visita concierto mercado exposicion cosas que hacer",
+      },
+      {
+        tag: "Section",
+        title: "Vie pratique",
+        detail: "Déchèterie, déchets, verre, défibrillateurs, recharge et services utiles.",
+        href: "#pratique",
+        keywords:
+          "practical useful recycling waste rubbish trash glass bin defibrillator charger charging services walks hikes punto limpio basura residuos reciclaje vidrio contenedor desfibrilador recarga servicios paseos senderismo",
+      },
+      {
+        tag: "Section",
+        title: "Sport résa",
+        detail: "Padel La Baule, réservations, tournois, Ten'Up, Country Club et liens officiels.",
+        href: "#sport-resa",
+        keywords:
+          "sport sports booking reservation reservations padel tennis tournament court country club tenup activity activities deporte deportes reserva reservas torneo pista tenis actividades",
+      },
+      {
+        tag: "Section",
+        title: "Découvrir",
+        detail: "Idées de visite, marais salants, criée, Côte Sauvage, patrimoine et balades.",
+        href: "#/decouvrir",
+        keywords:
+          "discover visit visits sightseeing salt marshes fish market wild coast heritage walks tourism explore descubrir visitar visitas turismo marismas salinas lonja costa salvaje patrimonio paseos explorar",
+      },
+      {
+        tag: "Plage",
+        title: "Chiens sur les plages",
+        detail: `${dogRule.label}. ${dogRule.note}`,
+        href: "#cote",
+        keywords:
+          "dog dogs beach beaches rules regulation allowed forbidden pets leash animal perro perros playa playas normas regulacion permitido prohibido mascota correa",
+      },
+      {
+        tag: "Déchets",
+        title: "Déchèterie du Pouliguen",
+        detail: "Adresse derrière la gare du Pouliguen, horaires et lien Cap Atlantique.",
+        href: "#pratique",
+        keywords:
+          "recycling centre recycling center waste dump tip address opening hours hours rubbish trash garbage déchetterie decheterie punto limpio reciclaje residuos basura direccion horario horarios apertura estacion gare",
+      },
+    ];
+
+    for (const beach of beaches) {
+      baseResults.push({
+        tag: "Plage",
+        title: beach.name,
+        detail: beach.description,
+        href: "#cote",
+        keywords:
+          "beach beaches coast sea swimming bathing water sand plage playa playas costa mar baño bano nadar arena agua",
+      });
+    }
+
+    for (const event of currentAgenda) {
+      baseResults.push({
+        tag: "Agenda",
+        title: event.title,
+        detail: [event.dateRange, event.location, event.city].filter(Boolean).join(" · "),
+        href: "#aujourdhui",
+        keywords:
+          "event events agenda today now outing tourism visit concert market exhibition activity salida salidas evento eventos hoy ahora turismo visita concierto mercado exposicion actividad",
+      });
+    }
+
+    for (const circuit of sortedCircuits.slice(0, 12)) {
+      baseResults.push({
+        tag: circuit.kind === "velo" ? "Vélo" : "Balade",
+        title: circuit.name,
+        detail: [
+          circuit.communes.join(", "),
+          circuit.km ? `${circuit.km} km` : "",
+          circuit.duration ?? "",
+        ]
+          .filter(Boolean)
+          .join(" · "),
+        href: "#pratique",
+        keywords:
+          "walk walking hike trail route bike bicycle cycling ride path paseo senderismo ruta bici bicicleta ciclismo camino recorrido",
+      });
+    }
+
+    for (const info of (roadInfo ?? []).slice(0, 6)) {
+      baseResults.push({
+        tag: "Route",
+        title: info.nature || "Info route",
+        detail: `${info.lines.join(" ")} · ${info.distanceKm} km`,
+        href: "#deplacer",
+        keywords:
+          "road traffic disruption closure works accident route circulation carretera trafico cierre obras accidente transporte",
+      });
+    }
+
+    return baseResults.filter((result) => matchesSiteSearch(result, siteSearch)).slice(0, 10);
+  }, [beaches, currentAgenda, dogRule, roadInfo, siteSearch, sortedCircuits]);
 
   const nearestGlass = glassPoints[0] ?? null;
 
@@ -738,6 +1063,9 @@ export default function App() {
   const toggleMap = (key: string) => {
     setOpenMaps((maps) => ({ ...maps, [key]: !maps[key] }));
   };
+
+  const activeNavHref = isDiscover ? "#/decouvrir" : route && !route.startsWith("#/") ? route : "#essentiel";
+  const searchCopy = SEARCH_COPY[searchLanguage];
 
   return (
     <div className="app">
@@ -767,7 +1095,7 @@ export default function App() {
             <a
               key={link.href}
               href={link.href}
-              className={isDiscover && link.href === "#/decouvrir" ? "nav-active" : ""}
+              className={activeNavHref === link.href ? "nav-active" : ""}
               onClick={() => setIsMobileNavOpen(false)}
             >
               {link.label}
@@ -820,47 +1148,102 @@ export default function App() {
         </div>
       )}
 
-      <section className="source-health" aria-label="État des sources de données">
+      <section className="site-search" role="search" aria-label="Recherche dans Le Pouliguen Live">
+        <label className="visually-hidden" htmlFor="site-search-input">
+          Recherche
+        </label>
+        <div className="site-search-row">
+          <input
+            id="site-search-input"
+            type="search"
+            value={siteSearch}
+            onChange={(event) => setSiteSearch(event.target.value)}
+            placeholder={searchCopy.placeholder}
+            autoComplete="off"
+          />
+          {siteSearch && (
+            <button
+              type="button"
+              className="site-search-clear"
+              onClick={() => setSiteSearch("")}
+              aria-label="Effacer la recherche"
+            >
+              ×
+            </button>
+          )}
+        </div>
+        {siteSearch.trim() && (
+          <div className="site-search-results" aria-live="polite">
+            {siteSearchResults.length > 0 ? (
+              siteSearchResults.map((result) => (
+                <a
+                  key={`${result.href}-${result.tag}-${result.title}`}
+                  className="site-search-result"
+                  href={result.href}
+                  onClick={() => {
+                    setSiteSearch("");
+                    setIsMobileNavOpen(false);
+                  }}
+                >
+                  <span>{result.tag}</span>
+                  <strong>{result.title}</strong>
+                  <small>{result.detail}</small>
+                </a>
+              ))
+            ) : (
+              <p>{searchCopy.empty}</p>
+            )}
+          </div>
+        )}
+      </section>
+
+      <section className="source-health" aria-label="Accès rapides aux informations">
         <SourceHealthLink
           href="#cote"
           kind={weather && marine ? "live" : "unavailable"}
-          label="météo et mer"
+          label="Météo & mer"
           status={weather && marine ? "données directes" : "source indisponible"}
         />
         <SourceHealthLink
           href="#deplacer"
           kind={transit ? "live" : "unavailable"}
-          label="bus"
+          label="Bus"
           status={transit ? "horaires et temps réel" : "source indisponible"}
         />
         <SourceHealthLink
           href="#deplacer"
           kind={trains ? "partial" : "unavailable"}
-          label="train"
+          label="Train"
           status={trains ? "horaires, retards si publiés" : "source indisponible"}
         />
         <SourceHealthLink
           href="#aujourdhui"
           kind={cinema && cinema.sessions.length > 0 ? "static" : "unavailable"}
-          label="cinéma"
+          label="Cinéma"
           status={cinema && cinema.sessions.length > 0 ? "cache officiel" : "cache indisponible"}
         />
         <SourceHealthLink
           href="#aujourdhui"
           kind={agenda.length > 0 ? "partial" : "unavailable"}
-          label="agenda"
+          label="Sorties"
           status={agenda.length > 0 ? "flux partiel selon les villes" : "source indisponible"}
         />
         <SourceHealthLink
           href="#deplacer"
           kind="static"
-          label="parking"
+          label="Parking"
           status="source municipale 2026"
+        />
+        <SourceHealthLink
+          href="#sport-resa"
+          kind="partial"
+          label="Sport résa"
+          status="liens officiels et cache Padel La Baule"
         />
         <SourceHealthLink
           href="#navires"
           kind="static"
-          label="navires"
+          label="Navires"
           status="cache AIS statique"
         />
       </section>
@@ -1137,7 +1520,7 @@ export default function App() {
         <section className="card">
           <div className="card-heading">
             <h3>Stationnement</h3>
-            <SourceBadge kind="static">municipal 2026</SourceBadge>
+            <span className="data-chip">municipal 2026</span>
           </div>
           <ul className="parking-list">
             <li>
@@ -1350,16 +1733,21 @@ export default function App() {
                   </li>
                 ))}
               </ul>
-              <p className="meta-line">
-                Qualité officielle des eaux de baignade :{" "}
-                <a
-                  href="https://baignades.sante.gouv.fr"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  baignades.sante.gouv.fr
+              <article className="dog-beach-rules">
+                <div>
+                  <span>Chiens sur les plages</span>
+                  <strong>{dogRule.label}</strong>
+                </div>
+                <p>{dogRule.note}</p>
+                <p>
+                  Le sentier côtier reste autorisé aux chiens toute l'année,
+                  hors accès aux plages. Pensez à tenir compte de l'affichage
+                  sur place et à ramasser les déjections.
+                </p>
+                <a href={DOGS_BEACH_RULES_URL} target="_blank" rel="noopener noreferrer">
+                  règle officielle Le Pouliguen
                 </a>
-              </p>
+              </article>
             </>
           ) : (
             <p className="placeholder">Chargement des plages…</p>
@@ -1401,6 +1789,15 @@ export default function App() {
           <p className="meta-line">
             Le classement officiel est calculé sur quatre saisons de résultats
             microbiologiques, pas seulement sur le dernier prélèvement.
+            <br />
+            Qualité officielle des eaux de baignade :{" "}
+            <a
+              href="https://baignades.sante.gouv.fr"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              baignades.sante.gouv.fr
+            </a>
           </p>
         </section>
 
@@ -1487,9 +1884,10 @@ export default function App() {
           <div className="event-heading">
             <div>
               <h3>En ce moment sur la presqu'île</h3>
-              {agenda.length > 0 && (
+              {currentAgenda.length > 0 && (
                 <p className="event-summary">
-                  {agenda.length} idées sorties, de la plage aux visites urbaines.
+                  {currentAgenda.length} sorties à voir maintenant ou dans les{" "}
+                  {CURRENT_AGENDA_DAYS} prochains jours.
                 </p>
               )}
             </div>
@@ -1513,7 +1911,7 @@ export default function App() {
               </a>
             </div>
           </div>
-          {agenda.length > 0 && (
+          {currentAgenda.length > 0 && (
             <div className="event-filters" role="tablist" aria-label="Filtrer les événements par ville">
               {AGENDA_CITY_FILTERS.filter((city) => {
                 const count = agendaCounts.get(city) ?? 0;
@@ -1555,7 +1953,7 @@ export default function App() {
                 </li>
               ))}
             </ul>
-          ) : fallbackEvents.length > 0 ? (
+          ) : agenda.length === 0 && fallbackEvents.length > 0 ? (
             <ul className="events">
               {fallbackEvents.map((e, i) => (
                 <li key={i}>

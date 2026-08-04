@@ -42,6 +42,8 @@ export interface AgendaEvent {
   location: string;
   city: string;
   url: string | null;
+  startAt?: string;
+  endAt?: string;
 }
 
 async function ods(dataset: string, params: Record<string, string>) {
@@ -129,7 +131,7 @@ export async function fetchAgendaEvents(): Promise<AgendaEvent[]> {
       ods("244400610_publicevents_openagenda", {
         where: `lastdate_end>=now() AND location_city="${city}"`,
         order_by: "firstdate_begin",
-        select: "title_fr,daterange_fr,location_name,location_city,canonicalurl",
+        select: "title_fr,daterange_fr,location_name,location_city,canonicalurl,firstdate_begin,lastdate_end",
         limit: "8",
       }),
     ),
@@ -149,6 +151,8 @@ export async function fetchAgendaEvents(): Promise<AgendaEvent[]> {
         location: String(r.location_name ?? ""),
         city,
         url: r.canonicalurl ? String(r.canonicalurl) : null,
+        startAt: r.firstdate_begin ? String(r.firstdate_begin) : undefined,
+        endAt: r.lastdate_end ? String(r.lastdate_end) : undefined,
       });
     }
     return events;

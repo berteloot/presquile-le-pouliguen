@@ -302,6 +302,9 @@ export default function LanguageSwitcher() {
   useEffect(() => {
     writeStoredLanguage(activeLanguage);
     updateLanguageUrl(activeLanguage);
+    window.dispatchEvent(
+      new CustomEvent("plq:languagechange", { detail: { language: activeLanguage } }),
+    );
     return applyLanguage(activeLanguage);
   }, [activeLanguage]);
 
