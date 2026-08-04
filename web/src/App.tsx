@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import "./App.css";
 import BusMap from "./components/BusMap";
 import CinemaPax from "./components/CinemaPax";
@@ -220,6 +220,11 @@ function fluxBadgeClass(flux: string): string {
   return "flux-badge";
 }
 
+function initialRoute(): string {
+  const hash = window.location.hash;
+  return hash.startsWith("#/") ? hash : "";
+}
+
 function startOfDay(date: Date): Date {
   const d = new Date(date);
   d.setHours(0, 0, 0, 0);
@@ -380,7 +385,7 @@ export default function App() {
   const [selectedCircuit, setSelectedCircuit] = useState<string | null>(null);
   const [circuitMode, setCircuitMode] = useState<CircuitMode>("all");
   const [agendaCity, setAgendaCity] = useState("Tous");
-  const [route, setRoute] = useState<string>(() => window.location.hash);
+  const [route, setRoute] = useState<string>(initialRoute);
   const [openMaps, setOpenMaps] = useState<Record<string, boolean>>({});
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const selectedDateValue = toDateInputValue(selectedDate);
@@ -393,6 +398,29 @@ export default function App() {
     const onHash = () => setRoute(window.location.hash);
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
+  }, []);
+
+  useLayoutEffect(() => {
+    const previousRestoration = window.history.scrollRestoration;
+    window.history.scrollRestoration = "manual";
+    const resetToTop = () => {
+      if (window.location.hash && !window.location.hash.startsWith("#/")) {
+        window.history.replaceState(
+          null,
+          document.title,
+          `${window.location.pathname}${window.location.search}`,
+        );
+      }
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    };
+
+    resetToTop();
+    window.addEventListener("pageshow", resetToTop);
+
+    return () => {
+      window.removeEventListener("pageshow", resetToTop);
+      window.history.scrollRestoration = previousRestoration;
+    };
   }, []);
 
   const isDiscover = route.startsWith("#/decouvrir");
