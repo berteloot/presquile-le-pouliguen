@@ -39,6 +39,8 @@ Working MVP, static-only architecture, verified running locally:
   for sources such as the official Le Croisic agenda
 - Cinéma Pax: cached official weekly sessions from the Films & horaires page,
   with VO / young-audience hints, running time and direct ticket/source links
+- Padel La Baule: cached public site data for published course, tournament
+  and animation links, plus clear phone fallback for free court booking
 - Beaches: the commune's 4 official bathing sites with descriptions and links,
   plus a link to official water quality (baignades.sante.gouv.fr)
 - Offshore ships: static AIS cache for the Le Pouliguen / La Baule offshore
@@ -112,6 +114,12 @@ needed for verified previous ports and full time-at-anchor history; this app
 preserves anchor duration and static AIS details across successive cache
 refreshes for the same MMSI when AISstream has transmitted them.
 
+Padel note: `node tools/build_padel_events.mjs` reads public Padel La Baule
+planning metadata and writes `web/public/data/padel-events.json`. It does not
+attempt to book courts or call private Ten'Up / NetGolf / Bookandgolf endpoints.
+The cache exposes public links, detected planning metadata and the official
+phone route for free court reservations.
+
 GitHub Actions: `.github/workflows/ais-cache.yml` refreshes the offshore AIS
 cache every 30 minutes when the repository secret `AISSTREAM_API_KEY` is set.
 The workflow listens for a six-minute window, writes the static JSON cache,
@@ -119,6 +127,8 @@ verifies the web build and commits only when the cache changed.
 `.github/workflows/shom-tide-cache.yml` refreshes the SHOM tide cache daily.
 It works without secrets through the public SHOM tide table portal; licensed
 SUP Marée secrets remain optional for a future authenticated mode.
+`.github/workflows/padel-events-cache.yml` refreshes the Padel La Baule cache
+every six hours from the public WordPress API.
 
 ## Layout
 
@@ -154,6 +164,7 @@ npm run build      # production build to dist/
 npm run preview    # serve dist/ locally
 python3 ../tools/build_transit_data.py   # refresh transit data
 python3 ../tools/build_local_data.py cinema # refresh Cinéma Pax cache
+node ../tools/build_padel_events.mjs # refresh Padel La Baule public cache
 ```
 
 ## Data sources

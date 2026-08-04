@@ -10,6 +10,7 @@ import LanguageSwitcher from "./components/LanguageSwitcher";
 import MoonPhase from "./components/MoonPhase";
 import PoiMap from "./components/PoiMap";
 import ShipsOffshore from "./components/ShipsOffshore";
+import SportsBookings from "./components/SportsBookings";
 import TideChart from "./components/TideChart";
 import VisitPlanner from "./components/VisitPlanner";
 import {
@@ -1713,6 +1714,8 @@ export default function App() {
             <p className="placeholder">Chargement des circuits…</p>
           )}
         </section>
+
+        <SportsBookings />
 
         <section className="card">
           <h3>Urgences et défibrillateurs</h3>
