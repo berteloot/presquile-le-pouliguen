@@ -2885,6 +2885,49 @@ main {
   font-weight: 700;
 }
 
+.event-highlights {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0 4px;
+  border: 1px solid #ead9b0;
+  border-radius: 8px;
+  padding: 11px 12px;
+  background: #fffaf0;
+}
+
+.event-highlights > span {
+  color: #7b6413;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.event-highlights ul {
+  display: grid;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.event-highlights li {
+  display: grid;
+  gap: 3px;
+}
+
+.event-highlights a {
+  color: var(--navy);
+  font-weight: 850;
+  line-height: 1.25;
+}
+
+.event-highlights small {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
 .event-filters {
   gap: 8px;
   margin: 12px 0 4px;

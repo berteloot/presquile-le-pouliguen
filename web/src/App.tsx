@@ -155,9 +155,11 @@ const AGENDA_CITY_FILTERS = [
 ];
 const CURRENT_AGENDA_DAYS = 7;
 const CURRENT_AGENDA_LIMIT = 8;
+const UPCOMING_HIGHLIGHT_DAYS = 14;
 const TOURISM_EVENT_HINT =
   /\b(march[ée]|nocturne|concert|visite|expo|exposition|balade|festival|spectacle|patrimoine|atelier|animation|moulin|mus[ée]e|port|plage|feu|sortie)\b/i;
 const NON_TOURISM_EVENT_HINT = /\b(stage|cours particulier|tennis|cin[ée]ma|fitness|tonic)\b/i;
+const MAJOR_EVENT_HINT = /\b(feu d'?artifice|pyromusical|son et lumi[èe]res|15 ao[ûu]t)\b/i;
 const NAV_LINKS = [
   { href: "#essentiel", label: "Essentiel" },
   { href: "#cote", label: "Côte" },
@@ -434,6 +436,12 @@ function agendaBoundsFromText(event: AgendaEvent, ref: Date): { start: Date; end
     if (start && end) return { start, end };
   }
 
+  const singleDate = text.match(/(?:le\s+)?(\d{1,2})\s+([a-z]+)\s+(\d{4})/);
+  if (singleDate) {
+    const date = parseFrenchDayMonth(singleDate[1], singleDate[2], Number(singleDate[3]));
+    if (date) return { start: date, end: date };
+  }
+
   return null;
 }
 
@@ -483,6 +491,19 @@ function agendaSortValue(event: AgendaEvent, ref: Date): number {
   if (!bounds) return Number.MAX_SAFE_INTEGER;
   if (bounds.start < ref && bounds.end >= ref) return bounds.end.getTime();
   return bounds.start.getTime();
+}
+
+function isUpcomingHighlightEvent(event: AgendaEvent, ref: Date): boolean {
+  const text = `${event.title} ${event.location} ${event.dateRange}`;
+  if (!MAJOR_EVENT_HINT.test(text)) return false;
+
+  const windowStart = startOfDay(ref);
+  const currentWindowEnd = addDays(windowStart, CURRENT_AGENDA_DAYS);
+  const highlightWindowEnd = addDays(windowStart, UPCOMING_HIGHLIGHT_DAYS);
+  const bounds = agendaBounds(event, ref);
+  if (!bounds) return false;
+
+  return bounds.start > currentWindowEnd && bounds.start <= highlightWindowEnd;
 }
 
 function mergeAgendaEvents(live: AgendaEvent[], curated: LocalEvent[]): AgendaEvent[] {
@@ -882,6 +903,14 @@ export default function App() {
         .filter((event) => isCurrentTourismEvent(event, now))
         .sort((a, b) => agendaSortValue(a, now) - agendaSortValue(b, now))
         .slice(0, CURRENT_AGENDA_LIMIT),
+    [agenda, now],
+  );
+  const upcomingHighlights = useMemo(
+    () =>
+      agenda
+        .filter((event) => isUpcomingHighlightEvent(event, now))
+        .sort((a, b) => agendaSortValue(a, now) - agendaSortValue(b, now))
+        .slice(0, 3),
     [agenda, now],
   );
   const agendaCounts = useMemo(() => {
@@ -1911,6 +1940,25 @@ export default function App() {
               </a>
             </div>
           </div>
+          {upcomingHighlights.length > 0 && (
+            <div className="event-highlights" aria-label="Temps forts à venir">
+              <span>À noter bientôt</span>
+              <ul>
+                {upcomingHighlights.map((event) => (
+                  <li key={`${event.title}-${event.dateRange}`}>
+                    <a href={safeAgendaUrl(event)} target="_blank" rel="noopener noreferrer">
+                      {event.title}
+                    </a>
+                    <small>
+                      {event.dateRange}
+                      {event.city ? ` · ${event.city}` : ""}
+                      {event.location ? ` · ${event.location}` : ""}
+                    </small>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           {currentAgenda.length > 0 && (
             <div className="event-filters" role="tablist" aria-label="Filtrer les événements par ville">
               {AGENDA_CITY_FILTERS.filter((city) => {
