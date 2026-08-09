@@ -96,6 +96,13 @@ function plural(count: number, singular: string, pluralLabel: string): string {
   return count > 1 ? pluralLabel : singular;
 }
 
+function hoursSince(value: string | null | undefined): number | null {
+  if (!value) return null;
+  const time = Date.parse(value);
+  if (Number.isNaN(time)) return null;
+  return Math.max(0, (Date.now() - time) / 3_600_000);
+}
+
 function buildInterestingFacts(ships: EnrichedShip[]): string[] {
   const facts: string[] = [];
   const addFact = (fact: string | null | undefined) => {
@@ -399,6 +406,8 @@ export default function ShipsOffshore() {
   const isDemoCache = cache?.sourceMode !== "api-cache";
   const isPreservedCache =
     cache?.refreshStatus === "stale-preserved" || cache?.refreshStatus === "error-preserved";
+  const isExpiredPreservedCache =
+    isPreservedCache && (hoursSince(cache?.generatedAt) ?? 0) > 24;
 
   const selectShip = useCallback((ship: EnrichedShip) => {
     setSelectedMmsi(ship.mmsi);
@@ -474,10 +483,24 @@ export default function ShipsOffshore() {
                 la baie de Saint-Nazaire.
               </p>
               {cache.refreshMessage && <p>{cache.refreshMessage}</p>}
+              {isExpiredPreservedCache && (
+                <p>
+                  La carte et la liste courante sont masquées pour éviter de
+                  présenter d'anciennes positions comme des navires présents
+                  maintenant.
+                </p>
+              )}
             </div>
           )}
 
-          {!isDemoCache && (
+          {!isDemoCache && isExpiredPreservedCache && (
+            <p className="placeholder">
+              AIS live indisponible pour le moment. Le site attend un nouveau
+              captage AIS non vide avant de republier les navires au large.
+            </p>
+          )}
+
+          {!isDemoCache && !isExpiredPreservedCache && (
             <>
               <div className="ship-focus">
                 <div>
