@@ -35,9 +35,11 @@ jobs:
         env:
           AISSTREAM_API_KEY: ${{ secrets.AISSTREAM_API_KEY }}
           AISSTREAM_SECONDS: "360"
+          VESSELAPI_KEY: ${{ secrets.VESSELAPI_KEY }}
+          VESSELAPI_MIN_HOURS: "12"
         run: |
-          if [ -z "$AISSTREAM_API_KEY" ]; then
-            echo "AISSTREAM_API_KEY secret is missing; skipping AIS cache refresh."
+          if [ -z "$AISSTREAM_API_KEY" ] && [ -z "$VESSELAPI_KEY" ]; then
+            echo "AIS secrets are missing; skipping AIS cache refresh."
             exit 0
           fi
           node tools/build_ais_cache.mjs

@@ -7,7 +7,9 @@ const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, "..");
 const outputPath = resolve(repoRoot, "web/public/data/offshore-ships.json");
 const AISSTREAM_URL = "wss://stream.aisstream.io/v0/stream";
+const VESSELAPI_BBOX_URL = "https://api.vesselapi.com/v1/location/vessels/bounding-box";
 const DEFAULT_AISSTREAM_SECONDS = 75;
+const DEFAULT_VESSELAPI_MIN_HOURS = 12;
 const DEFAULT_BBOX = [
   [
     [47.03, -3.1],
@@ -160,6 +162,11 @@ function firstDefined(...values) {
   return values.find((value) => value !== undefined && value !== null && value !== "");
 }
 
+function positiveNumberEnv(name, fallback) {
+  const num = Number(process.env[name]);
+  return Number.isFinite(num) && num > 0 ? num : fallback;
+}
+
 function knownText(value) {
   if (!value) return false;
   return !/^(undefined|null|non connu|non confirm|non déclar|unknown|n\/a)$/i.test(String(value).trim());
@@ -217,6 +224,24 @@ function countryFromMmsi(mmsi) {
   return { country: "Inconnu", flagCode: "" };
 }
 
+function countryFromRow(row, previousShip, mmsi) {
+  const country = firstDefined(row.country, row.flag_country, row.flagState, row.flag_state);
+  const code = firstDefined(row.country_code, row.flag_code, row.flagCode, row.flag);
+  if (knownText(country)) {
+    return {
+      country: String(country).trim(),
+      flagCode: knownText(code) ? String(code).trim().toUpperCase().slice(0, 2) : "",
+    };
+  }
+  if (knownText(previousShip?.flagCountry)) {
+    return {
+      country: previousShip.flagCountry,
+      flagCode: previousShip.flagCode ?? "",
+    };
+  }
+  return countryFromMmsi(mmsi);
+}
+
 function statusFromCode(code, speedKnots) {
   const numeric = numberOrNull(code);
   const label = numeric == null ? null : AIS_STATUS.get(numeric);
@@ -233,6 +258,27 @@ function statusFromCode(code, speedKnots) {
     return { navStatus: label ?? "Immobile ou très lent", statusGroup: "Anchored" };
   }
   return { navStatus: label ?? "Non défini", statusGroup: "Underway" };
+}
+
+function statusFromValue(value, speedKnots) {
+  const numeric = numberOrNull(value);
+  if (numeric != null) return statusFromCode(numeric, speedKnots);
+  const speed = numberOrNull(speedKnots) ?? 0;
+  const text = String(value ?? "").trim();
+  const lower = text.toLowerCase();
+  if (lower.includes("anchor") || lower.includes("mouillage")) {
+    return { navStatus: "Au mouillage", statusGroup: "Anchored" };
+  }
+  if (lower.includes("moored") || lower.includes("amarr")) {
+    return { navStatus: "Amarré", statusGroup: "Moored" };
+  }
+  if (lower.includes("under way") || lower.includes("en route")) {
+    return { navStatus: "En route", statusGroup: "Underway" };
+  }
+  if (speed < 0.5) {
+    return { navStatus: text || "Immobile ou très lent", statusGroup: "Anchored" };
+  }
+  return { navStatus: text || "En route", statusGroup: "Underway" };
 }
 
 function typeFromCode(code) {
@@ -257,6 +303,34 @@ function typeFromCode(code) {
     return { vesselType: numeric === 36 ? "Sailing vessel" : "Pleasure craft", vesselTypeGroup: "Other" };
   }
   return { vesselType: `AIS type ${numeric}`, vesselTypeGroup: "Other" };
+}
+
+function typeFromLabel(label) {
+  if (!knownText(label)) return null;
+  const text = String(label).trim();
+  const lower = text.toLowerCase();
+  if (lower.includes("tanker")) return { vesselType: "Tanker", vesselTypeGroup: "Tanker" };
+  if (lower.includes("cargo") || lower.includes("bulk")) {
+    return { vesselType: lower.includes("heavy") ? "Cargo lourd ou spécialisé" : "Cargo", vesselTypeGroup: "Cargo" };
+  }
+  if (lower.includes("passenger")) return { vesselType: "Passenger ship", vesselTypeGroup: "Passenger" };
+  if (lower.includes("fishing")) return { vesselType: "Fishing vessel", vesselTypeGroup: "Fishing" };
+  if (lower.includes("offshore") || lower.includes("tug") || lower.includes("service")) {
+    return { vesselType: "Service vessel", vesselTypeGroup: "Service" };
+  }
+  return { vesselType: text, vesselTypeGroup: "Other" };
+}
+
+function typeFromRow(row, previousShip) {
+  return (
+    typeFromLabel(firstDefined(row.vessel_type, row.vesselType, row.ship_type, row.type)) ??
+    (previousShip?.vesselType
+      ? {
+          vesselType: previousShip.vesselType,
+          vesselTypeGroup: previousShip.vesselTypeGroup,
+        }
+      : { vesselType: "Navire AIS", vesselTypeGroup: "Other" })
+  );
 }
 
 function normalizeHeading(value) {
@@ -303,6 +377,30 @@ function formatEta(rawEta) {
     candidate.setUTCFullYear(candidate.getUTCFullYear() + 1);
   }
   return candidate.toISOString();
+}
+
+function parseDate(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function isVesselApiDue(existing, minHours) {
+  const lastAttempt = parseDate(existing?.lastVesselApiAttemptAt);
+  if (!lastAttempt) return true;
+  return Date.now() - lastAttempt.getTime() >= minHours * 3_600_000;
+}
+
+function vesselApiPosition(row) {
+  const coordinates = Array.isArray(row.location?.coordinates) ? row.location.coordinates : [];
+  const lat = numberOrNull(
+    firstDefined(row.latitude, row.lat, row.position?.latitude, row.position?.lat, coordinates[1]),
+  );
+  const lon = numberOrNull(
+    firstDefined(row.longitude, row.lon, row.lng, row.position?.longitude, row.position?.lon, coordinates[0]),
+  );
+  if (lat == null || lon == null || Math.abs(lat) > 90 || Math.abs(lon) > 180) return null;
+  return { lat, lon };
 }
 
 function dataText(data) {
@@ -564,6 +662,8 @@ function buildAisstreamCache(records, existing, seconds, boundingBoxes) {
     coverageLabel: "Baie de Saint-Nazaire : La Baule, Le Pouliguen, mouillages Loire/Donges",
     center: { lat: 47.21, lon: -2.36 },
     lastRefreshAttemptAt: generatedAt,
+    lastVesselApiAttemptAt: existing?.lastVesselApiAttemptAt,
+    refreshProvider: "aisstream",
     refreshStatus: ships.length > 0 ? "live" : "empty",
     refreshMessage:
       ships.length > 0
@@ -580,6 +680,159 @@ function buildAisstreamCache(records, existing, seconds, boundingBoxes) {
     ],
     ships,
   };
+}
+
+function buildVesselApiCache(rows, existing) {
+  const generatedAt = isoParisNow();
+  const previous =
+    existing?.sourceMode === "api-cache"
+      ? new Map(existing.ships.map((ship) => [String(ship.mmsi), ship]))
+      : new Map();
+  const positionedRecords = rows
+    .map((row) => ({ row, position: vesselApiPosition(row) }))
+    .filter((record) => record.position);
+  const inAreaRecords = positionedRecords.filter((record) => isInSaintNazaireBay(record.position));
+  const refreshStats = {
+    rawRecords: rows.length,
+    positionedRecords: positionedRecords.length,
+    inAreaRecords: inAreaRecords.length,
+  };
+  console.log(
+    `VesselAPI stats: ${refreshStats.rawRecords} records, ${refreshStats.positionedRecords} positioned, ${refreshStats.inAreaRecords} in Saint-Nazaire bay.`,
+  );
+
+  const ships = inAreaRecords.map(({ row, position }) => {
+      const mmsi = String(firstDefined(row.mmsi, row.MMSI, row.mmsi_number, row.id) ?? "").trim();
+      const previousShip = previous.get(mmsi);
+      const { country, flagCode } = countryFromRow(row, previousShip, mmsi);
+      const speedKnots =
+        numberOrNull(firstDefined(row.sog, row.speed, row.speed_knots, row.speedOverGround)) ?? 0;
+      const status = statusFromValue(firstDefined(row.nav_status, row.navStatus, row.status), speedKnots);
+      const type = typeFromRow(row, previousShip);
+      const destination = String(
+        firstDefined(
+          knownText(row.destination) ? row.destination : undefined,
+          knownText(row.reported_destination) ? row.reported_destination : undefined,
+          knownText(row.destination_port) ? row.destination_port : undefined,
+          knownText(row.eta?.destination) ? row.eta.destination : undefined,
+          knownText(previousShip?.destination) ? previousShip.destination : undefined,
+          "Non déclarée",
+        ),
+      ).trim();
+      const isStillAnchored =
+        status.statusGroup === "Anchored" && previousShip?.statusGroup === "Anchored";
+      const anchorStartedAt =
+        status.statusGroup === "Anchored"
+          ? isStillAnchored
+            ? previousShip.anchorStartedAt ?? previousShip.updatedAt ?? generatedAt
+            : generatedAt
+          : null;
+      const name = String(
+        firstDefined(
+          row.vessel_name,
+          row.name,
+          row.ship_name,
+          previousShip && !/^MMSI\s/i.test(previousShip.name) ? previousShip.name : undefined,
+          mmsi ? `MMSI ${mmsi}` : "Navire AIS",
+        ),
+      ).trim();
+
+      return {
+        mmsi,
+        imo: knownText(row.imo)
+          ? String(row.imo).trim()
+          : knownText(previousShip?.imo)
+            ? String(previousShip.imo).trim()
+            : "",
+        name,
+        callSign: firstDefined(
+          knownText(row.call_sign) ? row.call_sign : undefined,
+          knownText(row.callsign) ? row.callsign : undefined,
+          knownText(previousShip?.callSign) ? previousShip.callSign : undefined,
+        ),
+        flagCountry: country,
+        flagCode,
+        vesselType: type.vesselType,
+        vesselTypeGroup: type.vesselTypeGroup,
+        lengthM: numberOrNull(firstDefined(row.length, row.length_m, row.lengthM)) ?? previousShip?.lengthM ?? 0,
+        beamM: numberOrNull(firstDefined(row.breadth, row.beam, row.beam_m, row.beamM)) ?? previousShip?.beamM,
+        grossTonnage:
+          numberOrNull(firstDefined(row.gross_tonnage, row.grossTonnage, row.gt)) ??
+          previousShip?.grossTonnage ??
+          0,
+        deadweightTons:
+          numberOrNull(firstDefined(row.deadweight_tonnage, row.deadweightTons, row.dwt)) ??
+          previousShip?.deadweightTons,
+        speedKnots,
+        headingDeg: normalizeHeading(firstDefined(row.heading, row.true_heading, row.cog)),
+        courseDeg: numberOrNull(row.cog),
+        navStatus: status.navStatus,
+        statusGroup: status.statusGroup,
+        destination,
+        lastDeparturePort: previousShip?.lastDeparturePort ?? {
+          name: "Non connu",
+          country: "non confirmé",
+        },
+        eta: firstDefined(row.eta_time, row.eta, row.estimated_time_arrival, previousShip?.eta),
+        anchorStartedAt,
+        position,
+        updatedAt: firstDefined(row.timestamp, row.processed_timestamp, row.updated_at, generatedAt),
+        areaName: positionArea(position.lat, position.lon),
+        cargoContext:
+          "Position AIS réelle captée via VesselAPI ; détails statiques conservés par MMSI quand ils ne sont pas retransmis.",
+        sourceConfidence: "high",
+      };
+    })
+    .filter((ship) => ship.mmsi)
+    .sort((a, b) => {
+      const statusA = a.statusGroup === "Anchored" ? 0 : 1;
+      const statusB = b.statusGroup === "Anchored" ? 0 : 1;
+      return statusA - statusB || a.name.localeCompare(b.name, "fr");
+    });
+
+  return {
+    generatedAt,
+    sourceMode: "api-cache",
+    coverageLabel: "Baie de Saint-Nazaire : La Baule, Le Pouliguen, mouillages Loire/Donges",
+    center: { lat: 47.21, lon: -2.36 },
+    lastRefreshAttemptAt: generatedAt,
+    lastVesselApiAttemptAt: generatedAt,
+    refreshProvider: "vesselapi",
+    refreshStatus: ships.length > 0 ? "live" : "empty",
+    refreshMessage:
+      ships.length > 0
+        ? `Capture VesselAPI active : ${ships.length} navire(s) dans la baie de Saint-Nazaire.`
+        : "Dernière tentative VesselAPI : aucun navire renvoyé dans la baie de Saint-Nazaire.",
+    refreshStats,
+    notes: [
+      "Cache VesselAPI généré depuis une requête bounding-box limitée à 50 positions pour protéger le quota gratuit.",
+      "Affichage filtré à la baie de Saint-Nazaire ; Mor Braz, Vilaine, Houat et Quiberon sont exclus.",
+      "Positions, vitesse, cap et statut proviennent du dernier message AIS disponible dans VesselAPI.",
+      "Nom, IMO, destination et dimensions sont conservés par MMSI lorsque l'endpoint de zone ne les renvoie pas.",
+      "Aucun enrichissement navire-par-navire n'est lancé automatiquement afin de rester sous 150 appels/mois.",
+    ],
+    ships,
+  };
+}
+
+async function loadFromVesselApi(apiKey, existing) {
+  const url = new URL(VESSELAPI_BBOX_URL);
+  url.searchParams.set("filter.latBottom", String(SAINT_NAZAIRE_BAY_BOUNDS.minLat));
+  url.searchParams.set("filter.latTop", String(SAINT_NAZAIRE_BAY_BOUNDS.maxLat));
+  url.searchParams.set("filter.lonLeft", String(SAINT_NAZAIRE_BAY_BOUNDS.minLon));
+  url.searchParams.set("filter.lonRight", String(SAINT_NAZAIRE_BAY_BOUNDS.maxLon));
+  url.searchParams.set("pagination.limit", "50");
+
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${apiKey}` },
+  });
+  if (!res.ok) throw new Error(`VesselAPI HTTP ${res.status}`);
+  const payload = await res.json();
+  const rows = payload.vessels ?? payload.results ?? payload.records ?? payload.data;
+  if (!Array.isArray(rows)) {
+    throw new Error("VesselAPI did not return vessels, results, records or data");
+  }
+  return buildVesselApiCache(rows, existing);
 }
 
 async function loadFromUrl(url) {
@@ -606,6 +859,7 @@ async function loadFromUrl(url) {
     coverageLabel: "Baie de Saint-Nazaire : La Baule, Le Pouliguen, mouillages Loire/Donges",
     center: { lat: 47.21, lon: -2.36 },
     lastRefreshAttemptAt: isoParisNow(),
+    refreshProvider: "source-url",
     refreshStatus: rows.length > 0 ? "live" : "empty",
     refreshMessage: `Cache AIS généré depuis AIS_CACHE_SOURCE_URL : ${rows.length} ligne(s) reçue(s).`,
     notes: [
@@ -620,6 +874,8 @@ function preserveExistingCache(existing, patch) {
   return {
     ...existing,
     lastRefreshAttemptAt: patch.lastRefreshAttemptAt ?? isoParisNow(),
+    lastVesselApiAttemptAt: patch.lastVesselApiAttemptAt ?? existing.lastVesselApiAttemptAt,
+    refreshProvider: patch.refreshProvider ?? existing.refreshProvider,
     refreshStatus: patch.refreshStatus,
     refreshMessage: patch.refreshMessage,
     refreshStats: patch.refreshStats ?? existing.refreshStats,
@@ -630,36 +886,71 @@ async function main() {
   const existing = JSON.parse(await readFile(outputPath, "utf8"));
   const sourceUrl = process.env.AIS_CACHE_SOURCE_URL;
   const aisstreamKey = process.env.AISSTREAM_API_KEY;
-  const seconds = Number(process.env.AISSTREAM_SECONDS ?? DEFAULT_AISSTREAM_SECONDS);
+  const vesselApiKey = process.env.VESSELAPI_KEY;
+  const seconds = positiveNumberEnv("AISSTREAM_SECONDS", DEFAULT_AISSTREAM_SECONDS);
+  const vesselApiMinHours = positiveNumberEnv("VESSELAPI_MIN_HOURS", DEFAULT_VESSELAPI_MIN_HOURS);
   let cache;
+  let attemptedRefresh = false;
+  let attemptedVesselApiAt = null;
+  const errors = [];
   try {
-    cache = aisstreamKey
-      ? await captureAisstream({
-          apiKey: aisstreamKey,
-          seconds: Number.isFinite(seconds) && seconds > 0 ? seconds : DEFAULT_AISSTREAM_SECONDS,
-          existing,
-        })
-      : sourceUrl
-        ? await loadFromUrl(sourceUrl)
-        : existing;
+    if (vesselApiKey && isVesselApiDue(existing, vesselApiMinHours)) {
+      attemptedRefresh = true;
+      attemptedVesselApiAt = isoParisNow();
+      try {
+        cache = await loadFromVesselApi(vesselApiKey, existing);
+      } catch (err) {
+        errors.push(`VesselAPI ${err.message}`);
+        console.warn(`VesselAPI refresh failed (${err.message}); trying fallback source.`);
+      }
+    } else if (vesselApiKey) {
+      console.log(`VesselAPI skipped: last attempt is less than ${vesselApiMinHours} h old.`);
+    }
+
+    if (!cache && aisstreamKey) {
+      attemptedRefresh = true;
+      cache = await captureAisstream({
+        apiKey: aisstreamKey,
+        seconds,
+        existing,
+      });
+    }
+
+    if (!cache && sourceUrl) {
+      attemptedRefresh = true;
+      cache = await loadFromUrl(sourceUrl);
+    }
+
+    if (!cache && errors.length > 0 && existing.ships?.length > 0) {
+      cache = preserveExistingCache(existing, {
+        lastVesselApiAttemptAt: attemptedVesselApiAt ?? existing.lastVesselApiAttemptAt,
+        refreshStatus: "error-preserved",
+        refreshMessage: `Dernière tentative AIS : erreur (${errors.join(" ; ")}); dernier captage connu conservé.`,
+      });
+    }
+
+    cache = cache ?? existing;
   } catch (err) {
-    if ((aisstreamKey || sourceUrl) && existing.ships?.length > 0) {
+    if ((attemptedRefresh || vesselApiKey || aisstreamKey || sourceUrl) && existing.ships?.length > 0) {
       console.warn(`AIS refresh failed (${err.message}); keeping existing cache.`);
       cache = preserveExistingCache(existing, {
+        lastVesselApiAttemptAt: attemptedVesselApiAt ?? existing.lastVesselApiAttemptAt,
         refreshStatus: "error-preserved",
-        refreshMessage: `Dernière tentative AIS : erreur (${err.message}); dernier captage connu conservé.`,
+        refreshMessage: `Dernière tentative AIS : erreur (${[...errors, err.message].join(" ; ")}); dernier captage connu conservé.`,
       });
     } else {
       throw err;
     }
   }
 
-  if ((aisstreamKey || sourceUrl) && cache.ships.length === 0 && existing.ships?.length > 0) {
+  if (attemptedRefresh && cache.ships.length === 0 && existing.ships?.length > 0) {
     console.log(
       "AIS refresh returned 0 ships in the Saint-Nazaire bay filter; keeping existing cache.",
     );
     cache = preserveExistingCache(existing, {
       lastRefreshAttemptAt: cache.lastRefreshAttemptAt,
+      lastVesselApiAttemptAt: cache.lastVesselApiAttemptAt ?? attemptedVesselApiAt,
+      refreshProvider: cache.refreshProvider,
       refreshStatus: "stale-preserved",
       refreshMessage:
         cache.refreshMessage ??
@@ -669,7 +960,12 @@ async function main() {
   }
 
   cache.generatedAt = cache.generatedAt ?? isoParisNow();
-  cache.sourceMode = aisstreamKey || sourceUrl ? "api-cache" : cache.sourceMode ?? "static-cache";
+  if (attemptedVesselApiAt && !cache.lastVesselApiAttemptAt) {
+    cache.lastVesselApiAttemptAt = attemptedVesselApiAt;
+  } else if (existing.lastVesselApiAttemptAt && !cache.lastVesselApiAttemptAt) {
+    cache.lastVesselApiAttemptAt = existing.lastVesselApiAttemptAt;
+  }
+  cache.sourceMode = vesselApiKey || aisstreamKey || sourceUrl ? "api-cache" : cache.sourceMode ?? "static-cache";
   assertCacheShape(cache);
 
   await writeFile(outputPath, `${JSON.stringify(cache, null, 2)}\n`);

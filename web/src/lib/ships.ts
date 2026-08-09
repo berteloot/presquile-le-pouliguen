@@ -53,6 +53,8 @@ export interface OffshoreShipCache {
     lon: number;
   };
   lastRefreshAttemptAt?: string;
+  lastVesselApiAttemptAt?: string;
+  refreshProvider?: "aisstream" | "vesselapi" | "source-url";
   refreshStatus?: "live" | "empty" | "stale-preserved" | "error-preserved";
   refreshMessage?: string;
   refreshStats?: {
