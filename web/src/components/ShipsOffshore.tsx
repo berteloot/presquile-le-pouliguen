@@ -34,6 +34,12 @@ const STATUS_LABELS: Record<ShipStatusGroup, string> = {
   Working: "En opération",
   Moored: "À quai",
 };
+const EXTERNAL_AIS_MAP_URL =
+  "https://www.vesselfinder.com/aismap?latitude=47.18&longitude=-2.38&zoom=9&names=true";
+const EXTERNAL_AIS_FULL_URL =
+  "https://www.vesselfinder.com/?latitude=47.18&longitude=-2.38&zoom=9";
+const MY_SHIP_TRACKING_URL =
+  "https://www.myshiptracking.com/?lat=47.18&lng=-2.38&zoom=9";
 
 function numberLabel(value: number): string {
   return value.toLocaleString("fr-FR");
@@ -494,10 +500,7 @@ export default function ShipsOffshore() {
           )}
 
           {!isDemoCache && isExpiredPreservedCache && (
-            <p className="placeholder">
-              AIS live indisponible pour le moment. Le site attend un nouveau
-              captage AIS non vide avant de republier les navires au large.
-            </p>
+            <ExternalAisFallback />
           )}
 
           {!isDemoCache && !isExpiredPreservedCache && (
@@ -702,6 +705,44 @@ export default function ShipsOffshore() {
       ) : (
         <p className="placeholder">Chargement du cache AIS…</p>
       )}
+    </section>
+  );
+}
+
+function ExternalAisFallback() {
+  return (
+    <section className="external-ais-fallback" aria-label="Carte AIS externe">
+      <div className="external-ais-copy">
+        <div>
+          <span className="section-eyebrow">Carte AIS externe live</span>
+          <h3>Navires actuels via VesselFinder</h3>
+          <p>
+            Notre flux AIS enrichi est vide pour la baie. Cette carte externe
+            gratuite affiche les positions disponibles dans le réseau
+            VesselFinder autour du Pouliguen, La Baule et Saint-Nazaire.
+          </p>
+        </div>
+        <div className="external-ais-links">
+          <a href={EXTERNAL_AIS_FULL_URL} target="_blank" rel="noreferrer">
+            Ouvrir VesselFinder
+          </a>
+          <a href={MY_SHIP_TRACKING_URL} target="_blank" rel="noreferrer">
+            Essayer MyShipTracking
+          </a>
+        </div>
+      </div>
+      <iframe
+        title="Carte AIS VesselFinder autour du Pouliguen et Saint-Nazaire"
+        src={EXTERNAL_AIS_MAP_URL}
+        loading="lazy"
+        referrerPolicy="no-referrer-when-downgrade"
+        sandbox="allow-scripts allow-same-origin allow-popups"
+      />
+      <p className="meta-line">
+        Source externe : VesselFinder. Les détails enrichis, explications et
+        filtres du site reviendront dès qu'un nouveau captage AIS local non
+        vide sera disponible.
+      </p>
     </section>
   );
 }

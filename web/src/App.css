@@ -1433,6 +1433,71 @@ main {
   font-weight: 800;
 }
 
+.external-ais-fallback {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.external-ais-copy {
+  display: grid;
+  gap: 12px;
+  align-items: start;
+}
+
+@media (min-width: 760px) {
+  .external-ais-copy {
+    grid-template-columns: 1fr auto;
+  }
+}
+
+.external-ais-copy h3 {
+  margin: 0;
+  color: var(--navy);
+  font-size: 22px;
+}
+
+.external-ais-copy p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.external-ais-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.external-ais-links a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  border: 1px solid #c8dbe6;
+  border-radius: 8px;
+  padding: 8px 12px;
+  background: #ffffff;
+  color: var(--sea-link);
+  font-size: 14px;
+  font-weight: 850;
+  text-decoration: none;
+}
+
+.external-ais-fallback iframe {
+  width: 100%;
+  min-height: 430px;
+  border: 1px solid #c8dbe6;
+  border-radius: 8px;
+  background: #e7f3f7;
+}
+
+@media (max-width: 640px) {
+  .external-ais-fallback iframe {
+    min-height: 360px;
+  }
+}
+
 .ship-focus {
   display: grid;
   gap: 12px;
