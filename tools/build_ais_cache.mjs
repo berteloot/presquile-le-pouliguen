@@ -596,7 +596,7 @@ async function main() {
   const sourceUrl = process.env.AIS_CACHE_SOURCE_URL;
   const aisstreamKey = process.env.AISSTREAM_API_KEY;
   const seconds = Number(process.env.AISSTREAM_SECONDS ?? DEFAULT_AISSTREAM_SECONDS);
-  const cache = aisstreamKey
+  let cache = aisstreamKey
     ? await captureAisstream({
         apiKey: aisstreamKey,
         seconds: Number.isFinite(seconds) && seconds > 0 ? seconds : DEFAULT_AISSTREAM_SECONDS,
@@ -605,6 +605,13 @@ async function main() {
     : sourceUrl
       ? await loadFromUrl(sourceUrl)
       : existing;
+
+  if ((aisstreamKey || sourceUrl) && cache.ships.length === 0 && existing.ships?.length > 0) {
+    console.log(
+      "AIS refresh returned 0 ships in the Saint-Nazaire bay filter; keeping existing cache.",
+    );
+    cache = existing;
+  }
 
   cache.generatedAt = cache.generatedAt ?? isoParisNow();
   cache.sourceMode = aisstreamKey || sourceUrl ? "api-cache" : cache.sourceMode ?? "static-cache";
