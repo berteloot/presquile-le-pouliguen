@@ -61,6 +61,7 @@ export interface OffshoreShipCache {
     rawRecords?: number;
     positionedRecords?: number;
     inAreaRecords?: number;
+    uniqueInAreaShips?: number;
   };
   notes: string[];
   ships: OffshoreShip[];

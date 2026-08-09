@@ -385,6 +385,39 @@ function parseDate(value) {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
+function timeValue(value) {
+  return parseDate(value)?.getTime() ?? 0;
+}
+
+function detailScore(ship) {
+  return [
+    knownText(ship.imo),
+    knownText(ship.callSign),
+    knownText(ship.destination),
+    ship.lengthM > 0,
+    ship.grossTonnage > 0,
+    knownText(ship.vesselType) && ship.vesselType !== "Navire AIS",
+  ].filter(Boolean).length;
+}
+
+function dedupeShipsByMmsi(ships) {
+  const byMmsi = new Map();
+  for (const ship of ships) {
+    const key = String(ship.mmsi ?? "").trim();
+    if (!key) continue;
+    const previous = byMmsi.get(key);
+    if (
+      !previous ||
+      timeValue(ship.updatedAt) > timeValue(previous.updatedAt) ||
+      (timeValue(ship.updatedAt) === timeValue(previous.updatedAt) &&
+        detailScore(ship) > detailScore(previous))
+    ) {
+      byMmsi.set(key, ship);
+    }
+  }
+  return Array.from(byMmsi.values());
+}
+
 function isVesselApiDue(existing, minHours) {
   const lastAttempt = parseDate(existing?.lastVesselApiAttemptAt);
   if (!lastAttempt) return true;
@@ -692,16 +725,25 @@ function buildVesselApiCache(rows, existing) {
     .map((row) => ({ row, position: vesselApiPosition(row) }))
     .filter((record) => record.position);
   const inAreaRecords = positionedRecords.filter((record) => isInSaintNazaireBay(record.position));
+  const latestInAreaRecords = dedupeShipsByMmsi(
+    inAreaRecords.map(({ row, position }) => ({
+      row,
+      position,
+      mmsi: firstDefined(row.mmsi, row.MMSI, row.mmsi_number, row.id),
+      updatedAt: firstDefined(row.timestamp, row.processed_timestamp, row.updated_at),
+    })),
+  );
   const refreshStats = {
     rawRecords: rows.length,
     positionedRecords: positionedRecords.length,
     inAreaRecords: inAreaRecords.length,
+    uniqueInAreaShips: latestInAreaRecords.length,
   };
   console.log(
-    `VesselAPI stats: ${refreshStats.rawRecords} records, ${refreshStats.positionedRecords} positioned, ${refreshStats.inAreaRecords} in Saint-Nazaire bay.`,
+    `VesselAPI stats: ${refreshStats.rawRecords} records, ${refreshStats.positionedRecords} positioned, ${refreshStats.inAreaRecords} in Saint-Nazaire bay, ${refreshStats.uniqueInAreaShips} unique ships.`,
   );
 
-  const ships = inAreaRecords.map(({ row, position }) => {
+  const ships = latestInAreaRecords.map(({ row, position }) => {
       const mmsi = String(firstDefined(row.mmsi, row.MMSI, row.mmsi_number, row.id) ?? "").trim();
       const previousShip = previous.get(mmsi);
       const { country, flagCode } = countryFromRow(row, previousShip, mmsi);
@@ -784,6 +826,31 @@ function buildVesselApiCache(rows, existing) {
       };
     })
     .filter((ship) => ship.mmsi)
+    .map((ship) => {
+      const previousShip = previous.get(String(ship.mmsi));
+      return previousShip
+        ? {
+            ...previousShip,
+            ...ship,
+            callSign: ship.callSign ?? previousShip.callSign,
+            vesselType:
+              ship.vesselType === "Navire AIS" && previousShip.vesselType !== "Navire AIS"
+                ? previousShip.vesselType
+                : ship.vesselType,
+            vesselTypeGroup:
+              ship.vesselType === "Navire AIS" && previousShip.vesselType !== "Navire AIS"
+                ? previousShip.vesselTypeGroup
+                : ship.vesselTypeGroup,
+            lengthM: ship.lengthM || previousShip.lengthM,
+            beamM: ship.beamM ?? previousShip.beamM,
+            grossTonnage: ship.grossTonnage || previousShip.grossTonnage,
+            deadweightTons: ship.deadweightTons ?? previousShip.deadweightTons,
+            destination: knownText(ship.destination) ? ship.destination : previousShip.destination,
+            eta: ship.eta ?? previousShip.eta,
+            lastDeparturePort: previousShip.lastDeparturePort,
+          }
+        : ship;
+    })
     .sort((a, b) => {
       const statusA = a.statusGroup === "Anchored" ? 0 : 1;
       const statusB = b.statusGroup === "Anchored" ? 0 : 1;
@@ -960,6 +1027,13 @@ async function main() {
   }
 
   cache.generatedAt = cache.generatedAt ?? isoParisNow();
+  cache.ships = dedupeShipsByMmsi(cache.ships);
+  if (cache.refreshStats && cache.refreshStats.uniqueInAreaShips == null) {
+    cache.refreshStats.uniqueInAreaShips = cache.ships.length;
+  }
+  if (cache.refreshProvider === "vesselapi" && cache.refreshStatus === "live") {
+    cache.refreshMessage = `Capture VesselAPI active : ${cache.ships.length} navire(s) unique(s) dans la baie de Saint-Nazaire.`;
+  }
   if (attemptedVesselApiAt && !cache.lastVesselApiAttemptAt) {
     cache.lastVesselApiAttemptAt = attemptedVesselApiAt;
   } else if (existing.lastVesselApiAttemptAt && !cache.lastVesselApiAttemptAt) {
