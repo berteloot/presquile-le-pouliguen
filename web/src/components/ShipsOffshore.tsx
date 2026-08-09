@@ -34,12 +34,38 @@ const STATUS_LABELS: Record<ShipStatusGroup, string> = {
   Working: "En opération",
   Moored: "À quai",
 };
-const EXTERNAL_AIS_MAP_URL =
-  "https://www.vesselfinder.com/aismap?latitude=47.18&longitude=-2.38&zoom=9&names=true";
 const EXTERNAL_AIS_FULL_URL =
   "https://www.vesselfinder.com/?latitude=47.18&longitude=-2.38&zoom=9";
 const MY_SHIP_TRACKING_URL =
   "https://www.myshiptracking.com/?lat=47.18&lng=-2.38&zoom=9";
+const VESSELFINDER_EMBED_HTML = `<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+        background: #e7f3f7;
+      }
+    </style>
+  </head>
+  <body>
+    <script>
+      var width = "100%";
+      var height = "430";
+      var latitude = "47.18";
+      var longitude = "-2.38";
+      var zoom = "9";
+      var names = true;
+    </script>
+    <script src="https://www.vesselfinder.com/aismap.js"></script>
+  </body>
+</html>`;
 
 function numberLabel(value: number): string {
   return value.toLocaleString("fr-FR");
@@ -361,7 +387,7 @@ export default function ShipsOffshore() {
   const [detailTab, setDetailTab] = useState<DetailTab>("why");
   const [failed, setFailed] = useState(false);
 
-  useEffect(() => {
+  const refreshShips = useCallback(() => {
     let cancelled = false;
     fetchOffshoreShips()
       .then((data) => {
@@ -374,6 +400,26 @@ export default function ShipsOffshore() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    let cleanup = refreshShips();
+    const refreshIfVisible = () => {
+      if (document.visibilityState === "hidden") return;
+      cleanup();
+      cleanup = refreshShips();
+    };
+    const interval = window.setInterval(refreshIfVisible, 60_000);
+    window.addEventListener("focus", refreshIfVisible);
+    window.addEventListener("hashchange", refreshIfVisible);
+    document.addEventListener("visibilitychange", refreshIfVisible);
+    return () => {
+      cleanup();
+      window.clearInterval(interval);
+      window.removeEventListener("focus", refreshIfVisible);
+      window.removeEventListener("hashchange", refreshIfVisible);
+      document.removeEventListener("visibilitychange", refreshIfVisible);
+    };
+  }, [refreshShips]);
 
   const ships = useMemo(() => (cache ? enrichShipCache(cache) : []), [cache]);
   const horizonShips = useMemo(
@@ -733,7 +779,7 @@ function ExternalAisFallback() {
       </div>
       <iframe
         title="Carte AIS VesselFinder autour du Pouliguen et Saint-Nazaire"
-        src={EXTERNAL_AIS_MAP_URL}
+        srcDoc={VESSELFINDER_EMBED_HTML}
         loading="lazy"
         referrerPolicy="no-referrer-when-downgrade"
         sandbox="allow-scripts allow-same-origin allow-popups"
