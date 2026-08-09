@@ -396,12 +396,30 @@ function captureAisstream({ apiKey, seconds, existing }) {
   return new Promise((resolvePromise, reject) => {
     let settled = false;
     const socket = new WebSocket(AISSTREAM_URL);
-    const timeout = setTimeout(() => {
+    const closeSocket = () => {
+      try {
+        if (socket.readyState === WebSocket.CONNECTING || socket.readyState === WebSocket.OPEN) {
+          socket.close();
+        }
+      } catch {
+        // The capture is already done; cleanup should never make the cache fail.
+      }
+    };
+    const resolveOnce = () => {
       if (settled) return;
       settled = true;
-      socket.close();
+      clearTimeout(timeout);
+      closeSocket();
       resolvePromise(buildAisstreamCache(records, existing, seconds, boundingBoxes));
-    }, seconds * 1000);
+    };
+    const rejectOnce = (err) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+      closeSocket();
+      reject(err);
+    };
+    const timeout = setTimeout(resolveOnce, seconds * 1000);
 
     socket.addEventListener("open", () => {
       socket.send(
@@ -418,33 +436,21 @@ function captureAisstream({ apiKey, seconds, existing }) {
         const text = await dataText(event.data);
         const payload = JSON.parse(text);
         if (payload.error || payload.Error) {
-          throw new Error(payload.error ?? payload.Error);
+          rejectOnce(new Error(payload.error ?? payload.Error));
+          return;
         }
         mergeAisstreamMessage(records, payload);
       } catch (err) {
-        clearTimeout(timeout);
-        if (!settled) {
-          settled = true;
-          socket.close();
-          reject(err);
-        }
+        console.warn(`Skipping AISstream message: ${err.message}`);
       }
     });
 
     socket.addEventListener("error", () => {
-      clearTimeout(timeout);
-      if (!settled) {
-        settled = true;
-        reject(new Error("AISstream WebSocket error"));
-      }
+      rejectOnce(new Error("AISstream WebSocket error"));
     });
 
     socket.addEventListener("close", () => {
-      clearTimeout(timeout);
-      if (!settled) {
-        settled = true;
-        resolvePromise(buildAisstreamCache(records, existing, seconds, boundingBoxes));
-      }
+      resolveOnce();
     });
   });
 }
@@ -596,15 +602,25 @@ async function main() {
   const sourceUrl = process.env.AIS_CACHE_SOURCE_URL;
   const aisstreamKey = process.env.AISSTREAM_API_KEY;
   const seconds = Number(process.env.AISSTREAM_SECONDS ?? DEFAULT_AISSTREAM_SECONDS);
-  let cache = aisstreamKey
-    ? await captureAisstream({
-        apiKey: aisstreamKey,
-        seconds: Number.isFinite(seconds) && seconds > 0 ? seconds : DEFAULT_AISSTREAM_SECONDS,
-        existing,
-      })
-    : sourceUrl
-      ? await loadFromUrl(sourceUrl)
-      : existing;
+  let cache;
+  try {
+    cache = aisstreamKey
+      ? await captureAisstream({
+          apiKey: aisstreamKey,
+          seconds: Number.isFinite(seconds) && seconds > 0 ? seconds : DEFAULT_AISSTREAM_SECONDS,
+          existing,
+        })
+      : sourceUrl
+        ? await loadFromUrl(sourceUrl)
+        : existing;
+  } catch (err) {
+    if ((aisstreamKey || sourceUrl) && existing.ships?.length > 0) {
+      console.warn(`AIS refresh failed (${err.message}); keeping existing cache.`);
+      cache = existing;
+    } else {
+      throw err;
+    }
+  }
 
   if ((aisstreamKey || sourceUrl) && cache.ships.length === 0 && existing.ships?.length > 0) {
     console.log(
@@ -623,7 +639,9 @@ async function main() {
   );
 }
 
-main().catch((err) => {
+main().then(() => {
+  process.exit(0);
+}).catch((err) => {
   console.error(err);
   process.exit(1);
 });

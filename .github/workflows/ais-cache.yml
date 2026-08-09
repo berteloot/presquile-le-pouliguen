@@ -7,11 +7,12 @@ on:
 
 concurrency:
   group: ais-offshore-cache
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   refresh:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: write
 
