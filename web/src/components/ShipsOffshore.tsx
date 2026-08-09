@@ -393,7 +393,12 @@ export default function ShipsOffshore() {
     filteredShips.find((ship) => ship.mmsi === selectedMmsi) ?? filteredShips[0] ?? null;
   const interestingFacts = useMemo(() => buildInterestingFacts(filteredShips), [filteredShips]);
   const generatedAt = cache ? formatDateTime(cache.generatedAt) : "";
+  const lastRefreshAttemptAt = cache?.lastRefreshAttemptAt
+    ? formatDateTime(cache.lastRefreshAttemptAt)
+    : "";
   const isDemoCache = cache?.sourceMode !== "api-cache";
+  const isPreservedCache =
+    cache?.refreshStatus === "stale-preserved" || cache?.refreshStatus === "error-preserved";
 
   const selectShip = useCallback((ship: EnrichedShip) => {
     setSelectedMmsi(ship.mmsi);
@@ -427,7 +432,12 @@ export default function ShipsOffshore() {
             {cache?.coverageLabel ?? "Chargement des navires..."}
           </p>
         </div>
-        <SourceStamp generatedAt={generatedAt} sourceMode={cache?.sourceMode} />
+        <SourceStamp
+          generatedAt={generatedAt}
+          lastRefreshAttemptAt={lastRefreshAttemptAt}
+          refreshStatus={cache?.refreshStatus}
+          sourceMode={cache?.sourceMode}
+        />
       </div>
 
       {cache ? (
@@ -451,6 +461,19 @@ export default function ShipsOffshore() {
                 <code>tools/build_ais_cache.mjs</code> pour publier un cache
                 statique réellement rafraîchi, sans serveur payant en continu.
               </p>
+            </div>
+          )}
+
+          {!isDemoCache && isPreservedCache && (
+            <div className="ship-live-missing">
+              <strong>Dernier captage AIS connu</strong>
+              <p>
+                Les positions affichées datent du dernier cache non vide. Le
+                refresh automatique tourne encore, mais la dernière fenêtre
+                AISstream gratuite n'a pas renvoyé de navire exploitable dans
+                la baie de Saint-Nazaire.
+              </p>
+              {cache.refreshMessage && <p>{cache.refreshMessage}</p>}
             </div>
           )}
 
@@ -648,6 +671,8 @@ export default function ShipsOffshore() {
           <p className="meta-line">
             {isDemoCache
               ? "Données : cache de démonstration. Les positions, ports précédents et explications ne doivent pas être interprétés comme des observations AIS réelles."
+              : isPreservedCache
+                ? "Données : dernier cache AIS API conservé. Les positions sont le dernier captage connu, pas une nouvelle position live confirmée."
               : "Données : cache AIS API. Les origines, ports précédents et explications restent estimés quand l'historique AIS complet manque."}
           </p>
         </>
@@ -660,15 +685,27 @@ export default function ShipsOffshore() {
 
 function SourceStamp({
   generatedAt,
+  lastRefreshAttemptAt,
+  refreshStatus,
   sourceMode,
 }: {
   generatedAt: string;
+  lastRefreshAttemptAt: string;
+  refreshStatus?: OffshoreShipCache["refreshStatus"];
   sourceMode?: OffshoreShipCache["sourceMode"];
 }) {
+  const hasSeparateCheck = lastRefreshAttemptAt && lastRefreshAttemptAt !== generatedAt;
+  const label =
+    sourceMode !== "api-cache"
+      ? "démo non GPS"
+      : refreshStatus === "live"
+        ? "cache API AIS"
+        : "dernier captage AIS";
   return (
     <div className="ship-source">
-      <span>{sourceMode === "api-cache" ? "cache API AIS" : "démo non GPS"}</span>
-      {generatedAt && <small>{generatedAt}</small>}
+      <span>{label}</span>
+      {generatedAt && <small>capté {generatedAt}</small>}
+      {hasSeparateCheck && <small>vérifié {lastRefreshAttemptAt}</small>}
     </div>
   );
 }

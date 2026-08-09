@@ -52,6 +52,14 @@ export interface OffshoreShipCache {
     lat: number;
     lon: number;
   };
+  lastRefreshAttemptAt?: string;
+  refreshStatus?: "live" | "empty" | "stale-preserved" | "error-preserved";
+  refreshMessage?: string;
+  refreshStats?: {
+    rawRecords?: number;
+    positionedRecords?: number;
+    inAreaRecords?: number;
+  };
   notes: string[];
   ships: OffshoreShip[];
 }

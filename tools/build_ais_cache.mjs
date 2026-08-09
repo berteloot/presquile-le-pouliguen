@@ -462,10 +462,19 @@ function buildAisstreamCache(records, existing, seconds, boundingBoxes) {
       ? new Map(existing.ships.map((ship) => [String(ship.mmsi), ship]))
       : new Map();
 
-  const ships = Array.from(records.values())
-    .filter((record) => record.position)
-    .filter((record) => isInSaintNazaireBay(record.position))
-    .map((record) => {
+  const allRecords = Array.from(records.values());
+  const positionedRecords = allRecords.filter((record) => record.position);
+  const inAreaRecords = positionedRecords.filter((record) => isInSaintNazaireBay(record.position));
+  const refreshStats = {
+    rawRecords: allRecords.length,
+    positionedRecords: positionedRecords.length,
+    inAreaRecords: inAreaRecords.length,
+  };
+  console.log(
+    `AISstream capture stats: ${refreshStats.rawRecords} records, ${refreshStats.positionedRecords} positioned, ${refreshStats.inAreaRecords} in Saint-Nazaire bay.`,
+  );
+
+  const ships = inAreaRecords.map((record) => {
       const { country, flagCode } = countryFromMmsi(record.mmsi);
       const speedKnots = record.speedKnots ?? 0;
       const status = statusFromCode(record.navStatusCode, speedKnots);
@@ -554,6 +563,13 @@ function buildAisstreamCache(records, existing, seconds, boundingBoxes) {
     sourceMode: "api-cache",
     coverageLabel: "Baie de Saint-Nazaire : La Baule, Le Pouliguen, mouillages Loire/Donges",
     center: { lat: 47.21, lon: -2.36 },
+    lastRefreshAttemptAt: generatedAt,
+    refreshStatus: ships.length > 0 ? "live" : "empty",
+    refreshMessage:
+      ships.length > 0
+        ? `Capture AISstream active : ${ships.length} navire(s) dans la baie de Saint-Nazaire.`
+        : "Dernière tentative AISstream : aucun navire renvoyé dans la baie de Saint-Nazaire.",
+    refreshStats,
     notes: [
       `Cache AISstream généré depuis une capture WebSocket de ${seconds} s.`,
       `Zone AISstream: ${JSON.stringify(boundingBoxes)}.`,
@@ -589,11 +605,24 @@ async function loadFromUrl(url) {
     sourceMode: "api-cache",
     coverageLabel: "Baie de Saint-Nazaire : La Baule, Le Pouliguen, mouillages Loire/Donges",
     center: { lat: 47.21, lon: -2.36 },
+    lastRefreshAttemptAt: isoParisNow(),
+    refreshStatus: rows.length > 0 ? "live" : "empty",
+    refreshMessage: `Cache AIS généré depuis AIS_CACHE_SOURCE_URL : ${rows.length} ligne(s) reçue(s).`,
     notes: [
       "Cache AIS généré automatiquement depuis AIS_CACHE_SOURCE_URL.",
       "Affichage filtré à la baie de Saint-Nazaire ; Mor Braz, Vilaine, Houat et Quiberon sont exclus.",
     ],
     ships: rows.filter((ship) => isInSaintNazaireBay(ship.position)),
+  };
+}
+
+function preserveExistingCache(existing, patch) {
+  return {
+    ...existing,
+    lastRefreshAttemptAt: patch.lastRefreshAttemptAt ?? isoParisNow(),
+    refreshStatus: patch.refreshStatus,
+    refreshMessage: patch.refreshMessage,
+    refreshStats: patch.refreshStats ?? existing.refreshStats,
   };
 }
 
@@ -616,7 +645,10 @@ async function main() {
   } catch (err) {
     if ((aisstreamKey || sourceUrl) && existing.ships?.length > 0) {
       console.warn(`AIS refresh failed (${err.message}); keeping existing cache.`);
-      cache = existing;
+      cache = preserveExistingCache(existing, {
+        refreshStatus: "error-preserved",
+        refreshMessage: `Dernière tentative AIS : erreur (${err.message}); dernier captage connu conservé.`,
+      });
     } else {
       throw err;
     }
@@ -626,7 +658,14 @@ async function main() {
     console.log(
       "AIS refresh returned 0 ships in the Saint-Nazaire bay filter; keeping existing cache.",
     );
-    cache = existing;
+    cache = preserveExistingCache(existing, {
+      lastRefreshAttemptAt: cache.lastRefreshAttemptAt,
+      refreshStatus: "stale-preserved",
+      refreshMessage:
+        cache.refreshMessage ??
+        "Dernière tentative AIS : aucun navire renvoyé dans la baie de Saint-Nazaire ; dernier captage connu conservé.",
+      refreshStats: cache.refreshStats,
+    });
   }
 
   cache.generatedAt = cache.generatedAt ?? isoParisNow();
