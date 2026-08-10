@@ -525,23 +525,12 @@ export default function ShipsOffshore() {
             </div>
           )}
 
-          {!isDemoCache && isPreservedCache && (
+          {!isDemoCache && isExpiredPreservedCache && (
             <div className="ship-live-missing">
-              <strong>Dernier captage AIS connu</strong>
+              <strong>Dernier AIS disponible</strong>
               <p>
-                Les positions affichées datent du dernier cache non vide. Le
-                refresh automatique tourne encore, mais la dernière fenêtre
-                AISstream gratuite n'a pas renvoyé de navire exploitable dans
-                la baie de Saint-Nazaire.
+                Positions conservées depuis le dernier captage fiable.
               </p>
-              {cache.refreshMessage && <p>{cache.refreshMessage}</p>}
-              {isExpiredPreservedCache && (
-                <p>
-                  La carte et la liste courante sont masquées pour éviter de
-                  présenter d'anciennes positions comme des navires présents
-                  maintenant.
-                </p>
-              )}
             </div>
           )}
 
@@ -744,7 +733,7 @@ export default function ShipsOffshore() {
             {isDemoCache
               ? "Données : cache de démonstration. Les positions, ports précédents et explications ne doivent pas être interprétés comme des observations AIS réelles."
               : isPreservedCache
-                ? "Données : dernier cache AIS API conservé. Les positions sont le dernier captage connu, pas une nouvelle position live confirmée."
+                ? "Données AIS : dernier captage disponible."
               : "Données : cache AIS API. Les origines, ports précédents et explications restent estimés quand l'historique AIS complet manque."}
           </p>
         </>
@@ -810,7 +799,7 @@ function SourceStamp({
       ? "démo non GPS"
       : refreshStatus === "live"
         ? "cache API AIS"
-        : "dernier captage AIS";
+        : "AIS disponible";
   return (
     <div className="ship-source">
       <span>{label}</span>
