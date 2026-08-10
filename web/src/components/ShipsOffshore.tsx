@@ -158,8 +158,8 @@ function buildInterestingFacts(ships: EnrichedShip[]): string[] {
   if (dongesShips.length > 0) {
     addFact(
       dongesShips.length === 1
-        ? `${dongesShips[0].name} déclare Donges comme destination AIS, typique des escales pétrolières de l'estuaire.`
-        : `${dongesShips.length} ${plural(dongesShips.length, "navire déclare", "navires déclarent")} Donges côté AIS : ${shipNames(dongesShips, 3)}.`,
+        ? `${dongesShips[0].name} déclare Donges comme destination dans son signal navire, typique des escales pétrolières de l'estuaire.`
+        : `${dongesShips.length} ${plural(dongesShips.length, "navire déclare", "navires déclarent")} Donges dans leur signal de position : ${shipNames(dongesShips, 3)}.`,
     );
   } else if (tankers.length > 0) {
     addFact(
@@ -172,15 +172,15 @@ function buildInterestingFacts(ships: EnrichedShip[]): string[] {
     if (route) {
       addFact(
         /donges/i.test(route)
-          ? `${routeShip.name} affiche une route AIS ${route}, un indice fort vers le terminal pétrolier de l'estuaire.`
-          : `${routeShip.name} affiche une route AIS ${route}, ce qui donne un indice rare sur son voyage.`,
+          ? `${routeShip.name} affiche une route déclarée ${route}, un indice fort vers le terminal pétrolier de l'estuaire.`
+          : `${routeShip.name} affiche une route déclarée ${route}, ce qui donne un indice rare sur son voyage.`,
       );
     }
   }
 
   if (largestShip) {
     addFact(
-      `${largestShip.name} est la plus grande silhouette AIS ici : ${largestShip.lengthM} m à ${largestShip.distanceFromLePouliguenKm.toFixed(1)} km du Pouliguen.`,
+      `${largestShip.name} est la plus grande silhouette détectée ici : ${largestShip.lengthM} m à ${largestShip.distanceFromLePouliguenKm.toFixed(1)} km du Pouliguen.`,
     );
   }
 
@@ -204,7 +204,7 @@ function buildInterestingFacts(ships: EnrichedShip[]): string[] {
 
   if (missingDestinations.length >= Math.max(3, Math.ceil(ships.length / 2))) {
     addFact(
-      `${missingDestinations.length} AIS sur ${ships.length} ne déclarent pas de destination exploitable ; les explications restent donc volontairement prudentes.`,
+      `${missingDestinations.length} navires sur ${ships.length} ne déclarent pas de destination exploitable ; les explications restent donc volontairement prudentes.`,
     );
   }
 
@@ -259,7 +259,7 @@ function ShipDetail({
           role="tab"
           aria-selected={tab === "ais"}
         >
-          AIS
+          Signal navire
         </button>
         <button
           type="button"
@@ -285,7 +285,7 @@ function ShipDetail({
               <dd>
                 {knownValue(ship.lastDeparturePort.name)
                   ? `${ship.lastDeparturePort.country}, via ${ship.lastDeparturePort.name}`
-                  : "non confirmée par le cache AIS"}
+                  : "non confirmée par le cache navire"}
               </dd>
             </div>
             <div>
@@ -357,7 +357,7 @@ function ShipDetail({
             <dd>{formatHours(ship.timeAtAnchorHours)}</dd>
           </div>
           <div>
-            <dt>Dernier captage AIS</dt>
+            <dt>Dernier signal reçu</dt>
             <dd>{formatDateTime(ship.updatedAt)}</dd>
           </div>
           <div>
@@ -476,7 +476,7 @@ export default function ShipsOffshore() {
     return (
       <section className="card card-wide ships-card" id="navires">
         <h2>Navires au large</h2>
-        <p className="placeholder">Cache AIS indisponible pour le moment.</p>
+        <p className="placeholder">Positions navires indisponibles pour le moment.</p>
       </section>
     );
   }
@@ -486,7 +486,7 @@ export default function ShipsOffshore() {
       <div className="ships-header">
         <div>
           <span className="section-eyebrow">
-            {isDemoCache ? "Démo AIS offshore" : "AIS offshore"}
+            {isDemoCache ? "Démo positions navires" : "Positions des navires"}
           </span>
           <h2>Navires au large</h2>
           <p>
@@ -505,17 +505,17 @@ export default function ShipsOffshore() {
         <>
           {isDemoCache && (
             <div className="ship-live-missing">
-              <strong>AIS réel non connecté</strong>
+              <strong>Positions réelles non connectées</strong>
               <p>
                 Les noms et positions du cache local sont une maquette, pas des
                 navires observés maintenant au large du Pouliguen. Pour éviter
                 toute confusion, la carte live est masquée tant qu'un vrai flux
-                AIS n'alimente pas le cache.
+                signal de position n'alimente pas le cache.
               </p>
               <ul>
-                <li>AISstream : flux WebSocket temps réel avec clé API.</li>
+                <li>AISstream : flux temps réel des signaux de position des navires.</li>
                 <li>VesselAPI : requête par zone avec positions, statut, cap et ETA.</li>
-                <li>AISHub : accès au flux agrégé si une station AIS locale est partagée.</li>
+                <li>AISHub : accès au flux agrégé si une station locale est partagée.</li>
               </ul>
               <p className="meta-line">
                 Renseigner ensuite <code>AISSTREAM_API_KEY</code> puis lancer{" "}
@@ -527,7 +527,7 @@ export default function ShipsOffshore() {
 
           {!isDemoCache && isExpiredPreservedCache && (
             <div className="ship-live-missing">
-              <strong>Dernier AIS disponible</strong>
+              <strong>Dernières positions disponibles</strong>
               <p>
                 Positions conservées depuis le dernier captage fiable.
               </p>
@@ -545,7 +545,7 @@ export default function ShipsOffshore() {
                   <span>Vue par défaut</span>
                   <strong>Gros navires au mouillage visibles depuis la côte</strong>
                   <p>
-                    La vue complète affiche tous les AIS captés dans la baie.
+                    La vue complète affiche tous les navires captés dans la baie.
                     Le filtre Horizon isole seulement les silhouettes immobiles
                     les plus plausibles au large.
                   </p>
@@ -568,7 +568,7 @@ export default function ShipsOffshore() {
                     role="tab"
                     aria-selected={shipScope === "all"}
                   >
-                    Tout AIS
+                    Tous les navires
                     <small>{ships.length}</small>
                   </button>
                 </div>
@@ -648,17 +648,17 @@ export default function ShipsOffshore() {
                 <StatCard
                   label="Attente moyenne"
                   value={formatHours(stats.averageWaitHours)}
-                  note="mouillages AIS mesurés"
+                  note="mouillages mesurés"
                 />
                 <StatCard
                   label="Plus grand"
                   value={stats.largestShip ? `${stats.largestShip.lengthM} m` : "non transmis"}
-                  note={stats.largestShip?.name ?? "longueur AIS manquante"}
+                  note={stats.largestShip?.name ?? "longueur non transmise"}
                 />
                 <StatCard
                   label="Plus lourd"
                   value={stats.biggestTonnage ? `${numberLabel(stats.biggestTonnage.grossTonnage)} GT` : "non transmis"}
-                  note={stats.biggestTonnage?.name ?? "tonnage AIS manquant"}
+                  note={stats.biggestTonnage?.name ?? "tonnage non transmis"}
                 />
               </div>
 
@@ -688,7 +688,7 @@ export default function ShipsOffshore() {
                               {ship.distanceFromLePouliguenKm.toFixed(1)} km
                               {shipScope === "horizon" ? " · horizon" : ""}
                               <br />
-                              Dernier captage AIS : {formatDateTime(ship.updatedAt)}
+                              Dernier signal : {formatDateTime(ship.updatedAt)}
                             </small>
                           </button>
                         </li>
@@ -708,7 +708,7 @@ export default function ShipsOffshore() {
                   {shipSearch
                     ? `Aucun navire ne correspond à "${shipSearch}".`
                     : shipScope === "horizon"
-                    ? "Aucun gros navire au mouillage détecté dans la fenêtre AIS actuelle. Essayez Tout AIS ou attendez le prochain rafraîchissement."
+                    ? "Aucun gros navire au mouillage détecté dans la fenêtre actuelle. Essayez Tous les navires ou attendez le prochain rafraîchissement."
                     : "Aucun navire ne correspond aux filtres."}
                 </p>
               )}
@@ -731,14 +731,14 @@ export default function ShipsOffshore() {
 
           <p className="meta-line">
             {isDemoCache
-              ? "Données : cache de démonstration. Les positions, ports précédents et explications ne doivent pas être interprétés comme des observations AIS réelles."
+              ? "Données : cache de démonstration. Les positions, ports précédents et explications ne doivent pas être interprétés comme des observations réelles."
               : isPreservedCache
-                ? "Données AIS : dernier captage disponible."
-              : "Données : cache AIS API. Les origines, ports précédents et explications restent estimés quand l'historique AIS complet manque."}
+                ? "Données navires : dernier captage disponible."
+              : "Données : signal de position des navires. Les origines, ports précédents et explications restent estimés quand l'historique complet manque."}
           </p>
         </>
       ) : (
-        <p className="placeholder">Chargement du cache AIS…</p>
+        <p className="placeholder">Chargement des positions navires…</p>
       )}
     </section>
   );
@@ -746,13 +746,13 @@ export default function ShipsOffshore() {
 
 function ExternalAisFallback() {
   return (
-    <section className="external-ais-fallback" aria-label="Carte AIS externe">
+    <section className="external-ais-fallback" aria-label="Carte navires externe">
       <div className="external-ais-copy">
         <div>
-          <span className="section-eyebrow">Carte AIS externe live</span>
+          <span className="section-eyebrow">Carte navires externe live</span>
           <h3>Navires actuels via VesselFinder</h3>
           <p>
-            Notre flux AIS enrichi est vide pour la baie. Cette carte externe
+            Notre carte enrichie est vide pour la baie. Cette carte externe
             gratuite affiche les positions disponibles dans le réseau
             VesselFinder autour du Pouliguen, La Baule et Saint-Nazaire.
           </p>
@@ -767,7 +767,7 @@ function ExternalAisFallback() {
         </div>
       </div>
       <iframe
-        title="Carte AIS VesselFinder autour du Pouliguen et Saint-Nazaire"
+        title="Carte navires VesselFinder autour du Pouliguen et Saint-Nazaire"
         srcDoc={VESSELFINDER_EMBED_HTML}
         loading="lazy"
         referrerPolicy="no-referrer-when-downgrade"
@@ -775,7 +775,7 @@ function ExternalAisFallback() {
       />
       <p className="meta-line">
         Source externe : VesselFinder. Les détails enrichis, explications et
-        filtres du site reviendront dès qu'un nouveau captage AIS local non
+        filtres du site reviendront dès qu'un nouveau captage local non
         vide sera disponible.
       </p>
     </section>
@@ -798,8 +798,8 @@ function SourceStamp({
     sourceMode !== "api-cache"
       ? "démo non GPS"
       : refreshStatus === "live"
-        ? "cache API AIS"
-        : "AIS disponible";
+        ? "positions navires"
+        : "positions disponibles";
   return (
     <div className="ship-source">
       <span>{label}</span>

@@ -258,7 +258,14 @@ function voyageLabel(hours: number | null): string {
 }
 
 function vesselTypeSentenceLabel(vesselType: string): string {
-  return vesselType.toLowerCase().replace(/\bais\b/g, "AIS");
+  return vesselType === "Navire AIS"
+    ? "navire détecté"
+    : vesselType.toLowerCase().replace(/\bais\b/g, "AIS");
+}
+
+function displayVesselType(vesselType: string): string {
+  if (vesselType === "Navire AIS") return "Navire détecté";
+  return vesselType.replace(/^AIS type\s+/i, "Type navire ");
 }
 
 function knownText(value: string | null | undefined): boolean {
@@ -362,7 +369,7 @@ function buildSummary(ship: OffshoreShip, now: Date, distanceKm: number, wait: n
     ? ` ${voyageLabel(voyageHours)} de ${ship.lastDeparturePort.name} (${ship.lastDeparturePort.country}).`
     : "";
   const destination = knownText(ship.destination)
-    ? `, destination AIS ${destinationLabel(ship.destination)}`
+    ? `, destination déclarée ${destinationLabel(ship.destination)}`
     : "";
   const movement =
     ship.statusGroup === "Underway"
@@ -374,7 +381,7 @@ function buildSummary(ship: OffshoreShip, now: Date, distanceKm: number, wait: n
           : `attend au mouillage depuis ${formatHours(wait)}`;
   return (
     `${ship.name}, ${vesselTypeSentenceLabel(ship.vesselType)} sous pavillon ${flagCountryLabel(ship.flagCountry)}, ` +
-    `observé par AIS à environ ${distanceKm.toFixed(1)} km du Pouliguen.` +
+    `repéré par son signal de position à environ ${distanceKm.toFixed(1)} km du Pouliguen.` +
     departure +
     ` Il ${movement}, cap ${Math.round(ship.headingDeg)}°${destination}.`
   );
@@ -384,14 +391,14 @@ function buildWhy(ship: OffshoreShip, wait: number | null) {
   const context = destinationContext(ship);
   if (!context) {
     if (ship.statusGroup === "Underway") {
-      return "L'AIS indique un navire en route, mais sa destination n'est pas assez précise pour expliquer son passage avec certitude.";
+      return "Son signal de position indique un navire en route, mais sa destination n'est pas assez précise pour expliquer son passage avec certitude.";
     }
     if (ship.statusGroup === "Working") {
-      return "L'AIS indique une opération dans la zone, sans destination ou mission assez détaillée pour confirmer le contexte.";
+      return "Son signal de position indique une opération dans la zone, sans destination ou mission assez détaillée pour confirmer le contexte.";
     }
     const waitText =
       wait != null ? ` depuis ${formatHours(wait)}` : "";
-    return `L'AIS le montre au mouillage${waitText}, mais sans destination déclarée fiable. Le motif exact reste donc non confirmé.`;
+    return `Son signal le montre au mouillage${waitText}, mais sans destination déclarée fiable. Le motif exact reste donc non confirmé.`;
   }
   const action =
     ship.statusGroup === "Underway"
@@ -412,7 +419,7 @@ function buildFact(ship: OffshoreShip, distanceKm: number, wait: number | null) 
   }
   if (wait != null && wait >= 24) {
     const destination = knownText(ship.destination)
-      ? `, destination AIS ${destinationLabel(ship.destination)}`
+      ? `, destination déclarée ${destinationLabel(ship.destination)}`
       : "";
     return `${ship.name} attend au mouillage depuis ${formatHours(wait)}, à ${distanceKm.toFixed(1)} km du Pouliguen${destination}.`;
   }
@@ -420,9 +427,9 @@ function buildFact(ship: OffshoreShip, distanceKm: number, wait: number | null) 
     return `${ship.name} raconte l'autre trafic de la baie : les navires de service liés au parc éolien.`;
   }
   if (!knownText(ship.destination)) {
-    return `${ship.name} n'émet pas de destination AIS exploitable ; son contexte reste donc à confirmer.`;
+    return `${ship.name} n'émet pas de destination exploitable ; son contexte reste donc à confirmer.`;
   }
-  return `${ship.name} déclare ${destinationLabel(ship.destination)} côté AIS, à ${distanceKm.toFixed(1)} km du Pouliguen.`;
+  return `${ship.name} déclare ${destinationLabel(ship.destination)}, à ${distanceKm.toFixed(1)} km du Pouliguen.`;
 }
 
 function horizonScore(ship: OffshoreShip, distanceKm: number, distanceFromLaBauleKm: number): number {
@@ -463,6 +470,7 @@ export function enrichShip(ship: OffshoreShip, cacheTime: Date): EnrichedShip {
   const score = horizonScore(ship, distanceFromLePouliguenKm, distanceFromLaBauleKm);
   return {
     ...ship,
+    vesselType: displayVesselType(ship.vesselType),
     areaName: positionArea(ship.position.lat, ship.position.lon),
     flagEmoji: flagEmoji(ship.flagCode),
     flagCountryLabel: flagCountryLabel(ship.flagCountry),

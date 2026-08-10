@@ -431,6 +431,35 @@ function removeUnmeasuredAnchorStarts(cache) {
   });
 }
 
+function publicCopy(value) {
+  if (typeof value !== "string") return value;
+  return value
+    .replace(
+      "Position AIS réelle captée via VesselAPI ; détails statiques conservés par MMSI quand ils ne sont pas retransmis.",
+      "Position réelle captée via VesselAPI ; détails statiques conservés par MMSI quand ils ne sont pas retransmis.",
+    )
+    .replace(
+      "Position AIS réelle captée en direct ; détails statiques conservés par MMSI quand AISstream les transmet.",
+      "Position réelle captée depuis le signal public du navire ; détails statiques conservés par MMSI quand le flux les transmet.",
+    )
+    .replace("Positions, vitesse, cap et statut proviennent du dernier message AIS disponible dans VesselAPI.", "Positions, vitesse, cap et statut proviennent du dernier signal disponible dans VesselAPI.")
+    .replace("Positions, vitesse, cap et statut proviennent du flux AIS live lorsque transmis.", "Positions, vitesse, cap et statut proviennent du signal public du navire lorsque transmis.")
+    .replace("IMO, destination, dimensions et ETA sont conservés par MMSI dès qu'un message statique AIS les fournit.", "IMO, destination, dimensions et ETA sont conservés par MMSI dès qu'un message statique les fournit.")
+    .replace("Port précédent et historique long nécessitent toujours une source AIS historique externe.", "Port précédent et historique long nécessitent toujours une source maritime historique externe.");
+}
+
+function normalizePublicCopy(cache) {
+  return {
+    ...cache,
+    refreshMessage: publicCopy(cache.refreshMessage),
+    notes: Array.isArray(cache.notes) ? cache.notes.map(publicCopy) : cache.notes,
+    ships: cache.ships.map((ship) => ({
+      ...ship,
+      cargoContext: publicCopy(ship.cargoContext),
+    })),
+  };
+}
+
 function isVesselApiDue(existing, minHours) {
   const lastAttempt = parseDate(existing?.lastVesselApiAttemptAt);
   if (!lastAttempt) return true;
@@ -692,7 +721,7 @@ function buildAisstreamCache(records, existing, seconds, boundingBoxes) {
         updatedAt: record.updatedAt ?? generatedAt,
         areaName: positionArea(record.position.lat, record.position.lon),
         cargoContext:
-          "Position AIS réelle captée en direct ; détails statiques conservés par MMSI quand AISstream les transmet.",
+          "Position réelle captée depuis le signal public du navire ; détails statiques conservés par MMSI quand le flux les transmet.",
         sourceConfidence: "high",
       };
     })
@@ -720,9 +749,9 @@ function buildAisstreamCache(records, existing, seconds, boundingBoxes) {
       `Cache AISstream généré depuis une capture WebSocket de ${seconds} s.`,
       `Zone AISstream: ${JSON.stringify(boundingBoxes)}.`,
       "Affichage filtré à la baie de Saint-Nazaire ; Mor Braz, Vilaine, Houat et Quiberon sont exclus.",
-      "Positions, vitesse, cap et statut proviennent du flux AIS live lorsque transmis.",
-      "IMO, destination, dimensions et ETA sont conservés par MMSI dès qu'un message statique AIS les fournit.",
-      "Port précédent et historique long nécessitent toujours une source AIS historique externe.",
+      "Positions, vitesse, cap et statut proviennent du signal public du navire lorsque transmis.",
+      "IMO, destination, dimensions et ETA sont conservés par MMSI dès qu'un message statique les fournit.",
+      "Port précédent et historique long nécessitent toujours une source maritime historique externe.",
     ],
     ships,
   };
@@ -834,7 +863,7 @@ function buildVesselApiCache(rows, existing) {
         updatedAt: firstDefined(row.timestamp, row.processed_timestamp, row.updated_at, generatedAt),
         areaName: positionArea(position.lat, position.lon),
         cargoContext:
-          "Position AIS réelle captée via VesselAPI ; détails statiques conservés par MMSI quand ils ne sont pas retransmis.",
+          "Position réelle captée via VesselAPI ; détails statiques conservés par MMSI quand ils ne sont pas retransmis.",
         sourceConfidence: "high",
       };
     })
@@ -887,7 +916,7 @@ function buildVesselApiCache(rows, existing) {
     notes: [
       "Cache VesselAPI généré depuis une requête bounding-box limitée à 50 positions pour protéger le quota gratuit.",
       "Affichage filtré à la baie de Saint-Nazaire ; Mor Braz, Vilaine, Houat et Quiberon sont exclus.",
-      "Positions, vitesse, cap et statut proviennent du dernier message AIS disponible dans VesselAPI.",
+      "Positions, vitesse, cap et statut proviennent du dernier signal disponible dans VesselAPI.",
       "Nom, IMO, destination et dimensions sont conservés par MMSI lorsque l'endpoint de zone ne les renvoie pas.",
       "Aucun enrichissement navire-par-navire n'est lancé automatiquement afin de rester sous 150 appels/mois.",
     ],
@@ -1042,6 +1071,7 @@ async function main() {
   cache.generatedAt = cache.generatedAt ?? isoParisNow();
   cache.ships = dedupeShipsByMmsi(cache.ships);
   cache.ships = removeUnmeasuredAnchorStarts(cache);
+  cache = normalizePublicCopy(cache);
   if (cache.refreshStats && cache.refreshStats.uniqueInAreaShips == null) {
     cache.refreshStats.uniqueInAreaShips = cache.ships.length;
   }
