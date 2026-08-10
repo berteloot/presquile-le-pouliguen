@@ -379,7 +379,7 @@ function ShipDetail({
 
 export default function ShipsOffshore() {
   const [cache, setCache] = useState<OffshoreShipCache | null>(null);
-  const [shipScope, setShipScope] = useState<ShipScope>("horizon");
+  const [shipScope, setShipScope] = useState<ShipScope>("all");
   const [shipSearch, setShipSearch] = useState("");
   const [selectedType, setSelectedType] = useState<ShipTypeGroup | "all">("all");
   const [selectedStatus, setSelectedStatus] = useState<ShipStatusGroup | "all">("all");
@@ -556,9 +556,9 @@ export default function ShipsOffshore() {
                   <span>Vue par défaut</span>
                   <strong>Gros navires au mouillage visibles depuis la côte</strong>
                   <p>
-                    Tankers, cargos et autres grandes silhouettes AIS immobiles
-                    dans la zone que l'on voit sur l'horizon. Les petits AIS
-                    restent accessibles dans la vue complète.
+                    La vue complète affiche tous les AIS captés dans la baie.
+                    Le filtre Horizon isole seulement les silhouettes immobiles
+                    les plus plausibles au large.
                   </p>
                 </div>
                 <div className="ship-scope" role="tablist" aria-label="Vue navires">

@@ -418,6 +418,19 @@ function dedupeShipsByMmsi(ships) {
   return Array.from(byMmsi.values());
 }
 
+function removeUnmeasuredAnchorStarts(cache) {
+  const generatedTime = timeValue(cache.generatedAt);
+  return cache.ships.map((ship) => {
+    if (ship.statusGroup !== "Anchored" || !ship.anchorStartedAt) return ship;
+    const anchorTime = timeValue(ship.anchorStartedAt);
+    const isSyntheticVesselApiStart =
+      cache.refreshProvider === "vesselapi" &&
+      generatedTime > 0 &&
+      Math.abs(anchorTime - generatedTime) <= 60_000;
+    return isSyntheticVesselApiStart ? { ...ship, anchorStartedAt: null } : ship;
+  });
+}
+
 function isVesselApiDue(existing, minHours) {
   const lastAttempt = parseDate(existing?.lastVesselApiAttemptAt);
   if (!lastAttempt) return true;
@@ -766,8 +779,8 @@ function buildVesselApiCache(rows, existing) {
       const anchorStartedAt =
         status.statusGroup === "Anchored"
           ? isStillAnchored
-            ? previousShip.anchorStartedAt ?? previousShip.updatedAt ?? generatedAt
-            : generatedAt
+            ? previousShip.anchorStartedAt ?? null
+            : null
           : null;
       const name = String(
         firstDefined(
@@ -1028,6 +1041,7 @@ async function main() {
 
   cache.generatedAt = cache.generatedAt ?? isoParisNow();
   cache.ships = dedupeShipsByMmsi(cache.ships);
+  cache.ships = removeUnmeasuredAnchorStarts(cache);
   if (cache.refreshStats && cache.refreshStats.uniqueInAreaShips == null) {
     cache.refreshStats.uniqueInAreaShips = cache.ships.length;
   }

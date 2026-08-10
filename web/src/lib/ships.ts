@@ -158,6 +158,7 @@ const FLAG_COUNTRY_LABELS = new Map([
   ["Inconnu", "non transmis"],
   ["Ireland", "Irlande"],
   ["Malta", "Malte"],
+  ["Marshall Islands", "Îles Marshall"],
   ["Netherlands", "Pays-Bas"],
   ["Portugal", "Portugal"],
   ["Singapore", "Singapour"],
@@ -254,6 +255,10 @@ export function statusLabel(status: ShipStatusGroup): string {
 function voyageLabel(hours: number | null): string {
   if (hours == null) return "depuis un port non confirmé";
   return `parti il y a ${formatHours(hours)}`;
+}
+
+function vesselTypeSentenceLabel(vesselType: string): string {
+  return vesselType.toLowerCase().replace(/\bais\b/g, "AIS");
 }
 
 function knownText(value: string | null | undefined): boolean {
@@ -368,7 +373,7 @@ function buildSummary(ship: OffshoreShip, now: Date, distanceKm: number, wait: n
           ? "a un temps d'attente au mouillage non confirmé"
           : `attend au mouillage depuis ${formatHours(wait)}`;
   return (
-    `${ship.name}, ${ship.vesselType.toLowerCase()} sous pavillon ${flagCountryLabel(ship.flagCountry)}, ` +
+    `${ship.name}, ${vesselTypeSentenceLabel(ship.vesselType)} sous pavillon ${flagCountryLabel(ship.flagCountry)}, ` +
     `observé par AIS à environ ${distanceKm.toFixed(1)} km du Pouliguen.` +
     departure +
     ` Il ${movement}, cap ${Math.round(ship.headingDeg)}°${destination}.`
