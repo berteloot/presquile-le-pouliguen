@@ -326,7 +326,7 @@ function sunMomentLabel(weather: WeatherNow, ref: Date): string {
 
 function shouldShowEclipseNotice(ref: Date): boolean {
   const start = new Date("2026-08-12T00:00:00+02:00");
-  const end = new Date("2026-08-12T22:00:00+02:00");
+  const end = new Date("2026-08-12T21:30:00+02:00");
   return ref >= start && ref <= end;
 }
 
