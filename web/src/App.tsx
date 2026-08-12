@@ -138,6 +138,9 @@ const DOGS_BEACH_RULES_URL =
   "https://www.labaule-guerande.com/decouvrir/la-destination/le-pouliguen/";
 const PARKING_URL =
   "https://www.lepouliguen.fr/decouvrir/se-deplacer-et-stationner-au-pouliguen/";
+const ECLIPSE_TIMEANDDATE_URL =
+  "https://www.timeanddate.com/eclipse/in/france?iso=20260812";
+const ECLIPSE_SAFETY_URL = "https://science.nasa.gov/eclipses/safety/";
 const MONITORED_BEACHES = [
   "Plage du Nau",
   "Plage Benoît",
@@ -319,6 +322,12 @@ function sunMomentLabel(weather: WeatherNow, ref: Date): string {
   }
 
   return `soleil couché, lever demain`;
+}
+
+function shouldShowEclipseNotice(ref: Date): boolean {
+  const start = new Date("2026-08-12T00:00:00+02:00");
+  const end = new Date("2026-08-12T22:00:00+02:00");
+  return ref >= start && ref <= end;
 }
 
 function dateBoundsFromServices(
@@ -1013,6 +1022,18 @@ export default function App() {
       },
     ];
 
+    if (shouldShowEclipseNotice(now)) {
+      baseResults.push({
+        tag: "Ciel",
+        title: "Éclipse solaire ce soir",
+        detail:
+          "Partielle au Pouliguen : maximum vers 20h20, horizon ouest/nord-ouest et lunettes éclipse obligatoires.",
+        href: "#top",
+        keywords:
+          "eclipse éclipse solaire soleil lune ce soir tonight solar eclipse seguridad safety lunettes glasses horizon penchateau nau cote sauvage cielo sol luna gafas seguridad",
+      });
+    }
+
     for (const beach of beaches) {
       baseResults.push({
         tag: "Plage",
@@ -1064,7 +1085,7 @@ export default function App() {
     }
 
     return baseResults.filter((result) => matchesSiteSearch(result, siteSearch)).slice(0, 10);
-  }, [beaches, currentAgenda, dogRule, roadInfo, siteSearch, sortedCircuits]);
+  }, [beaches, currentAgenda, dogRule, now, roadInfo, siteSearch, sortedCircuits]);
 
   const nearestGlass = glassPoints[0] ?? null;
 
@@ -1133,7 +1154,7 @@ export default function App() {
         </nav>
       </header>
 
-      <header className="hero">
+      <header className="hero" id="top">
         <span className="hero-pill">La Presqu'île en direct ✺</span>
         <h1>
           Votre journée
@@ -1164,6 +1185,31 @@ export default function App() {
               vigilance officielle
             </a>
           </p>
+        )}
+        {shouldShowEclipseNotice(now) && (
+          <aside className="hero-eclipse" aria-label="Éclipse solaire du 12 août">
+            <div>
+              <span>Ce soir</span>
+              <strong>Éclipse solaire partielle</strong>
+            </div>
+            <p>
+              Au Pouliguen : 19h24-21h13, maximum vers 20h20. Environ 96 %
+              du Soleil couvert, mais pas de totalité en France.
+            </p>
+            <ul>
+              <li>Où : horizon ouest / nord-ouest dégagé, Côte sauvage, Penchâteau, plage du Nau.</li>
+              <li>Sécurité : lunettes ISO 12312-2 ou projection. Jamais à l'oeil nu, jumelles ou photo sans filtre solaire.</li>
+            </ul>
+            <p className="hero-eclipse-links">
+              <a href={ECLIPSE_TIMEANDDATE_URL} target="_blank" rel="noopener noreferrer">
+                horaires
+              </a>
+              <span>·</span>
+              <a href={ECLIPSE_SAFETY_URL} target="_blank" rel="noopener noreferrer">
+                sécurité NASA
+              </a>
+            </p>
+          </aside>
         )}
       </header>
 

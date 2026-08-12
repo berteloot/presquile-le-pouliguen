@@ -366,6 +366,66 @@ body {
   color: var(--navy);
 }
 
+.hero-eclipse {
+  display: grid;
+  gap: 8px;
+  max-width: 640px;
+  margin-top: 14px;
+  border: 1px solid rgba(18, 49, 75, 0.22);
+  border-left: 4px solid var(--alert);
+  border-radius: 8px;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.84);
+  color: var(--ink);
+  box-shadow: 0 10px 24px rgba(10, 33, 53, 0.08);
+  backdrop-filter: blur(4px);
+}
+
+.hero-eclipse div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.hero-eclipse span {
+  color: var(--alert);
+  font-size: 13px;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.hero-eclipse strong {
+  color: var(--navy);
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.hero-eclipse p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.hero-eclipse ul {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding-left: 18px;
+}
+
+.hero-eclipse li {
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.hero-eclipse-links {
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  font-weight: 800;
+}
+
 /* L'essentiel : the four immediate answers, tide-table style */
 .essentials {
   display: grid;
@@ -3635,6 +3695,22 @@ footer p {
 
   .hero-sub {
     font-size: 14px;
+  }
+
+  .hero-eclipse {
+    gap: 6px;
+    margin-top: 10px;
+    padding: 10px 12px;
+  }
+
+  .hero-eclipse strong {
+    font-size: 16px;
+  }
+
+  .hero-eclipse p,
+  .hero-eclipse li {
+    font-size: 12px;
+    line-height: 1.32;
   }
 
   main {
