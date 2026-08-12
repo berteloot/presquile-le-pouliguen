@@ -78,7 +78,7 @@ export default function SportsBookings() {
   );
 
   return (
-    <section className="card sports-bookings" id="sport-resa">
+    <section className="card sports-bookings">
       <div className="card-heading">
         <div>
           <span className="sports-tag">Sport résa</span>

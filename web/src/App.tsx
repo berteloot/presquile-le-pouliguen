@@ -1383,6 +1383,232 @@ export default function App() {
       </section>
 
       <main>
+        <h2 className="section-title" id="cote">La côte</h2>
+        <div className="cards">
+
+        <section className="card">
+          <div className="card-heading">
+            <h3>Mer et marée</h3>
+            <DateSelector
+              value={selectedDateValue}
+              isToday={selectedDateValue === todayValue}
+              onChange={selectDate}
+              onPrevious={() => shiftSelectedDate(-1)}
+              onNext={() => shiftSelectedDate(1)}
+              onToday={() => selectDate(todayValue)}
+            />
+          </div>
+          {marine ? (
+            <>
+              <div className="tide-summary">
+                {selectedDayExtrema.length > 0 ? (
+                  selectedDayExtrema.map((e, i) => (
+                    <div key={i} className="tide-next">
+                      <span className="tide-kind">
+                        {e.type === "high" ? "Marée haute" : "Marée basse"}
+                      </span>
+                      <span className="tide-time">{fmtTime.format(e.time)}</span>
+                      {e.coefficient != null && (
+                        <small className="tide-coeff">coef. {Math.round(e.coefficient)}</small>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <p className="placeholder tide-placeholder">
+                    Aucun horaire de marée disponible pour cette date.
+                  </p>
+                )}
+                {trend && selectedDateValue === todayValue && (
+                  <div className="tide-next">
+                    <span className="tide-kind">Tendance</span>
+                    <span className="tide-time">
+                      {trend === "rising" ? "montante ↗" : "descendante ↘"}
+                    </span>
+                  </div>
+                )}
+              </div>
+              <TideChart marine={marine} extrema={extrema} now={now} date={selectedDate} />
+              <MoonPhase moon={selectedMoon} formatDateTime={fmtShortDateTime} />
+              <p className="meta-line">
+                {seaTempSelected != null && <>Eau {seaTempSelected.toFixed(1)}°C · </>}
+                {waveSelected != null && <>vagues {waveSelected.toFixed(1)} m · </>}
+                marées {marine.tideSource === "shom" ? "officielles" : "indicatives"} :{" "}
+                {marine.tideSourceLabel}
+                {marine.tideSource === "open-meteo"
+                  ? " (modèle marin, à comparer avec SHOM pour la navigation)"
+                  : " (cache quotidien)"}
+                .
+              </p>
+            </>
+          ) : (
+            <p className="placeholder">Chargement des conditions de mer…</p>
+          )}
+        </section>
+
+        <section className="card">
+          <h3>Plages</h3>
+          {beaches.length > 0 ? (
+            <>
+              <button
+                type="button"
+                className="map-toggle"
+                onClick={() => toggleMap("beaches")}
+                aria-expanded={Boolean(openMaps.beaches)}
+              >
+                {openMaps.beaches ? "masquer la carte" : "voir la carte des plages"}
+              </button>
+              {openMaps.beaches && (
+                <PoiMap
+                  markers={beaches.map((b) => ({
+                    lat: b.lat,
+                    lon: b.lon,
+                    label: "P",
+                    color: "#0b6396",
+                    title: b.name,
+                    popupHtml:
+                      `<div class="bus-popup"><h3>${escapeHtml(b.name)}</h3>` +
+                      `<p>${escapeHtml(b.description.slice(0, 120))}…</p>` +
+                      (b.url
+                        ? `<a href="${escapeHtml(b.url)}" target="_blank" rel="noopener noreferrer">En savoir plus</a>`
+                        : "") +
+                      `</div>`,
+                  }))}
+                />
+              )}
+              <ul className="beaches">
+                {beaches.map((b, i) => (
+                  <li key={i}>
+                    <strong>{b.name}</strong>
+                    <span>
+                      {b.description.length > 130
+                        ? b.description.slice(0, 130).trimEnd() + "…"
+                        : b.description}
+                    </span>
+                    {b.url && (
+                      <a href={b.url} target="_blank" rel="noopener noreferrer">
+                        en savoir plus
+                      </a>
+                    )}
+                  </li>
+                ))}
+              </ul>
+              <article className="dog-beach-rules">
+                <div>
+                  <span>Chiens sur les plages</span>
+                  <strong>{dogRule.label}</strong>
+                </div>
+                <p>{dogRule.note}</p>
+                <p>
+                  Le sentier côtier reste autorisé aux chiens toute l'année,
+                  hors accès aux plages. Pensez à tenir compte de l'affichage
+                  sur place et à ramasser les déjections.
+                </p>
+                <a href={DOGS_BEACH_RULES_URL} target="_blank" rel="noopener noreferrer">
+                  règle officielle Le Pouliguen
+                </a>
+              </article>
+            </>
+          ) : (
+            <p className="placeholder">Chargement des plages…</p>
+          )}
+        </section>
+
+        <section className="card">
+          <h3>Qualité de l'eau</h3>
+          <div className="water-quality">
+            <div className="water-highlight">
+              <span className="water-badge water-badge-sufficient">
+                Baie du Guec · suffisant
+              </span>
+              <div>
+                <strong>Baie du Guec, classement baignade 2025</strong>
+                <span>
+                  “Suffisant” signifie que l'eau reste classée conforme pour la
+                  baignade, mais dans la catégorie la plus basse avant
+                  “insuffisant”. Ce label concerne Baie du Guec uniquement.
+                </span>
+                <a href={BATHING_WATER_URL} target="_blank" rel="noopener noreferrer">
+                  Voir la fiche officielle du Ministère de la Santé
+                </a>
+              </div>
+            </div>
+            <p className="water-note">
+              Autres plages suivies autour du Pouliguen, sans statut affiché ici :
+            </p>
+            <ul className="water-beach-list" aria-label="Autres plages suivies">
+              {MONITORED_BEACHES.map((beach) => (
+                <li key={beach}>{beach}</li>
+              ))}
+            </ul>
+            <p className="water-note">
+              Elles restent listées pour repère, mais le badge “suffisant” ne
+              s'applique pas à toutes.
+            </p>
+          </div>
+          <p className="meta-line">
+            Le classement officiel est calculé sur quatre saisons de résultats
+            microbiologiques, pas seulement sur le dernier prélèvement.
+            <br />
+            Qualité officielle des eaux de baignade :{" "}
+            <a
+              href="https://baignades.sante.gouv.fr"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              baignades.sante.gouv.fr
+            </a>
+          </p>
+        </section>
+
+        <section className="card">
+          <h3>Pêche à pied</h3>
+          {marine ? (
+            lowTides.length > 0 ? (
+              <>
+                <p className="peche-intro">
+                  Basses mers du jour sélectionné (meilleur créneau environ 1 h 30
+                  avant et après) :
+                </p>
+                <ul className="lowtides">
+                  {lowTides.map((e, i) => (
+                    <li key={i}>
+                      <span className="lowtide-time">{fmtDayTime.format(e.time)}</span>
+                      <span className="lowtide-kind">basse mer</span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="meta-line">
+                  Avant de partir, vérifiez les fermetures sanitaires et les tailles
+                  autorisées :{" "}
+                  <a
+                    href="https://www.pecheapied-responsable.fr"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    pecheapied-responsable.fr
+                  </a>{" "}
+                  ·{" "}
+                  <a
+                    href="https://www.loire-atlantique.gouv.fr"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    préfecture de Loire-Atlantique
+                  </a>
+                </p>
+              </>
+            ) : (
+              <p className="placeholder">
+                Aucune basse mer disponible pour cette date.
+              </p>
+            )
+          ) : (
+            <p className="placeholder">Chargement des horaires de marée…</p>
+          )}
+        </section>
+
+        </div>
+
         <h2 className="section-title" id="deplacer">Se déplacer</h2>
         <div className="cards">
 
@@ -1700,232 +1926,7 @@ export default function App() {
 
         </div>
 
-        <h2 className="section-title" id="cote">La côte</h2>
-        <div className="cards">
-
-        <section className="card">
-          <div className="card-heading">
-            <h3>Mer et marée</h3>
-            <DateSelector
-              value={selectedDateValue}
-              isToday={selectedDateValue === todayValue}
-              onChange={selectDate}
-              onPrevious={() => shiftSelectedDate(-1)}
-              onNext={() => shiftSelectedDate(1)}
-              onToday={() => selectDate(todayValue)}
-            />
-          </div>
-          {marine ? (
-            <>
-              <div className="tide-summary">
-                {selectedDayExtrema.length > 0 ? (
-                  selectedDayExtrema.map((e, i) => (
-                    <div key={i} className="tide-next">
-                      <span className="tide-kind">
-                        {e.type === "high" ? "Marée haute" : "Marée basse"}
-                      </span>
-                      <span className="tide-time">{fmtTime.format(e.time)}</span>
-                      {e.coefficient != null && (
-                        <small className="tide-coeff">coef. {Math.round(e.coefficient)}</small>
-                      )}
-                    </div>
-                  ))
-                ) : (
-                  <p className="placeholder tide-placeholder">
-                    Aucun horaire de marée disponible pour cette date.
-                  </p>
-                )}
-                {trend && selectedDateValue === todayValue && (
-                  <div className="tide-next">
-                    <span className="tide-kind">Tendance</span>
-                    <span className="tide-time">
-                      {trend === "rising" ? "montante ↗" : "descendante ↘"}
-                    </span>
-                  </div>
-                )}
-              </div>
-              <TideChart marine={marine} extrema={extrema} now={now} date={selectedDate} />
-              <MoonPhase moon={selectedMoon} formatDateTime={fmtShortDateTime} />
-              <p className="meta-line">
-                {seaTempSelected != null && <>Eau {seaTempSelected.toFixed(1)}°C · </>}
-                {waveSelected != null && <>vagues {waveSelected.toFixed(1)} m · </>}
-                marées {marine.tideSource === "shom" ? "officielles" : "indicatives"} :{" "}
-                {marine.tideSourceLabel}
-                {marine.tideSource === "open-meteo"
-                  ? " (modèle marin, à comparer avec SHOM pour la navigation)"
-                  : " (cache quotidien)"}
-                .
-              </p>
-            </>
-          ) : (
-            <p className="placeholder">Chargement des conditions de mer…</p>
-          )}
-        </section>
-
-        <section className="card">
-          <h3>Plages</h3>
-          {beaches.length > 0 ? (
-            <>
-              <button
-                type="button"
-                className="map-toggle"
-                onClick={() => toggleMap("beaches")}
-                aria-expanded={Boolean(openMaps.beaches)}
-              >
-                {openMaps.beaches ? "masquer la carte" : "voir la carte des plages"}
-              </button>
-              {openMaps.beaches && (
-                <PoiMap
-                  markers={beaches.map((b) => ({
-                    lat: b.lat,
-                    lon: b.lon,
-                    label: "P",
-                    color: "#0b6396",
-                    title: b.name,
-                    popupHtml:
-                      `<div class="bus-popup"><h3>${escapeHtml(b.name)}</h3>` +
-                      `<p>${escapeHtml(b.description.slice(0, 120))}…</p>` +
-                      (b.url
-                        ? `<a href="${escapeHtml(b.url)}" target="_blank" rel="noopener noreferrer">En savoir plus</a>`
-                        : "") +
-                      `</div>`,
-                  }))}
-                />
-              )}
-              <ul className="beaches">
-                {beaches.map((b, i) => (
-                  <li key={i}>
-                    <strong>{b.name}</strong>
-                    <span>
-                      {b.description.length > 130
-                        ? b.description.slice(0, 130).trimEnd() + "…"
-                        : b.description}
-                    </span>
-                    {b.url && (
-                      <a href={b.url} target="_blank" rel="noopener noreferrer">
-                        en savoir plus
-                      </a>
-                    )}
-                  </li>
-                ))}
-              </ul>
-              <article className="dog-beach-rules">
-                <div>
-                  <span>Chiens sur les plages</span>
-                  <strong>{dogRule.label}</strong>
-                </div>
-                <p>{dogRule.note}</p>
-                <p>
-                  Le sentier côtier reste autorisé aux chiens toute l'année,
-                  hors accès aux plages. Pensez à tenir compte de l'affichage
-                  sur place et à ramasser les déjections.
-                </p>
-                <a href={DOGS_BEACH_RULES_URL} target="_blank" rel="noopener noreferrer">
-                  règle officielle Le Pouliguen
-                </a>
-              </article>
-            </>
-          ) : (
-            <p className="placeholder">Chargement des plages…</p>
-          )}
-        </section>
-
-        <section className="card">
-          <h3>Qualité de l'eau</h3>
-          <div className="water-quality">
-            <div className="water-highlight">
-              <span className="water-badge water-badge-sufficient">
-                Baie du Guec · suffisant
-              </span>
-              <div>
-                <strong>Baie du Guec, classement baignade 2025</strong>
-                <span>
-                  “Suffisant” signifie que l'eau reste classée conforme pour la
-                  baignade, mais dans la catégorie la plus basse avant
-                  “insuffisant”. Ce label concerne Baie du Guec uniquement.
-                </span>
-                <a href={BATHING_WATER_URL} target="_blank" rel="noopener noreferrer">
-                  Voir la fiche officielle du Ministère de la Santé
-                </a>
-              </div>
-            </div>
-            <p className="water-note">
-              Autres plages suivies autour du Pouliguen, sans statut affiché ici :
-            </p>
-            <ul className="water-beach-list" aria-label="Autres plages suivies">
-              {MONITORED_BEACHES.map((beach) => (
-                <li key={beach}>{beach}</li>
-              ))}
-            </ul>
-            <p className="water-note">
-              Elles restent listées pour repère, mais le badge “suffisant” ne
-              s'applique pas à toutes.
-            </p>
-          </div>
-          <p className="meta-line">
-            Le classement officiel est calculé sur quatre saisons de résultats
-            microbiologiques, pas seulement sur le dernier prélèvement.
-            <br />
-            Qualité officielle des eaux de baignade :{" "}
-            <a
-              href="https://baignades.sante.gouv.fr"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              baignades.sante.gouv.fr
-            </a>
-          </p>
-        </section>
-
-        <section className="card">
-          <h3>Pêche à pied</h3>
-          {marine ? (
-            lowTides.length > 0 ? (
-              <>
-                <p className="peche-intro">
-                  Basses mers du jour sélectionné (meilleur créneau environ 1 h 30
-                  avant et après) :
-                </p>
-                <ul className="lowtides">
-                  {lowTides.map((e, i) => (
-                    <li key={i}>
-                      <span className="lowtide-time">{fmtDayTime.format(e.time)}</span>
-                      <span className="lowtide-kind">basse mer</span>
-                    </li>
-                  ))}
-                </ul>
-                <p className="meta-line">
-                  Avant de partir, vérifiez les fermetures sanitaires et les tailles
-                  autorisées :{" "}
-                  <a
-                    href="https://www.pecheapied-responsable.fr"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    pecheapied-responsable.fr
-                  </a>{" "}
-                  ·{" "}
-                  <a
-                    href="https://www.loire-atlantique.gouv.fr"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    préfecture de Loire-Atlantique
-                  </a>
-                </p>
-              </>
-            ) : (
-              <p className="placeholder">
-                Aucune basse mer disponible pour cette date.
-              </p>
-            )
-          ) : (
-            <p className="placeholder">Chargement des horaires de marée…</p>
-          )}
-        </section>
-
-        </div>
-
+        <ShipsOffshore />
         <h2 className="section-title" id="aujourdhui">Aujourd'hui</h2>
 
         <DailyBriefing
@@ -2237,8 +2238,6 @@ export default function App() {
           )}
         </section>
 
-        <SportsBookings />
-
         <section className="card">
           <h3>Urgences et défibrillateurs</h3>
           <p className="card-note emergency-lead">
@@ -2354,7 +2353,9 @@ export default function App() {
         </section>
         </div>
 
-        <ShipsOffshore />
+
+        <h2 className="section-title" id="sport-resa">Sport résa</h2>
+        <SportsBookings />
       </main>
         </>
       )}
