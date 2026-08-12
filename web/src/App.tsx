@@ -140,7 +140,8 @@ const PARKING_URL =
   "https://www.lepouliguen.fr/decouvrir/se-deplacer-et-stationner-au-pouliguen/";
 const ECLIPSE_TIMEANDDATE_URL =
   "https://www.timeanddate.com/eclipse/in/france?iso=20260812";
-const ECLIPSE_SAFETY_URL = "https://science.nasa.gov/eclipses/safety/";
+const ECLIPSE_SAFETY_URL =
+  "https://www.esa.int/Space_in_Member_States/France/Eclipse_totale_de_Soleil_comment_la_suivre_en_direct_depuis_chez_soi";
 const MONITORED_BEACHES = [
   "Plage du Nau",
   "Plage Benoît",
@@ -1206,7 +1207,7 @@ export default function App() {
               </a>
               <span>·</span>
               <a href={ECLIPSE_SAFETY_URL} target="_blank" rel="noopener noreferrer">
-                sécurité NASA
+                sécurité ESA
               </a>
             </p>
           </aside>
