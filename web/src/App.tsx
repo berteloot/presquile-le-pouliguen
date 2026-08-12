@@ -1197,7 +1197,7 @@ export default function App() {
               du Soleil couvert, mais pas de totalité en France.
             </p>
             <ul>
-              <li>Où : horizon ouest / nord-ouest dégagé, Côte sauvage, Penchâteau, plage du Nau.</li>
+              <li>Où : horizon ouest / nord-ouest dégagé, Côte sauvage, pointe de Penchâteau, plage de la Govelle.</li>
               <li>Sécurité : lunettes ISO 12312-2 ou projection. Jamais à l'oeil nu, jumelles ou photo sans filtre solaire.</li>
             </ul>
             <p className="hero-eclipse-links">
