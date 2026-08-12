@@ -105,7 +105,7 @@ a {
   grid-row: 1;
   display: flex;
   justify-self: stretch;
-  justify-content: flex-end;
+  justify-content: flex-start;
   min-width: 0;
   gap: 4px;
   overflow-x: auto;
@@ -3582,7 +3582,7 @@ footer p {
   }
 }
 
-@media (max-width: 1080px) {
+@media (max-width: 1180px) {
   .topbar {
     grid-template-columns: minmax(0, 1fr) auto 44px;
     gap: 8px;
