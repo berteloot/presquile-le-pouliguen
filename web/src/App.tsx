@@ -139,7 +139,7 @@ const DOGS_BEACH_RULES_URL =
 const PARKING_URL =
   "https://www.lepouliguen.fr/decouvrir/se-deplacer-et-stationner-au-pouliguen/";
 const ECLIPSE_TIMEANDDATE_URL =
-  "https://www.timeanddate.com/eclipse/in/france?iso=20260812";
+  "https://france3-regions.franceinfo.fr/pays-de-la-loire/loire-atlantique/nantes/eclipse-solaire-du-12-aout-2026-les-horaires-ville-par-ville-pour-en-profiter-au-maximum-3391342.html";
 const ECLIPSE_SAFETY_URL =
   "https://www.esa.int/Space_in_Member_States/France/Eclipse_totale_de_Soleil_comment_la_suivre_en_direct_depuis_chez_soi";
 const MONITORED_BEACHES = [
