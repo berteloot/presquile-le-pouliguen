@@ -24,6 +24,8 @@ ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CONFIG = ROOT / "monitoring" / "pierre-site-monitor.json"
 DEFAULT_STATE = ROOT / ".monitor-state.json"
 DEFAULT_TIMEOUT = 15
+DEFAULT_RETRIES = 2
+DEFAULT_RETRY_STATUSES = {429, 500, 502, 503, 504}
 
 
 @dataclass
@@ -93,6 +95,33 @@ def request(url: str, timeout: int) -> tuple[HttpResponse | None, int, str | Non
         return None, int((time.monotonic() - start) * 1000), str(exc)
 
 
+def request_with_retries(
+    item: dict[str, Any],
+    timeout: int,
+) -> tuple[HttpResponse | None, int, str | None, int]:
+    retries = int(item.get("retries", DEFAULT_RETRIES))
+    retry_statuses = set(item.get("retry_statuses", DEFAULT_RETRY_STATUSES))
+    delay_seconds = float(item.get("retry_delay_seconds", 1))
+    attempts = max(1, retries + 1)
+    total_elapsed_ms = 0
+    last_response: HttpResponse | None = None
+    last_error: str | None = None
+
+    for attempt in range(1, attempts + 1):
+        response, elapsed_ms, error = request(item["url"], timeout)
+        total_elapsed_ms += elapsed_ms
+        last_response = response
+        last_error = error
+
+        should_retry = response is None or response.status_code in retry_statuses
+        if not should_retry or attempt == attempts:
+            return response, total_elapsed_ms, error, attempt
+
+        time.sleep(delay_seconds * attempt)
+
+    return last_response, total_elapsed_ms, last_error, attempts
+
+
 def value_at_path(payload: Any, path: str) -> Any:
     current = payload
     for part in path.split("."):
@@ -100,14 +129,20 @@ def value_at_path(payload: Any, path: str) -> Any:
     return current
 
 
-def check_http(item: dict[str, Any], timeout: int) -> CheckResult:
-    response, elapsed_ms, error = request(item["url"], timeout)
+def validate_http_response(
+    item: dict[str, Any],
+    response: HttpResponse | None,
+    elapsed_ms: int,
+    error: str | None,
+    attempts: int,
+) -> CheckResult | None:
+    attempt_note = f" after {attempts} attempts" if attempts > 1 else ""
     if response is None:
-        return CheckResult(item["name"], False, error or "request failed", item["url"], elapsed_ms)
+        return CheckResult(item["name"], False, f"{error or 'request failed'}{attempt_note}", item["url"], elapsed_ms)
 
     expected = set(item.get("expect_status", [200]))
     if response.status_code not in expected:
-        return CheckResult(item["name"], False, f"HTTP {response.status_code}, expected {sorted(expected)}", item["url"], elapsed_ms)
+        return CheckResult(item["name"], False, f"HTTP {response.status_code}, expected {sorted(expected)}{attempt_note}", item["url"], elapsed_ms)
 
     min_bytes = int(item.get("min_bytes", 0))
     if min_bytes and len(response.content) < min_bytes:
@@ -126,17 +161,27 @@ def check_http(item: dict[str, Any], timeout: int) -> CheckResult:
         if found in (None, "", [], {}):
             return CheckResult(item["name"], False, f"empty json path: {json_path}", item["url"], elapsed_ms)
 
-    return CheckResult(item["name"], True, f"HTTP {response.status_code}, {elapsed_ms} ms", item["url"], elapsed_ms)
+    return None
+
+
+def check_http(item: dict[str, Any], timeout: int) -> CheckResult:
+    response, elapsed_ms, error, attempts = request_with_retries(item, timeout)
+    invalid = validate_http_response(item, response, elapsed_ms, error, attempts)
+    if invalid:
+        return invalid
+
+    attempt_note = f" after {attempts} attempts" if attempts > 1 else ""
+    assert response is not None
+    return CheckResult(item["name"], True, f"HTTP {response.status_code}, {elapsed_ms} ms{attempt_note}", item["url"], elapsed_ms)
 
 
 def check_generated_json(item: dict[str, Any], timeout: int) -> CheckResult:
-    response, elapsed_ms, error = request(item["url"], timeout)
-    if response is None:
-        return CheckResult(item["name"], False, error or "request failed", item["url"], elapsed_ms)
-    base = check_http(item, timeout)
-    if not base.ok:
-        return base
+    response, elapsed_ms, error, attempts = request_with_retries(item, timeout)
+    invalid = validate_http_response(item, response, elapsed_ms, error, attempts)
+    if invalid:
+        return invalid
 
+    assert response is not None
     try:
         payload = response.json()
     except ValueError as exc:

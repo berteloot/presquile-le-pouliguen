@@ -145,6 +145,11 @@ Current monitor scope:
 - Cap Atlantique and Loire-Atlantique OpenDataSoft probes return records
 - Google Translate widget script is reachable
 
+HTTP checks retry transient network failures and temporary HTTP `429/5xx`
+responses before alerting. This avoids noisy alerts from short-lived provider
+hiccups, while still failing when the final response is missing, invalid, or
+outside the expected status/schema.
+
 GitHub Actions also runs the monitor every 15 minutes and on manual dispatch as
 a backup path. It uses repository secrets:
 
