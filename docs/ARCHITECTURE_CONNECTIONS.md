@@ -150,6 +150,11 @@ responses before alerting. This avoids noisy alerts from short-lived provider
 hiccups, while still failing when the final response is missing, invalid, or
 outside the expected status/schema.
 
+Realtime transport checks use a slightly longer retry window because the
+transport.data.gouv.fr proxy can return brief `502` responses while the next
+scheduled check is already healthy. The monitor still fails if the feed remains
+unavailable after the configured retries.
+
 GitHub Actions also runs the monitor every 15 minutes and on manual dispatch as
 a backup path. It uses repository secrets:
 
