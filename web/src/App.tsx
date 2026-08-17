@@ -2103,6 +2103,33 @@ export default function App() {
                 Toute la commune est en secteur unique : ces dates valent pour
                 chaque adresse du Pouliguen (source Cap Atlantique).
               </p>
+              <article className="waste-bin-guide">
+                <h4>Rappel pratique bacs</h4>
+                <ul>
+                  <li>
+                    <span className="bin-dot bin-dot-green" aria-hidden="true" />
+                    <strong>Bac vert</strong>
+                    <span>
+                      Enfermez les ordures ménagères dans des sacs poubelles
+                      fermés : le bac restera propre et les odeurs seront limitées.
+                    </span>
+                  </li>
+                  <li>
+                    <span className="bin-dot bin-dot-yellow" aria-hidden="true" />
+                    <strong>Bac jaune</strong>
+                    <span>
+                      Jetez les emballages et les papiers en vrac, sans sac
+                      poubelle.
+                    </span>
+                  </li>
+                </ul>
+                <p>
+                  Sortez votre bac la veille du jour de collecte et présentez-le
+                  poignées tournées vers la route. Ce détail peut surprendre les
+                  visiteurs étrangers, mais c'est bien la présentation attendue
+                  au Pouliguen.
+                </p>
+              </article>
             </>
           ) : (
             <p className="placeholder">Chargement du calendrier de collecte…</p>
