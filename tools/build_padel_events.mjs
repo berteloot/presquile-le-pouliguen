@@ -13,10 +13,20 @@ const PAGE_SLUGS = [
   "tournoi-interne-ccb",
 ];
 
+function codePoint(value, whole) {
+  // fromCodePoint throws RangeError above 0x10FFFF, which would fail the whole
+  // refresh over one malformed entity.
+  return Number.isFinite(value) && value >= 0 && value <= 0x10ffff
+    ? String.fromCodePoint(value)
+    : whole;
+}
+
 function decodeHtml(value = "") {
   return value
-    .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number(code)))
-    .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
+    .replace(/&#(\d+);/g, (whole, code) => codePoint(Number(code), whole))
+    .replace(/&#x([0-9a-f]+);/gi, (whole, code) =>
+      codePoint(Number.parseInt(code, 16), whole),
+    )
     .replace(/&nbsp;/g, " ")
     .replace(/&amp;/g, "&")
     .replace(/&quot;/g, '"')
@@ -41,11 +51,22 @@ function pageTitle(page) {
   return title || page?.slug || "Page Padel La Baule";
 }
 
+/** The site renders these hrefs directly, so anything that is not a plain web
+    link is dropped here rather than committed to the cache. */
+function webUrl(raw) {
+  try {
+    const url = new URL(raw, "https://padel-labaule.fr/");
+    return url.protocol === "https:" || url.protocol === "http:" ? url.href : null;
+  } catch {
+    return null;
+  }
+}
+
 function extractLinks(html = "") {
   const links = [];
   const linkRe = /<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
   for (const match of html.matchAll(linkRe)) {
-    const url = decodeHtml(match[1]);
+    const url = webUrl(decodeHtml(match[1]));
     const label = stripTags(match[2]);
     if (!url || !label || links.some((link) => link.url === url && link.label === label)) continue;
     links.push({ label, url });

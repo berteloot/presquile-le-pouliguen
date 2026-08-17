@@ -3,19 +3,12 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import type { EnrichedShip } from "../lib/ships";
 import { formatDateTime, formatHours, statusLabel } from "../lib/ships";
+import { escapeHtml as esc, textContent } from "../lib/html";
 
 interface Props {
   ships: EnrichedShip[];
   selectedShip: EnrichedShip | null;
   onSelect: (ship: EnrichedShip) => void;
-}
-
-function esc(value: string): string {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;");
 }
 
 function markerClass(ship: EnrichedShip, selected: boolean): string {
@@ -34,7 +27,7 @@ function popupHtml(ship: EnrichedShip): string {
     `<h3>${esc(ship.flagEmoji)} ${esc(ship.name)}</h3>` +
     `<p>Pavillon : ${esc(ship.flagCountryLabel)}</p>` +
     `<p><strong>${esc(ship.vesselType)}</strong> · ${esc(statusLabel(ship.statusGroup))}</p>` +
-    `<p>${ship.speedKnots.toFixed(1)} nd · cap ${Math.round(ship.headingDeg)}° · ${ship.coordinateLabel}</p>` +
+    `<p>${ship.speedKnots.toFixed(1)} nd · cap ${Math.round(ship.headingDeg)}° · ${esc(ship.coordinateLabel)}</p>` +
     `<p>Destination AIS : ${esc(ship.destinationCodeLabel)}</p>` +
     `<p>Mouillage : ${esc(formatHours(ship.timeAtAnchorHours))}</p>` +
     `<p>Dernier captage AIS : ${esc(formatDateTime(ship.updatedAt))}</p>` +
@@ -105,7 +98,7 @@ export default function ShipMap({ ships, selectedShip, onSelect }: Props) {
         iconAnchor: [17, 17],
       });
       const marker = L.marker([ship.position.lat, ship.position.lon], { icon })
-        .bindTooltip(`${ship.name} · ${statusLabel(ship.statusGroup)}`)
+        .bindTooltip(textContent(`${ship.name} · ${statusLabel(ship.statusGroup)}`))
         .bindPopup(popupHtml(ship))
         .on("click", () => onSelect(ship));
       marker.addTo(layer);

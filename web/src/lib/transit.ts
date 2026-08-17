@@ -13,9 +13,10 @@ import type {
   TransitData,
   Vehicle,
 } from "./types";
+import { fetchWithTimeout } from "./net";
 
 export async function loadTransitData(): Promise<TransitData> {
-  const res = await fetch(TRANSIT_DATA_URL);
+  const res = await fetchWithTimeout(TRANSIT_DATA_URL);
   if (!res.ok) throw new Error(`transit data HTTP ${res.status}`);
   const data = await res.json();
   data.fetchedAt = new Date();
@@ -126,7 +127,7 @@ export function nextDepartures(
 }
 
 export async function fetchGtfsRtFeed(url: string) {
-  const res = await fetch(url);
+  const res = await fetchWithTimeout(url);
   if (!res.ok) throw new Error(`GTFS-RT HTTP ${res.status}`);
   const buf = new Uint8Array(await res.arrayBuffer());
   return GtfsRealtimeBindings.transit_realtime.FeedMessage.decode(buf);

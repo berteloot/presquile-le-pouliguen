@@ -1,4 +1,5 @@
 import { LAT, LON } from "../config";
+import { fetchWithTimeout } from "./net";
 
 const SHIPS_DATA_URL = "/data/offshore-ships.json";
 
@@ -528,7 +529,7 @@ export function uniqueShipStatuses(ships: EnrichedShip[]): ShipStatusGroup[] {
 }
 
 export async function fetchOffshoreShips(): Promise<OffshoreShipCache> {
-  const response = await fetch(`${SHIPS_DATA_URL}?t=${Date.now()}`, { cache: "no-store" });
+  const response = await fetchWithTimeout(`${SHIPS_DATA_URL}?t=${Date.now()}`, { cache: "no-store" });
   if (!response.ok) throw new Error(`offshore ships HTTP ${response.status}`);
   return (await response.json()) as OffshoreShipCache;
 }

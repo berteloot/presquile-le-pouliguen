@@ -5,6 +5,7 @@ import {
   openMeteoMarineForDate,
 } from "../config";
 import type { MarineSeries, TideExtreme, WeatherNow } from "./types";
+import { fetchWithTimeout } from "./net";
 
 interface ShomTideCache {
   generatedAt: string;
@@ -24,7 +25,7 @@ interface ShomTideCache {
 let shomCachePromise: Promise<ShomTideCache | null> | null = null;
 
 export async function fetchWeather(): Promise<WeatherNow> {
-  const res = await fetch(OPEN_METEO_FORECAST);
+  const res = await fetchWithTimeout(OPEN_METEO_FORECAST);
   if (!res.ok) throw new Error(`weather HTTP ${res.status}`);
   const j = await res.json();
   return {
@@ -54,7 +55,7 @@ export async function fetchWeather(): Promise<WeatherNow> {
 }
 
 async function fetchMarineUrl(url: string): Promise<MarineSeries> {
-  const res = await fetch(url);
+  const res = await fetchWithTimeout(url);
   if (!res.ok) throw new Error(`marine HTTP ${res.status}`);
   const j = await res.json();
   if (j.error) throw new Error(`marine API ${j.reason ?? "error"}`);
@@ -134,7 +135,7 @@ export function windDirectionLabel(deg: number): string {
 
 async function fetchShomTideCache(): Promise<ShomTideCache | null> {
   if (!shomCachePromise) {
-    shomCachePromise = fetch(`${SHOM_TIDES_DATA_URL}?t=${Date.now()}`, { cache: "no-store" })
+    shomCachePromise = fetchWithTimeout(`${SHOM_TIDES_DATA_URL}?t=${Date.now()}`, { cache: "no-store" })
       .then((res) => (res.ok ? res.json() : null))
       .catch(() => null);
   }

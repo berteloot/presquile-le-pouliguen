@@ -100,17 +100,22 @@ a {
   color: var(--sea);
 }
 
+/* Above 1180px the hamburger disappears and these eight links have to fit the
+   980px container, which leaves them roughly 590px. They previously overflowed
+   into a scroller with a hidden scrollbar, so "Découvrir" was cut mid-word with
+   no way to tell it was there. Sized to fit now, and wrapping rather than
+   scrolling means a wider font on another platform pushes the last link to a
+   second row instead of hiding it. */
 .topnav {
   grid-column: 2;
   grid-row: 1;
   display: flex;
+  flex-wrap: wrap;
   justify-self: stretch;
   justify-content: flex-start;
   min-width: 0;
-  gap: 4px;
-  overflow-x: auto;
-  scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
+  gap: 3px;
+  row-gap: 4px;
 }
 
 .topnav::-webkit-scrollbar {
@@ -121,9 +126,9 @@ a {
   display: inline-flex;
   align-items: center;
   min-height: 34px;
-  padding: 4px 8px;
+  padding: 4px 6px;
   font-weight: 750;
-  font-size: 13px;
+  font-size: 12.5px;
   color: var(--ink);
   text-decoration: none;
   border: 1px solid transparent;
@@ -3958,4 +3963,41 @@ footer p {
   .date-today {
     grid-column: 1 / -1;
   }
+}
+
+/* Fallback shown by ErrorBoundary when a render throws. */
+.app-error {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 48px 20px;
+}
+
+.app-error h1 {
+  font-family: var(--font-display);
+  font-size: 30px;
+  margin-bottom: 12px;
+}
+
+.app-error p {
+  margin-bottom: 16px;
+}
+
+.app-error button {
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid var(--navy);
+  border-radius: 8px;
+  background: var(--navy);
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.app-error ul {
+  padding-left: 20px;
+}
+
+.app-error li {
+  margin-bottom: 6px;
 }

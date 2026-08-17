@@ -1,4 +1,5 @@
 import { fetchGtfsRtFeed, parisNow } from "./transit";
+import { fetchWithTimeout } from "./net";
 
 const TRAINS_DATA_URL = `${import.meta.env.BASE_URL}data/trains.json`;
 const SNCF_RT_TRIP_UPDATES =
@@ -38,7 +39,7 @@ export interface TrainDeparture {
 }
 
 export async function loadTrainsData(): Promise<TrainsData> {
-  const res = await fetch(TRAINS_DATA_URL);
+  const res = await fetchWithTimeout(TRAINS_DATA_URL);
   if (!res.ok) throw new Error(`trains data HTTP ${res.status}`);
   const data = await res.json();
   data.fetchedAt = new Date();

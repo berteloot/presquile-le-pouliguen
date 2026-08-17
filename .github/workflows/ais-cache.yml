@@ -2,7 +2,12 @@ name: AIS Offshore Cache
 
 on:
   schedule:
-    - cron: "*/30 * * * *"
+    # Every commit here lands on main, and main auto-deploys, so each refresh
+    # costs a full npm ci plus vite build on Render. At the old */30 that was up
+    # to 48 builds a day for ship positions in a bay that is watched from a
+    # promenade. Two hours keeps the panel current at a twelfth of the build
+    # spend. Raise it back if the ships feel stale, the cost is build minutes.
+    - cron: "37 */2 * * *"
   workflow_dispatch:
 
 concurrency:

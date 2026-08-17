@@ -288,7 +288,18 @@ def strip_tags(value: str) -> str:
 
 
 def absolute_cinema_url(url: str) -> str:
-    return urllib.parse.urljoin(CINEMA_PAX_URL, html.unescape(url)).replace("https://www.", "http://www.")
+    """Resolve a scraped href against the programme page.
+
+    urljoin keeps any absolute URL it is given, including a "javascript:" one, so
+    the scheme is checked here: the site renders these straight into hrefs, and a
+    defaced source page must not be able to plant a script URL in the cache.
+    """
+    resolved = urllib.parse.urljoin(CINEMA_PAX_URL, html.unescape(url)).replace(
+        "https://www.", "http://www."
+    )
+    if urllib.parse.urlparse(resolved).scheme not in ("http", "https"):
+        return CINEMA_PAX_URL
+    return resolved
 
 
 def duration_to_minutes(value: str) -> int | None:

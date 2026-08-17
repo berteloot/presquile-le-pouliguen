@@ -56,7 +56,7 @@ export default function TideChart({ marine, extrema, now, date }: Props) {
       viewBox={`0 0 ${W} ${H}`}
       className="tide-chart"
       role="img"
-      aria-label="Courbe de maree sur la journee"
+      aria-label="Courbe de marée sur la journée"
     >
       <polygon points={area} className="tide-area" />
       <polyline points={line} className="tide-line" fill="none" />

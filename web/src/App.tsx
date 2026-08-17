@@ -55,6 +55,8 @@ import {
   windDirectionLabel,
 } from "./lib/openmeteo";
 import { escapeHtml } from "./lib/html";
+import { readStored, writeStored } from "./lib/storage";
+import { fetchWithTimeout } from "./lib/net";
 import { currentTrend, findExtrema, moonInfo, nextExtremes } from "./lib/tides";
 import {
   fetchTrainDelays,
@@ -572,7 +574,7 @@ export default function App() {
   const [collections, setCollections] = useState<WasteCollection[]>([]);
   const [glassPoints, setGlassPoints] = useState<GlassPoint[]>([]);
   const [stopName, setStopName] = useState<string>(
-    () => localStorage.getItem(STOP_STORAGE_KEY) ?? "",
+    () => readStored(STOP_STORAGE_KEY) ?? "",
   );
   const [errors, setErrors] = useState<string[]>([]);
   const [selectedCircuit, setSelectedCircuit] = useState<string | null>(null);
@@ -702,7 +704,7 @@ export default function App() {
       .catch(() => setErrors((e) => [...e, "trains"]));
     Promise.all([
       fetchAgendaEvents().catch(() => []),
-      fetch(EVENTS_DATA_URL)
+      fetchWithTimeout(EVENTS_DATA_URL)
         .then((r) => (r.ok ? r.json() : []))
         .catch(() => []),
     ]).then(([liveAgenda, curatedEvents]: [AgendaEvent[], LocalEvent[]]) => {
@@ -1092,7 +1094,7 @@ export default function App() {
 
   const onStopChange = (name: string) => {
     setStopName(name);
-    localStorage.setItem(STOP_STORAGE_KEY, name);
+    writeStored(STOP_STORAGE_KEY, name);
   };
 
   const selectDate = (value: string) => {
@@ -2008,7 +2010,7 @@ export default function App() {
             </div>
           )}
           {currentAgenda.length > 0 && (
-            <div className="event-filters" role="tablist" aria-label="Filtrer les événements par ville">
+            <div className="event-filters" role="group" aria-label="Filtrer les événements par ville">
               {AGENDA_CITY_FILTERS.filter((city) => {
                 const count = agendaCounts.get(city) ?? 0;
                 return city === "Tous" || count > 0 || agendaCity === city;
@@ -2017,8 +2019,7 @@ export default function App() {
                 return (
                   <button
                     type="button"
-                    role="tab"
-                    aria-selected={agendaCity === city}
+                    aria-pressed={agendaCity === city}
                     className={agendaCity === city ? "event-filter is-active" : "event-filter"}
                     key={city}
                     onClick={() => setAgendaCity(city)}
@@ -2169,7 +2170,7 @@ export default function App() {
         <section className="card">
           <div className="card-heading">
             <h3>Balades à pied et à vélo</h3>
-            <div className="circuit-tabs" aria-label="Filtrer les balades">
+            <div className="circuit-tabs" role="group" aria-label="Filtrer les balades">
               {[
                 ["all", "Toutes"],
                 ["rando", "À pied"],
@@ -2179,6 +2180,7 @@ export default function App() {
                   key={mode}
                   type="button"
                   className={circuitMode === mode ? "circuit-tab circuit-tab-active" : "circuit-tab"}
+                  aria-pressed={circuitMode === mode}
                   onClick={() => setCircuitMode(mode as CircuitMode)}
                 >
                   {label}

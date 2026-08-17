@@ -1,3 +1,6 @@
+import { safeUrl } from "./html";
+import { fetchWithTimeout } from "./net";
+
 const PADEL_DATA_URL = "/data/padel-events.json";
 
 export interface PadelLink {
@@ -58,7 +61,15 @@ export interface PadelCache {
 }
 
 export async function fetchPadelCache(): Promise<PadelCache> {
-  const response = await fetch(`${PADEL_DATA_URL}?t=${Date.now()}`, { cache: "no-store" });
+  const response = await fetchWithTimeout(`${PADEL_DATA_URL}?t=${Date.now()}`, { cache: "no-store" });
   if (!response.ok) throw new Error(`padel cache HTTP ${response.status}`);
-  return (await response.json()) as PadelCache;
+  const cache = (await response.json()) as PadelCache;
+  // Every link here was scraped off a third-party WordPress site. The scraper
+  // filters schemes too; this is the second gate, so a stale cache built before
+  // that check still cannot put a script URL in an href.
+  return {
+    ...cache,
+    links: (cache.links ?? []).filter((link) => safeUrl(link.url)),
+    highlights: (cache.highlights ?? []).filter((item) => safeUrl(item.sourceUrl)),
+  };
 }

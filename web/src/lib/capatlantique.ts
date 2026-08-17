@@ -2,6 +2,8 @@
 // Explore v2.1 API, CORS open). Everything is filtered server-side so the
 // responses stay small.
 import { LAT, LON } from "../config";
+import { safeUrl } from "./html";
+import { fetchWithTimeout } from "./net";
 
 const BASE = "https://data.capatlantique.fr/api/explore/v2.1/catalog/datasets";
 const COMMUNE = "Le Pouliguen";
@@ -48,7 +50,7 @@ export interface AgendaEvent {
 
 async function ods(dataset: string, params: Record<string, string>) {
   const qs = new URLSearchParams(params).toString();
-  const res = await fetch(`${BASE}/${dataset}/records?${qs}`);
+  const res = await fetchWithTimeout(`${BASE}/${dataset}/records?${qs}`);
   if (!res.ok) throw new Error(`ODS ${dataset} HTTP ${res.status}`);
   return (await res.json()).results as Record<string, unknown>[];
 }
@@ -119,7 +121,7 @@ export async function fetchBeaches(): Promise<Beach[]> {
   return rows.map((r) => ({
     name: String(r.nom ?? ""),
     description: String(r.descriptif ?? ""),
-    url: r.lien_site ? String(r.lien_site) : null,
+    url: safeUrl(r.lien_site ? String(r.lien_site) : null),
     lat: Number(r.latitude),
     lon: Number(r.longitude),
   }));
@@ -150,7 +152,7 @@ export async function fetchAgendaEvents(): Promise<AgendaEvent[]> {
         dateRange: String(r.daterange_fr ?? ""),
         location: String(r.location_name ?? ""),
         city,
-        url: r.canonicalurl ? String(r.canonicalurl) : null,
+        url: safeUrl(r.canonicalurl ? String(r.canonicalurl) : null),
         startAt: r.firstdate_begin ? String(r.firstdate_begin) : undefined,
         endAt: r.lastdate_end ? String(r.lastdate_end) : undefined,
       });

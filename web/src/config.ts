@@ -17,14 +17,25 @@ export const OPEN_METEO_MARINE =
   `&cell_selection=sea` +
   `&timezone=${encodeURIComponent(TZ)}&past_days=1&forecast_days=2`;
 
+/** Day after `dateYmd`, computed in UTC so a DST boundary cannot shift it. */
+function nextYmd(dateYmd: string): string {
+  const [year, month, day] = dateYmd.split("-").map(Number);
+  return new Date(Date.UTC(year, month - 1, day + 1)).toISOString().slice(0, 10);
+}
+
 export function openMeteoMarineForDate(dateYmd: string): string {
+  // The window runs through the following day so the evening still has a next
+  // tide to show. SHOM events are filtered down to the days this series covers,
+  // and nextExtremes returns nothing once the day's last tide has passed, so a
+  // single-day window left the headline tide card showing a past tide from
+  // roughly 21:00 until midnight.
   return (
     `https://marine-api.open-meteo.com/v1/marine?latitude=${LAT}&longitude=${LON}` +
     `&hourly=wave_height,sea_surface_temperature` +
     `&minutely_15=sea_level_height_msl` +
     `&cell_selection=sea` +
     `&timezone=${encodeURIComponent(TZ)}` +
-    `&start_date=${dateYmd}&end_date=${dateYmd}`
+    `&start_date=${dateYmd}&end_date=${nextYmd(dateYmd)}`
   );
 }
 

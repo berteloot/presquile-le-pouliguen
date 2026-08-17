@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { LAT, LON } from "../config";
+import { escapeHtml, textContent } from "../lib/html";
 
 export interface PoiMarker {
   lat: number;
@@ -58,11 +59,13 @@ export default function PoiMap({
       bounds.push([m.lat, m.lon]);
       const icon = L.divIcon({
         className: "poi-marker-wrap",
-        html: `<div class="poi-marker" style="background:${m.color}">${m.label}</div>`,
+        html: `<div class="poi-marker" style="background:${m.color}">${escapeHtml(m.label)}</div>`,
         iconSize: [28, 28],
         iconAnchor: [14, 14],
       });
-      const marker = L.marker([m.lat, m.lon], { icon }).bindTooltip(m.title);
+      const marker = L.marker([m.lat, m.lon], { icon }).bindTooltip(
+        textContent(m.title),
+      );
       if (m.popupHtml) marker.bindPopup(m.popupHtml);
       marker.addTo(map);
     }
@@ -75,7 +78,7 @@ export default function PoiMap({
         color: line.color,
         weight: 3.5,
         opacity: 0.6,
-      }).bindTooltip(line.title);
+      }).bindTooltip(textContent(line.title));
       if (line.popupHtml) poly.bindPopup(line.popupHtml);
       poly.addTo(map);
       lineLayersRef.current.set(line.title, poly);

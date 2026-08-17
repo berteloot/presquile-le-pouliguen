@@ -3,6 +3,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { LAT, LON, VEHICLES_REFRESH_MS } from "../config";
 import { fetchVehicles, nextDepartures } from "../lib/transit";
+import { escapeHtml as esc, textContent } from "../lib/html";
 import type { TransitData, Vehicle } from "../lib/types";
 
 interface Props {
@@ -25,14 +26,6 @@ const fmtTime = new Intl.DateTimeFormat("fr-FR", {
   minute: "2-digit",
   timeZone: "Europe/Paris",
 });
-
-function esc(s: string): string {
-  return s
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;");
-}
 
 function vehicleColor(v: Vehicle): string {
   if (v.routeColor) return `#${v.routeColor}`;
@@ -114,7 +107,7 @@ export default function BusMap({ data, delays }: Props) {
         fillColor: "#ffffff",
         fillOpacity: 0.9,
       })
-        .bindTooltip(name)
+        .bindTooltip(textContent(name))
         .addTo(stopLayer);
       marker.bindPopup(() => {
         const deps = nextDepartures(data, g.ids, delaysRef.current, 4);
@@ -181,7 +174,9 @@ export default function BusMap({ data, delays }: Props) {
               : "") +
             `<a href="${TICKETS_URL}" target="_blank" rel="noopener noreferrer">Billets et infos ligne</a></div>`;
           L.marker([v.lat, v.lon], { icon })
-            .bindTooltip(`Ligne ${v.routeShort}${dest ? " vers " + dest : ""}`)
+            .bindTooltip(
+              textContent(`Ligne ${v.routeShort}${dest ? " vers " + dest : ""}`),
+            )
             .bindPopup(popup)
             .addTo(busLayerRef.current);
         }

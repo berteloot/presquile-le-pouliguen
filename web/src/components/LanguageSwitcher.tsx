@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { fetchWithTimeout } from "../lib/net";
 
 type LanguageCode = "fr" | "en" | "es";
 
@@ -146,7 +147,7 @@ async function translateText(
   url.searchParams.set("dt", "t");
   url.searchParams.set("q", text);
 
-  const response = await fetch(url.toString());
+  const response = await fetchWithTimeout(url.toString(), {}, 5000);
   if (!response.ok) throw new Error(`Translation failed: ${response.status}`);
   const payload = (await response.json()) as unknown;
   const translated =
@@ -227,6 +228,13 @@ function applyLanguage(language: LanguageCode): () => void {
 
   const enqueue = (node: Text) => {
     if (!canTranslateNode(node)) return;
+    // Writing nodeValue below fires a characterData record, which lands back
+    // here. Without this guard the node is queued again, rewritten with the same
+    // cached translation, and the observer feeds itself on the debounce forever.
+    const written = translatedByNode.get(node);
+    if (written && written.language === language && node.nodeValue === written.translated) {
+      return;
+    }
     const source = sourceTextForNode(node);
     if (!shouldTranslateText(source)) return;
     queue.add(node);

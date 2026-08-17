@@ -257,6 +257,8 @@ function ShipDetail({
           className={tab === "ais" ? "ship-tab ship-tab-active" : "ship-tab"}
           onClick={() => onTabChange("ais")}
           role="tab"
+          id="ship-tab-ais"
+          aria-controls="ship-panel-ais"
           aria-selected={tab === "ais"}
         >
           Signal navire
@@ -266,6 +268,8 @@ function ShipDetail({
           className={tab === "why" ? "ship-tab ship-tab-active" : "ship-tab"}
           onClick={() => onTabChange("why")}
           role="tab"
+          id="ship-tab-why"
+          aria-controls="ship-panel-why"
           aria-selected={tab === "why"}
         >
           Pourquoi ce navire est ici ?
@@ -273,7 +277,7 @@ function ShipDetail({
       </div>
 
       {tab === "why" ? (
-        <div className="ship-why">
+        <div className="ship-why" role="tabpanel" id="ship-panel-why" aria-labelledby="ship-tab-why">
           <p>{ship.whyHere}</p>
           <dl>
             <div>
@@ -295,7 +299,7 @@ function ShipDetail({
           </dl>
         </div>
       ) : (
-        <dl className="ship-facts">
+        <dl className="ship-facts" role="tabpanel" id="ship-panel-ais" aria-labelledby="ship-tab-ais">
           <div>
             <dt>MMSI</dt>
             <dd>{ship.mmsi}</dd>
@@ -550,13 +554,12 @@ export default function ShipsOffshore() {
                     les plus plausibles au large.
                   </p>
                 </div>
-                <div className="ship-scope" role="tablist" aria-label="Vue navires">
+                <div className="ship-scope" role="group" aria-label="Vue navires">
                   <button
                     type="button"
                     className={shipScope === "horizon" ? "ship-scope-active" : ""}
                     onClick={() => changeScope("horizon")}
-                    role="tab"
-                    aria-selected={shipScope === "horizon"}
+                    aria-pressed={shipScope === "horizon"}
                   >
                     Horizon
                     <small>{horizonShips.length}</small>
@@ -565,8 +568,7 @@ export default function ShipsOffshore() {
                     type="button"
                     className={shipScope === "all" ? "ship-scope-active" : ""}
                     onClick={() => changeScope("all")}
-                    role="tab"
-                    aria-selected={shipScope === "all"}
+                    aria-pressed={shipScope === "all"}
                   >
                     Tous les navires
                     <small>{ships.length}</small>

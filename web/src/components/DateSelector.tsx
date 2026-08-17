@@ -20,13 +20,13 @@ export default function DateSelector({
   onToday,
 }: DateSelectorProps) {
   return (
-    <div className="date-selector" aria-label="Date consultee">
+    <div className="date-selector" role="group" aria-label="Date consultée">
       <button
         type="button"
         className="date-step"
         onClick={onPrevious}
         disabled={min != null && value <= min}
-        aria-label="Jour precedent"
+        aria-label="Jour précédent"
         title="Jour precedent"
       >
         ‹

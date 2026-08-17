@@ -5,9 +5,14 @@ on:
     - cron: "17 */6 * * *"
   workflow_dispatch:
 
+concurrency:
+  group: padel-events-cache
+  cancel-in-progress: false
+
 jobs:
   refresh:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: write
 
@@ -40,4 +45,12 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add web/public/data/padel-events.json
           git commit -m "Refresh Padel La Baule cache"
-          git push
+          if ! git pull --rebase origin main; then
+            echo "Remote main changed while the padel cache was refreshing; skipping this cache commit."
+            git rebase --abort || true
+            exit 0
+          fi
+          if ! git push; then
+            echo "Remote main changed again while pushing; skipping this cache commit."
+            exit 0
+          fi

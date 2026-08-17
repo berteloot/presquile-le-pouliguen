@@ -1,6 +1,8 @@
 // Road disruptions (live, département), walking and cycling circuits (live,
 // Cap Atlantique), defibrillators and EV chargers (build-time JSON).
 import { LAT, LON } from "../config";
+import { safeUrl } from "./html";
+import { fetchWithTimeout } from "./net";
 
 const LA_BASE =
   "https://data.loire-atlantique.fr/api/explore/v2.1/catalog/datasets";
@@ -53,7 +55,7 @@ function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number) {
 
 /** Live departmental road disruptions within reach of the peninsula. */
 export async function fetchRoadInfo(maxKm = 25): Promise<RoadInfo[]> {
-  const res = await fetch(
+  const res = await fetchWithTimeout(
     `${LA_BASE}/224400028_info-route-departementale/records?limit=60`,
   );
   if (!res.ok) throw new Error(`road info HTTP ${res.status}`);
@@ -103,10 +105,10 @@ function formatDuration(value: unknown): string | null {
 
 export async function fetchCircuits(): Promise<Circuit[]> {
   const [randoRes, veloRes] = await Promise.all([
-    fetch(
+    fetchWithTimeout(
       `${CAP_BASE}/244400610_circuits-rando/records?select=nom,commune,kilometre,temps,fiche&limit=60`,
     ),
-    fetch(
+    fetchWithTimeout(
       `${CAP_BASE}/244400610_itineraires_cyclables/records?select=nom,commune,kilometre,temps,fiche&limit=30`,
     ),
   ]);
@@ -121,7 +123,7 @@ export async function fetchCircuits(): Promise<Circuit[]> {
         communes,
         km: r.kilometre != null ? Math.round(Number(r.kilometre) / 100) / 10 : null,
         duration: formatDuration(r.temps),
-        pdf: r.fiche ? String(r.fiche) : null,
+        pdf: safeUrl(r.fiche ? String(r.fiche) : null),
       });
     }
   }
@@ -135,7 +137,7 @@ export async function fetchCircuits(): Promise<Circuit[]> {
         communes,
         km: r.kilometre != null ? Number(r.kilometre) : null,
         duration: formatDuration(r.temps),
-        pdf: r.fiche ? String(r.fiche) : null,
+        pdf: safeUrl(r.fiche ? String(r.fiche) : null),
       });
     }
   }
@@ -220,10 +222,10 @@ export async function fetchCircuitTraces(): Promise<CircuitTrace[]> {
   for (const c of communes) {
     const refine = encodeURIComponent(`commune:"${c}"`);
     requests.push(
-      fetch(
+      fetchWithTimeout(
         `${CAP_BASE}/244400610_circuits-rando/records?select=nom,kilometre,fiche,geo_shape&refine=${refine}&limit=20`,
       ),
-      fetch(
+      fetchWithTimeout(
         `${CAP_BASE}/244400610_itineraires_cyclables/records?select=nom,kilometre,fiche,geo_shape&refine=${refine}&limit=20`,
       ),
     );
@@ -252,7 +254,7 @@ export async function fetchCircuitTraces(): Promise<CircuitTrace[]> {
             : kind === "rando"
               ? Math.round(rawKm / 100) / 10
               : rawKm,
-        pdf: r.fiche ? String(r.fiche) : null,
+        pdf: safeUrl(r.fiche ? String(r.fiche) : null),
         segments,
       });
     }
@@ -262,7 +264,7 @@ export async function fetchCircuitTraces(): Promise<CircuitTrace[]> {
 
 export async function fetchBikeParking(maxKm = 12): Promise<BikeParking[]> {
   const select = encodeURIComponent("nom_voie,commune,mobilier,couverture,capacite,geo_point_2d");
-  const res = await fetch(
+  const res = await fetchWithTimeout(
     `${CAP_BASE}/244400610_stationnement_velo/records?select=${select}&limit=100`,
   );
   if (!res.ok) throw new Error(`bike parking HTTP ${res.status}`);
@@ -289,7 +291,7 @@ export async function fetchBikeParking(maxKm = 12): Promise<BikeParking[]> {
 export async function fetchBikeSegments(maxKm = 12): Promise<BikeSegment[]> {
   const where = encodeURIComponent(nearbyWhere());
   const select = encodeURIComponent("nom,commune,longueur,amenagemen,date_maj,geo_point_2d");
-  const res = await fetch(
+  const res = await fetchWithTimeout(
     `${CAP_BASE}/244400610_itineraires_velo/records?select=${select}&where=${where}&limit=100`,
   );
   if (!res.ok) throw new Error(`bike segments HTTP ${res.status}`);
@@ -312,7 +314,7 @@ export async function fetchBikeSegments(maxKm = 12): Promise<BikeSegment[]> {
 }
 
 export async function fetchBikeShareStations(maxKm = 14): Promise<BikeShareStation[]> {
-  const res = await fetch(
+  const res = await fetchWithTimeout(
     `${CAP_BASE}/21440055800018_ecovelo_velo_baulois_station_information/records?select=name,lat,lon,capacity,joint_num_vehicles_available,joint_num_docks_available,rental_uris&limit=40`,
   );
   if (!res.ok) throw new Error(`bike share HTTP ${res.status}`);
@@ -322,7 +324,7 @@ export async function fetchBikeShareStations(maxKm = 14): Promise<BikeShareStati
       const lon = Number(r.lon);
       let rentalUrl: string | null = null;
       try {
-        rentalUrl = JSON.parse(String(r.rental_uris ?? "{}")).web ?? null;
+        rentalUrl = safeUrl(JSON.parse(String(r.rental_uris ?? "{}")).web ?? null);
       } catch {
         rentalUrl = null;
       }
@@ -342,7 +344,7 @@ export async function fetchBikeShareStations(maxKm = 14): Promise<BikeShareStati
 }
 
 export async function fetchDae(): Promise<DaePoint[]> {
-  const res = await fetch(`${import.meta.env.BASE_URL}data/dae.json`);
+  const res = await fetchWithTimeout(`${import.meta.env.BASE_URL}data/dae.json`);
   if (!res.ok) throw new Error(`dae HTTP ${res.status}`);
   return (await res.json()).items as DaePoint[];
 }
@@ -355,7 +357,7 @@ export function chargerLabel(c: ChargerStation): string {
 }
 
 export async function fetchChargers(): Promise<ChargerStation[]> {
-  const res = await fetch(`${import.meta.env.BASE_URL}data/chargers.json`);
+  const res = await fetchWithTimeout(`${import.meta.env.BASE_URL}data/chargers.json`);
   if (!res.ok) throw new Error(`chargers HTTP ${res.status}`);
   return (await res.json()).items as ChargerStation[];
 }
