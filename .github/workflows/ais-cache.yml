@@ -24,6 +24,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # This job installs npm dependencies and scrapes third-party sites.
+          # Without this, checkout leaves the push token in .git/config for the
+          # whole job, readable by anything that runs. The token is handed to the
+          # commit step alone, which runs no third-party code.
+          persist-credentials: false
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -56,21 +62,37 @@ jobs:
           npm run build
 
       - name: Commit cache update
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          set -euo pipefail
           if git diff --quiet -- web/public/data/offshore-ships.json; then
-            echo "AIS cache unchanged."
+            echo "AIS offshore cache unchanged."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git remote set-url --push origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
           git add web/public/data/offshore-ships.json
           git commit -m "Refresh AIS offshore cache"
-          if ! git pull --rebase origin main; then
-            echo "Remote main changed while AIS cache was refreshing; skipping this cache commit."
-            git rebase --abort || true
-            exit 0
-          fi
-          if ! git push; then
-            echo "Remote main changed again while pushing; skipping this cache commit."
-            exit 0
-          fi
+
+          # Two attempts. A genuine race with another cache job clears on the
+          # retry; anything else fails the run rather than exiting green, because
+          # a silently skipped push means a cache that never updates again.
+          for attempt in 1 2; do
+            git fetch origin main
+            # Rebase onto the fetched ref rather than pulling, which works
+            # whether or not checkout left HEAD on a branch.
+            if ! git rebase FETCH_HEAD; then
+              git rebase --abort || true
+              echo "Rebase onto origin/main failed on attempt $attempt."
+              continue
+            fi
+            if git push origin HEAD:main; then
+              echo "Pushed AIS offshore cache on attempt $attempt."
+              exit 0
+            fi
+            echo "Push rejected on attempt $attempt."
+          done
+          echo "Could not push the AIS offshore cache after 2 attempts."
+          exit 1
