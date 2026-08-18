@@ -1,13 +1,19 @@
-import { useEffect, useLayoutEffect, useMemo, useState } from "react";
+import {
+  lazy,
+  Suspense,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useState,
+  type ComponentProps,
+} from "react";
 import "./App.css";
-import BusMap from "./components/BusMap";
 import CinemaPax from "./components/CinemaPax";
 import ComingDays from "./components/ComingDays";
 import DailyBriefing from "./components/DailyBriefing";
 import DateSelector from "./components/DateSelector";
 import Discover from "./components/Discover";
 import MoonPhase from "./components/MoonPhase";
-import PoiMap from "./components/PoiMap";
 import ShipsOffshore from "./components/ShipsOffshore";
 import SportsBookings from "./components/SportsBookings";
 import TideChart from "./components/TideChart";
@@ -70,6 +76,32 @@ import {
   nextDepartures,
   stopGroups,
 } from "./lib/transit";
+// Leaflet plus its CSS is ~149 kB that the first paint never needs: every map
+// here sits behind a toggle. Each lazy component carries its own Suspense
+// boundary so the existing call sites stay as they were.
+const LazyBusMap = lazy(() => import("./components/BusMap"));
+const LazyPoiMap = lazy(() => import("./components/PoiMap"));
+
+function MapLoading() {
+  return <p className="placeholder">Chargement de la carte…</p>;
+}
+
+function BusMap(props: ComponentProps<typeof LazyBusMap>) {
+  return (
+    <Suspense fallback={<MapLoading />}>
+      <LazyBusMap {...props} />
+    </Suspense>
+  );
+}
+
+function PoiMap(props: ComponentProps<typeof LazyPoiMap>) {
+  return (
+    <Suspense fallback={<MapLoading />}>
+      <LazyPoiMap {...props} />
+    </Suspense>
+  );
+}
+
 import type {
   CinemaPaxData,
   LocalEvent,

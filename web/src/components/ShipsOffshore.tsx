@@ -1,5 +1,13 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import ShipMap from "./ShipMap";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type ComponentProps,
+} from "react";
+
 import {
   decodeAisRoute,
   enrichShipCache,
@@ -15,6 +23,16 @@ import {
   type ShipStatusGroup,
   type ShipTypeGroup,
 } from "../lib/ships";
+
+const LazyShipMap = lazy(() => import("./ShipMap"));
+
+function ShipMap(props: ComponentProps<typeof LazyShipMap>) {
+  return (
+    <Suspense fallback={<p className="placeholder">Chargement de la carte…</p>}>
+      <LazyShipMap {...props} />
+    </Suspense>
+  );
+}
 
 type DetailTab = "ais" | "why";
 type ShipScope = "horizon" | "all";

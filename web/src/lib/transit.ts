@@ -1,4 +1,3 @@
-import GtfsRealtimeBindings from "gtfs-realtime-bindings";
 import {
   GTFS_RT_ALERTS,
   GTFS_RT_TRIP_UPDATES,
@@ -130,6 +129,11 @@ export async function fetchGtfsRtFeed(url: string) {
   const res = await fetchWithTimeout(url);
   if (!res.ok) throw new Error(`GTFS-RT HTTP ${res.status}`);
   const buf = new Uint8Array(await res.arrayBuffer());
+  // protobufjs and the generated GTFS bindings are ~192 kB. Timetables render
+  // from the static snapshot without them, so the decoder loads alongside the
+  // first real-time request rather than blocking first paint. The module is
+  // cached after that, so the 20-second refresh pays nothing.
+  const { default: GtfsRealtimeBindings } = await import("gtfs-realtime-bindings");
   return GtfsRealtimeBindings.transit_realtime.FeedMessage.decode(buf);
 }
 
