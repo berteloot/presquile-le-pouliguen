@@ -6,7 +6,6 @@ import ComingDays from "./components/ComingDays";
 import DailyBriefing from "./components/DailyBriefing";
 import DateSelector from "./components/DateSelector";
 import Discover from "./components/Discover";
-import LanguageSwitcher from "./components/LanguageSwitcher";
 import MoonPhase from "./components/MoonPhase";
 import PoiMap from "./components/PoiMap";
 import ShipsOffshore from "./components/ShipsOffshore";
@@ -178,7 +177,6 @@ const NAV_LINKS = [
 ];
 type CircuitMode = "all" | "rando" | "velo";
 type SourceStatusKind = "live" | "partial" | "static" | "unavailable";
-type SearchLanguage = "fr" | "en" | "es";
 interface SiteSearchResult {
   title: string;
   detail: string;
@@ -187,19 +185,12 @@ interface SiteSearchResult {
   keywords?: string;
 }
 
-const SEARCH_COPY: Record<SearchLanguage, { placeholder: string; empty: string }> = {
-  fr: {
-    placeholder: "Plage, chien, bus, padel, navire...",
-    empty: "Aucun résultat direct. Essayez plage, bus, navire, padel ou déchèterie.",
-  },
-  en: {
-    placeholder: "Beach, dog, bus, padel, ship...",
-    empty: "No direct result. Try beach, bus, ship, padel or recycling centre.",
-  },
-  es: {
-    placeholder: "Playa, perro, bus, padel, barco...",
-    empty: "Sin resultado directo. Prueba playa, bus, barco, padel o punto limpio.",
-  },
+// The site is French. Search still matches English and Spanish synonyms through
+// the keywords on each entry below, so a visitor typing "beach" or "playa" lands
+// on the right section without the page changing language.
+const SEARCH_COPY = {
+  placeholder: "Plage, chien, bus, padel, navire...",
+  empty: "Aucun résultat direct. Essayez plage, bus, navire, padel ou déchèterie.",
 };
 
 function newTabProps(href: string) {
@@ -395,12 +386,6 @@ function matchesSiteSearch(result: SiteSearchResult, query: string): boolean {
   return terms.every((term) => haystack.includes(term));
 }
 
-function currentSearchLanguage(): SearchLanguage {
-  const params = new URLSearchParams(window.location.search);
-  const lang = params.get("lang") ?? params.get("tl") ?? params.get("_x_tr_tl");
-  return lang === "en" || lang === "es" ? lang : "fr";
-}
-
 const FRENCH_MONTHS = new Map([
   ["janvier", 0],
   ["fevrier", 1],
@@ -584,7 +569,6 @@ export default function App() {
   const [openMaps, setOpenMaps] = useState<Record<string, boolean>>({});
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [siteSearch, setSiteSearch] = useState("");
-  const [searchLanguage, setSearchLanguage] = useState<SearchLanguage>(() => currentSearchLanguage());
   const selectedDateValue = toDateInputValue(selectedDate);
   const todayValue = toDateInputValue(now);
   const selectedDateIsToday = selectedDateValue === todayValue;
@@ -596,20 +580,6 @@ export default function App() {
     const onHash = () => setRoute(window.location.hash);
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
-  }, []);
-
-  useEffect(() => {
-    const syncLanguage = () => setSearchLanguage(currentSearchLanguage());
-    const onLanguageChange = (event: Event) => {
-      const language = (event as CustomEvent<{ language?: string }>).detail?.language;
-      setSearchLanguage(language === "en" || language === "es" ? language : "fr");
-    };
-    window.addEventListener("popstate", syncLanguage);
-    window.addEventListener("plq:languagechange", onLanguageChange);
-    return () => {
-      window.removeEventListener("popstate", syncLanguage);
-      window.removeEventListener("plq:languagechange", onLanguageChange);
-    };
   }, []);
 
   useLayoutEffect(() => {
@@ -1118,7 +1088,7 @@ export default function App() {
   };
 
   const activeNavHref = isDiscover ? "#/decouvrir" : route && !route.startsWith("#/") ? route : "#essentiel";
-  const searchCopy = SEARCH_COPY[searchLanguage];
+  const searchCopy = SEARCH_COPY;
 
   return (
     <div className="app">
@@ -1126,7 +1096,6 @@ export default function App() {
         <a className="brand" href="#essentiel">
           Le Pouliguen <span>Live</span>
         </a>
-        <LanguageSwitcher />
         <button
           type="button"
           className="menu-toggle"

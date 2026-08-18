@@ -6,7 +6,9 @@
       "kind": "http",
       "name": "Canonical homepage",
       "url": "https://presquile-le-pouliguen.berteloot.org/",
-      "expect_status": [200],
+      "expect_status": [
+        200
+      ],
       "contains": "Le Pouliguen Live",
       "min_bytes": 5000
     },
@@ -14,7 +16,9 @@
       "kind": "http",
       "name": "Render origin homepage",
       "url": "https://presquile-le-pouliguen.onrender.com/",
-      "expect_status": [200],
+      "expect_status": [
+        200
+      ],
       "contains": "Le Pouliguen Live",
       "min_bytes": 5000
     },
@@ -22,7 +26,9 @@
       "kind": "http",
       "name": "Sitemap",
       "url": "https://presquile-le-pouliguen.berteloot.org/sitemap.xml",
-      "expect_status": [200],
+      "expect_status": [
+        200
+      ],
       "contains": "https://presquile-le-pouliguen.berteloot.org/",
       "min_bytes": 300
     },
@@ -30,7 +36,9 @@
       "kind": "http",
       "name": "AI summary",
       "url": "https://presquile-le-pouliguen.berteloot.org/llms.txt",
-      "expect_status": [200],
+      "expect_status": [
+        200
+      ],
       "contains": "Le Pouliguen Live",
       "min_bytes": 300
     },
@@ -38,7 +46,9 @@
       "kind": "http",
       "name": "AI site brief",
       "url": "https://presquile-le-pouliguen.berteloot.org/ai/site-brief.md",
-      "expect_status": [200],
+      "expect_status": [
+        200
+      ],
       "contains": "Le Pouliguen",
       "min_bytes": 300
     },
@@ -46,14 +56,18 @@
       "kind": "http",
       "name": "PWA manifest",
       "url": "https://presquile-le-pouliguen.berteloot.org/manifest.webmanifest",
-      "expect_status": [200],
+      "expect_status": [
+        200
+      ],
       "json_path": "name"
     },
     {
       "kind": "generated_json",
       "name": "Bus static GTFS snapshot",
       "url": "https://presquile-le-pouliguen.berteloot.org/data/transit.json",
-      "expect_status": [200],
+      "expect_status": [
+        200
+      ],
       "json_path": "departures",
       "max_age_hours": 744
     },
@@ -61,7 +75,9 @@
       "kind": "generated_json",
       "name": "Train static GTFS snapshot",
       "url": "https://presquile-le-pouliguen.berteloot.org/data/trains.json",
-      "expect_status": [200],
+      "expect_status": [
+        200
+      ],
       "json_path": "departures",
       "max_age_hours": 744
     },
@@ -69,7 +85,9 @@
       "kind": "generated_json",
       "name": "Defibrillator snapshot",
       "url": "https://presquile-le-pouliguen.berteloot.org/data/dae.json",
-      "expect_status": [200],
+      "expect_status": [
+        200
+      ],
       "json_path": "items",
       "max_age_hours": 2160
     },
@@ -77,7 +95,9 @@
       "kind": "generated_json",
       "name": "EV charger snapshot",
       "url": "https://presquile-le-pouliguen.berteloot.org/data/chargers.json",
-      "expect_status": [200],
+      "expect_status": [
+        200
+      ],
       "json_path": "items",
       "max_age_hours": 2160
     },
@@ -85,7 +105,9 @@
       "kind": "http",
       "name": "Curated agenda snapshot",
       "url": "https://presquile-le-pouliguen.berteloot.org/data/events.json",
-      "expect_status": [200],
+      "expect_status": [
+        200
+      ],
       "contains": "Le Croisic",
       "min_bytes": 500
     },
@@ -93,28 +115,36 @@
       "kind": "http",
       "name": "Cinema Pax cache",
       "url": "https://presquile-le-pouliguen.berteloot.org/data/cinema-pax.json",
-      "expect_status": [200],
+      "expect_status": [
+        200
+      ],
       "json_path": "sessions.0.film"
     },
     {
       "kind": "http",
       "name": "Open-Meteo forecast",
       "url": "https://api.open-meteo.com/v1/forecast?latitude=47.2769&longitude=-2.4292&current=temperature_2m,weather_code&daily=sunrise,sunset&timezone=Europe%2FParis&forecast_days=2",
-      "expect_status": [200],
+      "expect_status": [
+        200
+      ],
       "json_path": "current.temperature_2m"
     },
     {
       "kind": "http",
       "name": "Open-Meteo marine",
       "url": "https://marine-api.open-meteo.com/v1/marine?latitude=47.2769&longitude=-2.4292&hourly=wave_height,sea_surface_temperature&minutely_15=sea_level_height_msl&cell_selection=sea&timezone=Europe%2FParis&forecast_days=1",
-      "expect_status": [200],
+      "expect_status": [
+        200
+      ],
       "json_path": "hourly.wave_height"
     },
     {
       "kind": "http",
       "name": "Lila GTFS-RT trip updates",
       "url": "https://proxy.transport.data.gouv.fr/resource/lila-presquile-cap-atlantique-gtfs-rt-trip-update",
-      "expect_status": [200],
+      "expect_status": [
+        200
+      ],
       "min_bytes": 10,
       "retries": 5,
       "retry_delay_seconds": 2
@@ -123,7 +153,9 @@
       "kind": "http",
       "name": "Lila GTFS-RT vehicle positions",
       "url": "https://proxy.transport.data.gouv.fr/resource/lila-presquile-cap-atlantique-gtfs-rt-vehicle-position",
-      "expect_status": [200],
+      "expect_status": [
+        200
+      ],
       "min_bytes": 10,
       "retries": 5,
       "retry_delay_seconds": 2
@@ -132,7 +164,9 @@
       "kind": "http",
       "name": "SNCF GTFS-RT trip updates",
       "url": "https://proxy.transport.data.gouv.fr/resource/sncf-gtfs-rt-trip-updates",
-      "expect_status": [200],
+      "expect_status": [
+        200
+      ],
       "min_bytes": 20,
       "retries": 5,
       "retry_delay_seconds": 2
@@ -141,21 +175,27 @@
       "kind": "http",
       "name": "Cap Atlantique bathing sites",
       "url": "https://data.capatlantique.fr/api/explore/v2.1/catalog/datasets/244400610_sites_baignade/records?refine=ville:%22Le%20Pouliguen%22&select=nom&limit=1",
-      "expect_status": [200],
+      "expect_status": [
+        200
+      ],
       "json_path": "results.0.nom"
     },
     {
       "kind": "http",
       "name": "Cap Atlantique agenda",
       "url": "https://data.capatlantique.fr/api/explore/v2.1/catalog/datasets/244400610_publicevents_openagenda/records?where=lastdate_end%3E%3Dnow()%20AND%20location_city%3D%22Le%20Pouliguen%22&select=title_fr&limit=1",
-      "expect_status": [200],
+      "expect_status": [
+        200
+      ],
       "json_path": "results"
     },
     {
       "kind": "http",
       "name": "Le Croisic official agenda",
       "url": "https://lecroisic.fr/fr/ev/748477/agenda-578",
-      "expect_status": [200],
+      "expect_status": [
+        200
+      ],
       "contains": "Le Croisic",
       "min_bytes": 5000
     },
@@ -163,16 +203,10 @@
       "kind": "http",
       "name": "Loire-Atlantique road info",
       "url": "https://data.loire-atlantique.fr/api/explore/v2.1/catalog/datasets/224400028_info-route-departementale/records?limit=1",
-      "expect_status": [200],
+      "expect_status": [
+        200
+      ],
       "json_path": "results"
-    },
-    {
-      "kind": "http",
-      "name": "Google Translate API",
-      "url": "https://translate.googleapis.com/translate_a/single?client=gtx&sl=fr&tl=en&dt=t&q=Plage",
-      "expect_status": [200],
-      "contains": "Beach",
-      "min_bytes": 20
     }
   ]
 }
