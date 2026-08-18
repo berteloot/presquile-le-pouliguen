@@ -43,22 +43,19 @@ function initialLanguage(): LanguageCode {
   return queryLanguage() ?? storedLanguage() ?? "fr";
 }
 
-function cookieDomains(): (string | undefined)[] {
-  const hostname = window.location.hostname;
-  const domains: (string | undefined)[] = [undefined, hostname];
-  const parts = hostname.split(".");
+/** Clears this host's own googtrans cookie, and nothing above it.
 
-  if (parts.length > 2) {
-    domains.push(`.${parts.slice(-2).join(".")}`);
-    domains.push(`.${parts.slice(-3).join(".")}`);
-  }
+    An earlier version also cleared the cookie on the parent domain, which for
+    presquile-le-pouliguen.berteloot.org means .berteloot.org. That domain is
+    shared with princetonlive.berteloot.org, which sets googtrans there on
+    purpose, so every visit here silently reset that site's chosen language. A
+    cookie on a shared parent belongs to whoever set it.
 
-  return Array.from(new Set(domains));
-}
-
+    Both forms are cleared because a host-only cookie and one carrying an
+    explicit domain are separate entries. */
 function clearTranslateCookie() {
-  for (const domain of cookieDomains()) {
-    const domainPart = domain ? `;domain=${domain}` : "";
+  const host = window.location.hostname;
+  for (const domainPart of ["", `;domain=${host}`]) {
     document.cookie = `${COOKIE_NAME}=;path=/;max-age=0;SameSite=Lax${domainPart}`;
     document.cookie = `${COOKIE_NAME}=;path=/;max-age=0${domainPart}`;
   }
