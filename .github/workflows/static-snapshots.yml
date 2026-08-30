@@ -3,8 +3,8 @@ name: Static Snapshots
 on:
   schedule:
     # Weekly. Transdev and SNCF republish a few times a year, and the site
-    # monitor fails the snapshot once it passes 744 h, so a monthly job would
-    # leave the alert firing for days before the refresh lands.
+    # monitor fails a GTFS snapshot once it passes 744 h, so a monthly job
+    # would leave the alert firing for days before the refresh landed.
     - cron: "47 3 * * 1"
   workflow_dispatch:
 
@@ -15,7 +15,7 @@ concurrency:
 jobs:
   refresh:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     permissions:
       contents: write
 
@@ -23,28 +23,39 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # Five independent third-party sources. Overpass answered with HTTP 504
+      # on 2026-08-30 and took the whole job down with it, so each collector
+      # now runs to its own verdict, the good files still get committed, and
+      # the run reports red at the end if any source stayed down.
       - name: Refresh bus GTFS snapshot
+        id: bus
+        continue-on-error: true
         run: python3 tools/build_transit_data.py
 
       - name: Refresh train GTFS snapshot
+        id: trains
+        continue-on-error: true
         run: python3 tools/build_local_data.py trains
 
-      # dae.json and chargers.json carry a 2160 h ceiling in the monitor and
-      # had no refresh job either. They were built the same day in July and
-      # would have breached in late October, the same failure two months later.
       - name: Refresh defibrillator snapshot
+        id: dae
+        continue-on-error: true
         run: python3 tools/build_local_data.py dae
 
       - name: Refresh EV charger snapshot
+        id: chargers
+        continue-on-error: true
         run: python3 tools/build_local_data.py chargers
 
-      # events.json has no timestamp inside it, so the site monitor cannot age
-      # it. This step is the only thing that drops finished events, and a
-      # failure here mails the run like any other.
+      # events.json carries no timestamp, so the site monitor cannot age it.
+      # This step is the only thing that drops events once they are over.
       - name: Refresh curated agenda
+        id: events
+        continue-on-error: true
         run: python3 tools/build_local_data.py events
 
       - name: Commit snapshot update
+        if: always()
         run: |
           FILES="web/public/data/transit.json web/public/data/trains.json web/public/data/dae.json web/public/data/chargers.json web/public/data/events.json"
           git config user.name "github-actions[bot]"
@@ -64,3 +75,23 @@ jobs:
             echo "Remote main changed again while pushing; skipping this commit."
             exit 0
           fi
+
+      - name: Report collector failures
+        if: always()
+        run: |
+          FAILED=""
+          for pair in "bus:${{ steps.bus.outcome }}" "trains:${{ steps.trains.outcome }}" \
+                      "dae:${{ steps.dae.outcome }}" "chargers:${{ steps.chargers.outcome }}" \
+                      "events:${{ steps.events.outcome }}"; do
+            name="${pair%%:*}"
+            outcome="${pair##*:}"
+            if [ "$outcome" != "success" ]; then
+              FAILED="$FAILED $name"
+            fi
+          done
+          if [ -n "$FAILED" ]; then
+            echo "Collectors that did not finish:$FAILED"
+            echo "The files they own keep their previous contents."
+            exit 1
+          fi
+          echo "All five collectors finished."

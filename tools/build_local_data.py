@@ -21,6 +21,8 @@ import json
 import math
 import re
 import sys
+import time
+import urllib.error
 import urllib.parse
 import urllib.request
 import zipfile
@@ -65,9 +67,32 @@ FRENCH_MONTHS = {
 }
 
 
+# Overpass answered the defibrillator query with HTTP 504 on 2026-08-30, from a
+# GitHub runner, on a query that takes two seconds locally. It is a free shared
+# endpoint and it sheds load, so one attempt is not a measurement.
+RETRY_STATUS = {429, 500, 502, 503, 504}
+RETRY_ATTEMPTS = 3
+RETRY_BACKOFF_SECONDS = 15
+
+
 def fetch(url: str, timeout: int = 180) -> bytes:
     req = urllib.request.Request(url, headers=UA)
-    return urllib.request.urlopen(req, timeout=timeout).read()
+    for attempt in range(1, RETRY_ATTEMPTS + 1):
+        try:
+            return urllib.request.urlopen(req, timeout=timeout).read()
+        except urllib.error.HTTPError as exc:
+            if exc.code not in RETRY_STATUS or attempt == RETRY_ATTEMPTS:
+                raise
+            reason = "HTTP %d" % exc.code
+        except (urllib.error.URLError, TimeoutError) as exc:
+            if attempt == RETRY_ATTEMPTS:
+                raise
+            reason = str(exc)
+        wait = RETRY_BACKOFF_SECONDS * attempt
+        print(f"  {reason} from {url.split('?')[0]}, retrying in {wait}s "
+              f"({attempt}/{RETRY_ATTEMPTS - 1})")
+        time.sleep(wait)
+    raise RuntimeError("unreachable")
 
 
 def haversine_km(lat1, lon1, lat2, lon2):
