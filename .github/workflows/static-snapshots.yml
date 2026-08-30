@@ -23,6 +23,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Test the collectors
+        run: python3 tools/test_build_transit_data.py
+
       # Five independent third-party sources. Overpass answered with HTTP 504
       # on 2026-08-30 and took the whole job down with it, so each collector
       # now runs to its own verdict, the good files still get committed, and
