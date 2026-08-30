@@ -1,4 +1,4 @@
-name: GTFS Snapshots
+name: Static Snapshots
 
 on:
   schedule:
@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: gtfs-snapshot
+  group: static-snapshot
   cancel-in-progress: false
 
 jobs:
@@ -29,13 +29,22 @@ jobs:
       - name: Refresh train GTFS snapshot
         run: python3 tools/build_local_data.py trains
 
+      # dae.json and chargers.json carry a 2160 h ceiling in the monitor and
+      # had no refresh job either. They were built the same day in July and
+      # would have breached in late October, the same failure two months later.
+      - name: Refresh defibrillator snapshot
+        run: python3 tools/build_local_data.py dae
+
+      - name: Refresh EV charger snapshot
+        run: python3 tools/build_local_data.py chargers
+
       - name: Commit snapshot update
         run: |
-          FILES="web/public/data/transit.json web/public/data/trains.json"
+          FILES="web/public/data/transit.json web/public/data/trains.json web/public/data/dae.json web/public/data/chargers.json"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add $FILES
-          git commit -m "Refresh GTFS snapshots"
+          git commit -m "Refresh static snapshots"
           if ! git pull --rebase origin main; then
             echo "Remote main changed while the snapshots were refreshing; skipping this commit."
             git rebase --abort || true
