@@ -16,7 +16,7 @@ import sys
 import urllib.request
 import zipfile
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 GTFS_URL = "https://transport.data.gouv.fr/resources/83762/download"
@@ -37,6 +37,75 @@ def read_table(z: zipfile.ZipFile, name: str) -> list[dict]:
 def hms_to_seconds(hms: str) -> int:
     h, m, s = hms.split(":")
     return int(h) * 3600 + int(m) * 60 + int(s)
+
+
+def previous_snapshot(path: Path) -> dict:
+    if not path.exists():
+        return {}
+    try:
+        return json.loads(path.read_text())
+    except (OSError, ValueError):
+        return {}
+
+
+def day_before(yyyymmdd: str) -> str:
+    stamp = datetime.strptime(yyyymmdd, "%Y%m%d") - timedelta(days=1)
+    return stamp.strftime("%Y%m%d")
+
+
+def carry_over_gap(out: dict, previous: dict, today: str) -> None:
+    """Keep the outgoing feed alive until the incoming one starts.
+
+    Transdev published the September feed on 25 August, valid from the 1st.
+    Rebuilding on the 30th replaced a calendar that covered that day with one
+    that starts two days later, and the bus panel read "Aucun passage trouve"
+    for every stop in town. The old services are carried, clamped to the day
+    before the new feed starts so no date is served twice.
+    """
+    new_start = (out.get("feed") or {}).get("feed_start_date") or ""
+    if not new_start or new_start <= today or not previous:
+        return
+    cutoff = day_before(new_start)
+
+    carried = {}
+    for sid, svc in (previous.get("services") or {}).items():
+        if sid in out["services"]:
+            continue
+        start = max(svc.get("start", ""), today)
+        end = min(svc.get("end", ""), cutoff)
+        if not start or not end or start > end:
+            continue
+        carried[sid] = {"days": svc["days"], "start": start, "end": end}
+    if not carried:
+        return
+
+    out["services"].update(carried)
+    for sid, dates in (previous.get("serviceExceptions") or {}).items():
+        if sid not in carried:
+            continue
+        window = {d: kind for d, kind in dates.items() if today <= d <= cutoff}
+        if window:
+            out["serviceExceptions"][sid] = window
+
+    known_stops = {s["id"] for s in out["stops"]}
+    for stop_id, deps in (previous.get("departures") or {}).items():
+        if stop_id not in known_stops:
+            continue
+        gap_deps = [d for d in deps if d.get("service") in carried]
+        if not gap_deps:
+            continue
+        out["departures"][stop_id] = sorted(
+            out["departures"].get(stop_id, []) + gap_deps, key=lambda d: d["t"])
+
+    carried_trips = {d["trip"] for deps in out["departures"].values() for d in deps}
+    for trip_id, trip in (previous.get("trips") or {}).items():
+        if trip_id in carried_trips and trip_id not in out["trips"]:
+            out["trips"][trip_id] = trip
+    for route_id, route in (previous.get("routes") or {}).items():
+        out["routes"].setdefault(route_id, route)
+
+    print(f"Carried {len(carried)} outgoing services through {cutoff}, "
+          f"the day before the new feed starts")
 
 
 def main() -> None:
@@ -147,13 +216,16 @@ def main() -> None:
         "serviceExceptions": exceptions_out,
         "trips": trips_out,
     }
+    carry_over_gap(out, previous_snapshot(OUT_PATH),
+                   datetime.now(timezone.utc).strftime("%Y%m%d"))
+
     OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     OUT_PATH.write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")))
     size_kb = OUT_PATH.stat().st_size / 1024
-    n_dep = sum(len(v) for v in departures.values())
+    n_dep = sum(len(v) for v in out["departures"].values())
     print(f"Wrote {OUT_PATH} ({size_kb:.0f} KB): "
-          f"{len(local_stops)} stops, {len(routes_out)} routes, "
-          f"{n_dep} departures, {len(services_out)} services")
+          f"{len(out['stops'])} stops, {len(out['routes'])} routes, "
+          f"{n_dep} departures, {len(out['services'])} services")
 
 
 if __name__ == "__main__":
