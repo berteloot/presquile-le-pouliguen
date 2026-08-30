@@ -38,12 +38,22 @@ jobs:
       - name: Refresh EV charger snapshot
         run: python3 tools/build_local_data.py chargers
 
+      # events.json has no timestamp inside it, so the site monitor cannot age
+      # it. This step is the only thing that drops finished events, and a
+      # failure here mails the run like any other.
+      - name: Refresh curated agenda
+        run: python3 tools/build_local_data.py events
+
       - name: Commit snapshot update
         run: |
-          FILES="web/public/data/transit.json web/public/data/trains.json web/public/data/dae.json web/public/data/chargers.json"
+          FILES="web/public/data/transit.json web/public/data/trains.json web/public/data/dae.json web/public/data/chargers.json web/public/data/events.json"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add $FILES
+          if git diff --cached --quiet; then
+            echo "Snapshots unchanged."
+            exit 0
+          fi
           git commit -m "Refresh static snapshots"
           if ! git pull --rebase origin main; then
             echo "Remote main changed while the snapshots were refreshing; skipping this commit."

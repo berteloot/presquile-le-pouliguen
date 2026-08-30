@@ -374,25 +374,33 @@ def parse_french_end_date(date_range: str, today) -> object | None:
     return datetime(year, month, day).date()
 
 
-def build_events() -> None:
-    today = datetime.now(ZoneInfo("Europe/Paris")).date()
-    month_url = f"{LE_CROISIC_AGENDA_URL}/{today.year}/{today.month}"
-    print("Fetching Le Croisic official agenda ...")
-    page = fetch(month_url, timeout=60).decode("utf-8", errors="replace")
-    events = [
-        {
-            "title": "Marché nocturne",
-            "when": "Chaque mercredi soir en été (du 8 juillet au 19 août)",
-            "where": "Bord de mer, centre-ville",
-            "dateRange": "Chaque mercredi soir en été (du 8 juillet au 19 août)",
-            "location": "Bord de mer, centre-ville",
-            "city": "Le Pouliguen",
-            "url": "https://www.lepouliguen.fr/",
-            "note": "Artisans, créateurs et producteurs locaux.",
-            "source": "https://www.lepouliguen.fr/",
-        }
-    ]
-    seen = {f"{events[0]['title']}|{events[0]['city']}"}
+# The Pouliguen night market runs every summer and the town does not publish
+# it in a machine-readable feed, so it is written here. It is seasonal, and an
+# unconditional entry showed a market that ended on 19 August for the rest of
+# the year. The window is month and day, so it returns on its own next July.
+MARCHE_NOCTURNE = {
+    "title": "Marché nocturne",
+    "when": "Chaque mercredi soir en été (du 8 juillet au 19 août)",
+    "where": "Bord de mer, centre-ville",
+    "dateRange": "Chaque mercredi soir en été (du 8 juillet au 19 août)",
+    "location": "Bord de mer, centre-ville",
+    "city": "Le Pouliguen",
+    "url": "https://www.lepouliguen.fr/",
+    "note": "Artisans, créateurs et producteurs locaux.",
+    "source": "https://www.lepouliguen.fr/",
+}
+MARCHE_NOCTURNE_WINDOW = ((7, 8), (8, 19))
+CROISIC_EVENT_CAP = 8
+
+
+def in_season(today, window) -> bool:
+    (start_month, start_day), (end_month, end_day) = window
+    return (start_month, start_day) <= (today.month, today.day) <= (end_month, end_day)
+
+
+def collect_croisic_events(page: str, month_url: str, today, seen: set) -> list:
+    """Cards on one month page of the Croisic agenda, minus anything finished."""
+    found = []
     for match in re.finditer(
         r'<a\s+href="(?P<href>[^"]+)"[^>]*class="[^"]*\bcard-date\b[^"]*"[^>]*>(?P<body>.*?)</a>',
         page,
@@ -418,7 +426,7 @@ def build_events() -> None:
         if not title or key in seen:
             continue
         seen.add(key)
-        events.append(
+        found.append(
             {
                 "title": title,
                 "when": date_range,
@@ -430,10 +438,44 @@ def build_events() -> None:
                 "source": month_url,
             }
         )
-        if len([e for e in events if e.get("city") == "Le Croisic"]) >= 8:
+    return found
+
+
+def build_events() -> None:
+    today = datetime.now(ZoneInfo("Europe/Paris")).date()
+    # The Croisic agenda paginates by month, and late in a month the current
+    # page holds almost nothing that has not already happened. Read next month
+    # too, so the app carries events on the 30th as well as on the 2nd.
+    next_month = (today.month % 12) + 1
+    next_year = today.year + (1 if next_month == 1 else 0)
+    month_urls = [
+        f"{LE_CROISIC_AGENDA_URL}/{today.year}/{today.month}",
+        f"{LE_CROISIC_AGENDA_URL}/{next_year}/{next_month}",
+    ]
+    print("Fetching Le Croisic official agenda ...")
+    pages = []
+    for url in month_urls:
+        try:
+            pages.append((url, fetch(url, timeout=60).decode("utf-8", errors="replace")))
+        except Exception as exc:
+            print(f"Skipping {url}: {exc}")
+    if not pages:
+        raise SystemExit("Le Croisic agenda unreachable; events.json left as it was")
+
+    events, seen = [], set()
+    if in_season(today, MARCHE_NOCTURNE_WINDOW):
+        events.append(dict(MARCHE_NOCTURNE))
+        seen.add(f"{MARCHE_NOCTURNE['title']}|{MARCHE_NOCTURNE['city']}")
+    for month_url, page in pages:
+        for event in collect_croisic_events(page, month_url, today, seen):
+            events.append(event)
+            if len([e for e in events if e.get("city") == "Le Croisic"]) >= CROISIC_EVENT_CAP:
+                break
+        if len([e for e in events if e.get("city") == "Le Croisic"]) >= CROISIC_EVENT_CAP:
             break
     write_json("events.json", events)
     print(f"{len(events)} curated events")
+
 
 
 def build_cinema() -> None:
