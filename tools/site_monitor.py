@@ -113,7 +113,8 @@ def request_with_retries(
         last_response = response
         last_error = error
 
-        should_retry = response is None or response.status_code in retry_statuses
+        empty_body = response is not None and not response.content
+        should_retry = response is None or response.status_code in retry_statuses or empty_body
         if not should_retry or attempt == attempts:
             return response, total_elapsed_ms, error, attempt
 
@@ -212,16 +213,36 @@ def run_checks(cfg: dict[str, Any]) -> list[CheckResult]:
     return results
 
 
+def confirm_runs_for(cfg: dict[str, Any], item: dict[str, Any]) -> int:
+    """How many consecutive failing runs a check needs before it is reported.
+
+    Third-party feeds blip for a few seconds and are back by the next run, so a
+    single failing run on those pages twice (failure, then recovery) for
+    nothing. Per-check ``confirm_runs`` wins over the top-level default of 1.
+    """
+    return max(1, int(item.get("confirm_runs", cfg.get("confirm_runs", 1))))
+
+
 def build_alert(cfg: dict[str, Any], results: list[CheckResult], state_path: Path, force: bool) -> tuple[str | None, dict[str, Any]]:
     state = read_state(state_path)
     previous = state.get("failing", {})
-    current = {r.name: r.detail for r in results if not r.ok}
-    new_failures = [r for r in results if not r.ok and r.name not in previous]
+    thresholds = {item.get("name", "unnamed"): confirm_runs_for(cfg, item) for item in cfg.get("checks", [])}
+    old_streaks = state.get("streaks", {})
+    streaks: dict[str, int] = {}
+    for r in results:
+        # A state file written before streaks existed lists confirmed failures
+        # only; count those as already past their threshold.
+        seed = thresholds.get(r.name, 1) if r.name in previous else 0
+        streaks[r.name] = int(old_streaks.get(r.name, seed)) + 1 if not r.ok else 0
+    # A failure counts only once it has held for confirm_runs consecutive runs.
+    current = {r.name: r.detail for r in results if not r.ok and streaks[r.name] >= thresholds.get(r.name, 1)}
+    new_failures = [r for r in results if r.name in current and r.name not in previous]
     recoveries = [name for name in previous if name not in current]
 
     state["failing"] = current
+    state["streaks"] = {name: n for name, n in streaks.items() if n}
     state["last_run"] = utc_now().isoformat()
-    state["last_ok"] = not current
+    state["last_ok"] = not any(not r.ok for r in results)
 
     if force and not current:
         return f"Pierre monitor: {cfg.get('project', 'Website monitor')}\nAll checks green ({len(results)} checks).", state
