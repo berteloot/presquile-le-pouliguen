@@ -2,6 +2,10 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "presquile-le-pouliguen",
   "compatibility_date": "2026-09-09",
+  // Setting "routes" makes wrangler disable the workers.dev subdomain unless
+  // this is explicitly true. The site monitor checks the origin URL as a second
+  // path, so losing it turns one dead check into a permanent red alert.
+  "workers_dev": true,
   "routes": [
     {
       "pattern": "presquile-le-pouliguen.berteloot.org",
