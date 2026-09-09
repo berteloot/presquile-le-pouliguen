@@ -8,6 +8,21 @@ name: Deploy to Cloudflare Workers
 on:
   push:
     branches: [main]
+
+  # The five cache workflows push with the default GITHUB_TOKEN, and GitHub
+  # does not start a workflow run from a push made with that token. Render's
+  # own webhook was never subject to that rule, so the push trigger above
+  # covers human pushes only. Without this, every cache job would keep
+  # reporting green while the live site froze at the last manual deploy.
+  workflow_run:
+    workflows:
+      - AIS Offshore Cache
+      - Cinema Pax Cache
+      - Padel Events Cache
+      - SHOM Tide Cache
+      - Static Snapshots
+    types: [completed]
+
   workflow_dispatch:
 
 concurrency:
@@ -20,6 +35,11 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: read
+    # A cache workflow that failed has nothing new to publish. Push and
+    # workflow_dispatch carry no workflow_run context, so they pass this.
+    if: >-
+      github.event_name != 'workflow_run' ||
+      github.event.workflow_run.conclusion == 'success'
 
     steps:
       - name: Checkout
