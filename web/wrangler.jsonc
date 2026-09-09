@@ -1,0 +1,21 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "presquile-le-pouliguen",
+  "compatibility_date": "2026-09-09",
+  "routes": [
+    {
+      "pattern": "presquile-le-pouliguen.berteloot.org",
+      "custom_domain": true
+    }
+  ],
+  "assets": {
+    "directory": "./dist",
+    // Render serves a plain 404 for unknown paths (no rewrite rules in
+    // render.yaml). "none" keeps that behaviour instead of silently
+    // returning index.html for every typo.
+    "not_found_handling": "none"
+  },
+  "observability": {
+    "enabled": true
+  }
+}

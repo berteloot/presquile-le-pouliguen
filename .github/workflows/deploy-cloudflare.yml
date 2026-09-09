@@ -1,0 +1,88 @@
+name: Deploy to Cloudflare Workers
+
+# Render deployed on every push to main, and the five cache workflows depend on
+# that: they commit a refreshed JSON file and expect the live site to pick it up.
+# Render is gone, so this job is now the only thing that puts a cache refresh in
+# front of visitors. If it stops running, the site freezes at the last deploy
+# while every cache workflow keeps reporting green.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-cloudflare
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # This job installs npm dependencies. Keep the push token out of
+          # .git/config for the same reason the cache workflows do.
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install web dependencies
+        working-directory: web
+        run: npm ci
+
+      - name: Build
+        working-directory: web
+        run: |
+          npm run lint
+          npm run build
+
+      # dist/_headers carries the security headers that render.yaml used to own.
+      # A Vite config change that stops copying public/ would drop them silently,
+      # so fail the deploy here instead of shipping a site with no CSP.
+      - name: Verify security headers survived the build
+        working-directory: web
+        run: |
+          set -euo pipefail
+          test -f dist/_headers
+          grep -q "Content-Security-Policy" dist/_headers
+          grep -q "Strict-Transport-Security" dist/_headers
+          echo "dist/_headers present with CSP and HSTS."
+
+      - name: Deploy
+        working-directory: web
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx wrangler deploy
+
+      # A deploy reports success as soon as Cloudflare accepts the upload, and
+      # the first seconds after that served 404s from edges that had not caught
+      # up. Poll the live URL so a green run means visitors can load the site.
+      - name: Verify the live site
+        run: |
+          set -euo pipefail
+          URL="https://presquile-le-pouliguen.berteloot.org"
+          deadline=$(( $(date +%s) + 180 ))
+          while [ "$(date +%s)" -lt "$deadline" ]; do
+            home=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$URL/" || echo 000)
+            data=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$URL/data/transit.json" || echo 000)
+            miss=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$URL/no-such-page" || echo 000)
+            echo "homepage=$home transit=$data missing=$miss"
+            if [ "$home" = "200" ] && [ "$data" = "200" ] && [ "$miss" = "404" ]; then
+              echo "Live site verified."
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "Live site did not settle within 180s of the deploy."
+          exit 1

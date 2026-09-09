@@ -42,7 +42,7 @@
       name="twitter:image"
       content="https://presquile-le-pouliguen.berteloot.org/images/lighthouse-hero.jpg"
     />
-    <!-- Google tag (gtag.js). Skipped on dev, preview and the Render default
+    <!-- Google tag (gtag.js). Skipped on dev, preview and the workers.dev default
          URL so local work never lands in the production property. -->
     <script>
       window.dataLayer = window.dataLayer || [];
@@ -53,7 +53,7 @@
         var host = location.hostname;
         var internal =
           /^(localhost|127\.0\.0\.1|\[?::1\]?)$/.test(host) ||
-          /\.onrender\.com$/.test(host);
+          /\.workers\.dev$/.test(host);
         if (internal) return;
         var tag = document.createElement("script");
         tag.async = true;

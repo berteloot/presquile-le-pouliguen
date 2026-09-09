@@ -7,10 +7,9 @@
 >    the time (bus card, trains card, essentials tiles in `App.tsx`).
 > 2. Freshness stamps: show "mis à jour à HH:MM" on live cards (bus delays,
 >    trains, circulation routière) so stale data is visible.
-> 3. Deploy: give this folder its own git repo (the parent NYTRO_AI repo
->    must NEVER go to GitHub), push, create a Render static site
->    (build: `cd web && npm ci && npm run build`, publish: `web/dist`).
->    RENDER_API_KEY exists in ~/.config/nytro/.env.
+> 3. Deploy: this folder has its own git repo (the parent NYTRO_AI repo
+>    must NEVER go to GitHub). Pushing to `main` deploys to Cloudflare
+>    Workers via `.github/workflows/deploy-cloudflare.yml`.
 > 4. Then: daily briefing block, SEO pages (see Phase 2 below).
 > Build is currently green (`cd web && npm run build`).
 
@@ -187,7 +186,11 @@ node ../tools/build_padel_events.mjs # refresh Padel La Baule public cache
 - Shellfish closure status in-app (prefecture arrêtés are PDFs; needs parsing)
 - Daily briefing page (/aujourdhui), per-stop and per-beach SEO pages
 - Defibrillators (GeoDAE), EV charging (IRVE), Météo-France vigilance
-- Deployment: Render static site (free tier), custom domain
+- Deployment: Cloudflare Workers Static Assets, custom domain
+  `presquile-le-pouliguen.berteloot.org`. Every push to `main` runs
+  `.github/workflows/deploy-cloudflare.yml`, which builds and runs
+  `wrangler deploy`. The five cache workflows depend on that job: they commit a
+  refreshed JSON file and nothing else puts it in front of visitors.
 
 ## Notes
 

@@ -1,6 +1,6 @@
 # Le Pouliguen Live: Architecture and Data Connections
 
-Last updated: 2026-07-30
+Last updated: 2026-09-09
 
 ## Overview
 
@@ -12,7 +12,7 @@ directly for live information.
 Production URLs:
 
 - Canonical: `https://presquile-le-pouliguen.berteloot.org/`
-- Render origin: `https://presquile-le-pouliguen.onrender.com/`
+- Workers origin: `https://presquile-le-pouliguen.berteloot.workers.dev/`
 
 ## Runtime Architecture
 
@@ -21,7 +21,7 @@ Browser
   |
   | static assets, PWA manifest, generated JSON
   v
-Static host / Render
+Cloudflare Workers Static Assets
   |
   | live browser fetches
   v
