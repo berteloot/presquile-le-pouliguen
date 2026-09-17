@@ -37,7 +37,14 @@ UA = {"User-Agent": "presquile-le-pouliguen/0.1 (local utility app)"}
 LAT, LON = 47.2769, -2.4292
 
 SNCF_GTFS_URL = "https://www.data.gouv.fr/api/1/datasets/r/9ae758ec-cd7a-40cd-a890-bb3963224942"
-OVERPASS_URL = "https://overpass-api.de/api/interpreter"
+# The main Overpass instance answers this query in about two seconds locally and
+# still 504s from GitHub runners: it did on 2026-09-14, which left dae.json a
+# week stale. Try the community mirrors before giving up.
+OVERPASS_URLS = (
+    "https://overpass-api.de/api/interpreter",
+    "https://overpass.kumi.systems/api/interpreter",
+    "https://overpass.private.coffee/api/interpreter",
+)
 IRVE_DATASET_API = (
     "https://www.data.gouv.fr/api/1/datasets/"
     "fichier-consolide-des-bornes-de-recharge-pour-vehicules-electriques/"
@@ -232,9 +239,18 @@ def build_dae() -> None:
         '[out:json][timeout:25];'
         'node["emergency"="defibrillator"](47.263,-2.465,47.294,-2.398);out;'
     )
-    data = json.loads(
-        fetch(OVERPASS_URL + "?" + urllib.parse.urlencode({"data": query}), timeout=60)
-    )
+    params = urllib.parse.urlencode({"data": query})
+    raw, last_error = None, None
+    for url in OVERPASS_URLS:
+        try:
+            raw = fetch(url + "?" + params, timeout=60)
+            break
+        except Exception as exc:  # noqa: BLE001 - any mirror failure moves to the next
+            last_error = exc
+            print(f"  Overpass mirror {url.split('/api/')[0]} failed: {exc}")
+    if raw is None:
+        raise RuntimeError(f"every Overpass mirror failed, last error: {last_error}")
+    data = json.loads(raw)
     items = []
     for e in data.get("elements", []):
         tags = e.get("tags", {})
