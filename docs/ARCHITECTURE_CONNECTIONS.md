@@ -82,10 +82,14 @@ noisy redeploys.
 1. Build locally or on the host: `cd web && npm ci && npm run build`.
 2. Publish `web/dist`.
 3. The canonical domain points to the static deployment.
-4. Render origin remains useful as a second probe and fallback diagnostic URL.
+4. The workers.dev origin URL remains useful as a second probe that does not
+   depend on DNS.
 
-Render configuration lives in `render.yaml`. It defines the static-site runtime,
-build command, publish directory, and security headers for all paths.
+Hosting configuration lives in `web/wrangler.jsonc` (Cloudflare Workers Static
+Assets) and `web/public/_headers` (security headers for all paths). The Render
+service and its `render.yaml` were deleted on 2026-09-17, so there is no second
+host to fall back to: `.github/workflows/deploy-cloudflare.yml` is the only path
+to production.
 
 ## Known Reliability Edges
 
