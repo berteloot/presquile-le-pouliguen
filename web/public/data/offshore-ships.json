@@ -1,21 +1,21 @@
 {
-  "generatedAt": "2026-10-10T02:22:02+02:00",
+  "generatedAt": "2026-10-10T08:23:06+02:00",
   "sourceMode": "api-cache",
   "coverageLabel": "Baie de Saint-Nazaire : La Baule, Le Pouliguen, mouillages Loire/Donges",
   "center": {
     "lat": 47.21,
     "lon": -2.36
   },
-  "lastRefreshAttemptAt": "2026-10-10T02:22:02+02:00",
+  "lastRefreshAttemptAt": "2026-10-10T08:23:06+02:00",
   "lastVesselApiAttemptAt": "2026-10-09T21:39:34+02:00",
   "refreshProvider": "aisstream",
   "refreshStatus": "live",
-  "refreshMessage": "Capture AISstream active : 29 navire(s) dans la baie de Saint-Nazaire.",
+  "refreshMessage": "Capture AISstream active : 26 navire(s) dans la baie de Saint-Nazaire.",
   "refreshStats": {
-    "rawRecords": 43,
-    "positionedRecords": 43,
-    "inAreaRecords": 29,
-    "uniqueInAreaShips": 29
+    "rawRecords": 38,
+    "positionedRecords": 38,
+    "inAreaRecords": 26,
+    "uniqueInAreaShips": 26
   },
   "notes": [
     "Cache AISstream généré depuis une capture WebSocket de 360 s.",
@@ -27,19 +27,19 @@
   ],
   "ships": [
     {
-      "mmsi": "244730944",
+      "mmsi": "228308170",
       "imo": "",
-      "name": "ARKLOW BRAVE",
-      "flagCountry": "Netherlands",
-      "flagCode": "NL",
+      "name": "COYOTE IV",
+      "flagCountry": "France",
+      "flagCode": "FR",
       "vesselType": "Navire AIS",
       "vesselTypeGroup": "Other",
       "lengthM": 0,
       "grossTonnage": 0,
-      "speedKnots": 0.1,
-      "headingDeg": 272,
-      "courseDeg": 272,
-      "navStatus": "Au mouillage",
+      "speedKnots": 0,
+      "headingDeg": 0,
+      "courseDeg": null,
+      "navStatus": "Immobile ou très lent",
       "statusGroup": "Anchored",
       "destination": "Non déclarée",
       "lastDeparturePort": {
@@ -48,52 +48,19 @@
       },
       "anchorStartedAt": null,
       "position": {
-        "lat": 47.115516666666664,
-        "lon": -2.42713
+        "lat": 47.10544,
+        "lon": -2.11683
       },
-      "updatedAt": "2026-10-10 00:21:57.798323278 +0000 UTC",
+      "updatedAt": "2026-10-10 06:20:03.384296802 +0000 UTC",
       "areaName": "Mouillage extérieur sud Loire",
       "cargoContext": "Position réelle captée depuis le signal public du navire ; détails statiques conservés par MMSI quand le flux les transmet.",
       "sourceConfidence": "high"
     },
     {
-      "mmsi": "305030000",
-      "imo": "9614701",
-      "name": "BBC RHONETAL",
-      "callSign": "V2HH3  ",
-      "flagCountry": "Antigua and Barbuda",
-      "flagCode": "AG",
-      "vesselType": "Cargo",
-      "vesselTypeGroup": "Cargo",
-      "lengthM": 162,
-      "beamM": 23,
-      "grossTonnage": 0,
-      "speedKnots": 0,
-      "headingDeg": 0,
-      "courseDeg": null,
-      "navStatus": "Immobile ou très lent",
-      "statusGroup": "Anchored",
-      "destination": "FR MTX",
-      "lastDeparturePort": {
-        "name": "Non connu",
-        "country": "non confirmé"
-      },
-      "eta": "2026-10-09T16:30:00.000Z",
-      "anchorStartedAt": "2026-10-09T19:32:36Z",
-      "position": {
-        "lat": 47.29585,
-        "lon": -2.15405
-      },
-      "updatedAt": "2026-10-10 00:21:09.645579756 +0000 UTC",
-      "areaName": "Estuaire de la Loire / Saint-Nazaire",
-      "cargoContext": "Position réelle captée depuis le signal public du navire ; détails statiques conservés par MMSI quand le flux les transmet.",
-      "sourceConfidence": "high"
-    },
-    {
-      "mmsi": "538008844",
-      "imo": "9875719",
-      "name": "DREAM TERRAX",
-      "callSign": "V7A2822",
+      "mmsi": "538006120",
+      "imo": "9733624",
+      "name": "ECO LUCIDITY",
+      "callSign": "V7CC9  ",
       "flagCountry": "Marshall Islands",
       "flagCode": "MH",
       "vesselType": "Tanker",
@@ -106,86 +73,59 @@
       "courseDeg": null,
       "navStatus": "Immobile ou très lent",
       "statusGroup": "Anchored",
-      "destination": "FRDON",
+      "destination": "FR DON",
       "lastDeparturePort": {
         "name": "Non connu",
         "country": "non confirmé"
       },
-      "eta": "2026-10-08T20:30:00.000Z",
+      "eta": "2026-10-08T07:01:00.000Z",
+      "anchorStartedAt": "2026-10-10 00:18:54.558220634 +0000 UTC",
+      "position": {
+        "lat": 47.13762,
+        "lon": -2.40346
+      },
+      "updatedAt": "2026-10-10 06:20:23.311116814 +0000 UTC",
+      "areaName": "Mouillage extérieur sud Loire",
+      "cargoContext": "Position réelle captée depuis le signal public du navire ; détails statiques conservés par MMSI quand le flux les transmet.",
+      "sourceConfidence": "high"
+    },
+    {
+      "mmsi": "231875000",
+      "imo": "9362152",
+      "name": "FURE SKAGEN",
+      "callSign": "OZ2210",
+      "flagCountry": "Faroe Islands",
+      "flagCode": "FO",
+      "vesselType": "Tanker",
+      "vesselTypeGroup": "Tanker",
+      "lengthM": 144,
+      "beamM": 23,
+      "grossTonnage": 0,
+      "speedKnots": 0,
+      "headingDeg": 0,
+      "courseDeg": null,
+      "navStatus": "Immobile ou très lent",
+      "statusGroup": "Anchored",
+      "destination": "FR DON",
+      "lastDeparturePort": {
+        "name": "Non connu",
+        "country": "non confirmé"
+      },
+      "eta": "2026-10-08T08:00:00.000Z",
       "anchorStartedAt": null,
       "position": {
-        "lat": 47.30553,
-        "lon": -2.06684
+        "lat": 47.30466,
+        "lon": -2.06978
       },
-      "updatedAt": "2026-10-10 00:20:43.304188077 +0000 UTC",
+      "updatedAt": "2026-10-10 06:19:19.601142184 +0000 UTC",
       "areaName": "Estuaire de la Loire / Saint-Nazaire",
       "cargoContext": "Position réelle captée depuis le signal public du navire ; détails statiques conservés par MMSI quand le flux les transmet.",
       "sourceConfidence": "high"
     },
     {
-      "mmsi": "257089140",
+      "mmsi": "227004860",
       "imo": "",
-      "name": "EAGLE BLANE",
-      "flagCountry": "Norway",
-      "flagCode": "NO",
-      "vesselType": "Navire AIS",
-      "vesselTypeGroup": "Other",
-      "lengthM": 0,
-      "grossTonnage": 0,
-      "speedKnots": 0,
-      "headingDeg": 283,
-      "courseDeg": 178.4,
-      "navStatus": "Au mouillage",
-      "statusGroup": "Anchored",
-      "destination": "Non déclarée",
-      "lastDeparturePort": {
-        "name": "Non connu",
-        "country": "non confirmé"
-      },
-      "anchorStartedAt": null,
-      "position": {
-        "lat": 47.113809999999994,
-        "lon": -2.4662966666666666
-      },
-      "updatedAt": "2026-10-10 00:20:00.720983766 +0000 UTC",
-      "areaName": "Mouillage extérieur sud Loire",
-      "cargoContext": "Position réelle captée depuis le signal public du navire ; détails statiques conservés par MMSI quand le flux les transmet.",
-      "sourceConfidence": "high"
-    },
-    {
-      "mmsi": "538006120",
-      "imo": "",
-      "name": "ECO LUCIDITY",
-      "flagCountry": "Marshall Islands",
-      "flagCode": "MH",
-      "vesselType": "Navire AIS",
-      "vesselTypeGroup": "Other",
-      "lengthM": 0,
-      "grossTonnage": 0,
-      "speedKnots": 0.3,
-      "headingDeg": 296,
-      "courseDeg": 12.6,
-      "navStatus": "Au mouillage",
-      "statusGroup": "Anchored",
-      "destination": "Non déclarée",
-      "lastDeparturePort": {
-        "name": "Non connu",
-        "country": "non confirmé"
-      },
-      "anchorStartedAt": null,
-      "position": {
-        "lat": 47.138508333333334,
-        "lon": -2.400698333333333
-      },
-      "updatedAt": "2026-10-10 00:18:54.558220634 +0000 UTC",
-      "areaName": "Mouillage extérieur sud Loire",
-      "cargoContext": "Position réelle captée depuis le signal public du navire ; détails statiques conservés par MMSI quand le flux les transmet.",
-      "sourceConfidence": "high"
-    },
-    {
-      "mmsi": "227914510",
-      "imo": "",
-      "name": "HERMIONE",
+      "name": "MMSI 227004860",
       "flagCountry": "France",
       "flagCode": "FR",
       "vesselType": "Navire AIS",
@@ -194,7 +134,7 @@
       "grossTonnage": 0,
       "speedKnots": 0,
       "headingDeg": 0,
-      "courseDeg": null,
+      "courseDeg": 0,
       "navStatus": "Immobile ou très lent",
       "statusGroup": "Anchored",
       "destination": "Non déclarée",
@@ -204,20 +144,20 @@
       },
       "anchorStartedAt": null,
       "position": {
-        "lat": 47.25792,
-        "lon": -2.34926
+        "lat": 47.273606666666666,
+        "lon": -2.2006183333333333
       },
-      "updatedAt": "2026-10-10 00:20:07.450580987 +0000 UTC",
-      "areaName": "Approche Saint-Nazaire",
+      "updatedAt": "2026-10-10 06:19:50.132259944 +0000 UTC",
+      "areaName": "Estuaire de la Loire / Saint-Nazaire",
       "cargoContext": "Position réelle captée depuis le signal public du navire ; détails statiques conservés par MMSI quand le flux les transmet.",
       "sourceConfidence": "high"
     },
     {
-      "mmsi": "227452780",
+      "mmsi": "257732580",
       "imo": "",
-      "name": "MAHINA",
-      "flagCountry": "France",
-      "flagCode": "FR",
+      "name": "MMSI 257732580",
+      "flagCountry": "Norway",
+      "flagCode": "NO",
       "vesselType": "Navire AIS",
       "vesselTypeGroup": "Other",
       "lengthM": 0,
@@ -232,44 +172,13 @@
         "name": "Non connu",
         "country": "non confirmé"
       },
-      "anchorStartedAt": "2026-10-09T19:35:10Z",
-      "position": {
-        "lat": 47.10867,
-        "lon": -2.11522
-      },
-      "updatedAt": "2026-10-10 00:21:46.63499374 +0000 UTC",
-      "areaName": "Mouillage extérieur sud Loire",
-      "cargoContext": "Position réelle captée depuis le signal public du navire ; détails statiques conservés par MMSI quand le flux les transmet.",
-      "sourceConfidence": "high"
-    },
-    {
-      "mmsi": "211698330",
-      "imo": "",
-      "name": "MMSI 211698330",
-      "flagCountry": "Germany",
-      "flagCode": "DE",
-      "vesselType": "Sailing vessel",
-      "vesselTypeGroup": "Other",
-      "lengthM": 15,
-      "beamM": 5,
-      "grossTonnage": 0,
-      "speedKnots": 0,
-      "headingDeg": 0,
-      "courseDeg": null,
-      "navStatus": "Immobile ou très lent",
-      "statusGroup": "Anchored",
-      "destination": "Non déclarée",
-      "lastDeparturePort": {
-        "name": "Non connu",
-        "country": "non confirmé"
-      },
       "anchorStartedAt": null,
       "position": {
-        "lat": 47.2577,
-        "lon": -2.35022
+        "lat": 47.25875833333334,
+        "lon": -2.347376666666667
       },
-      "updatedAt": "2026-10-10 00:16:52.914377993 +0000 UTC",
-      "areaName": "Baie du Pouliguen / La Baule",
+      "updatedAt": "2026-10-10 06:20:04.615080444 +0000 UTC",
+      "areaName": "Approche Saint-Nazaire",
       "cargoContext": "Position réelle captée depuis le signal public du navire ; détails statiques conservés par MMSI quand le flux les transmet.",
       "sourceConfidence": "high"
     },
@@ -287,7 +196,7 @@
       "grossTonnage": 0,
       "speedKnots": 0,
       "headingDeg": 10,
-      "courseDeg": 9.9,
+      "courseDeg": 328,
       "navStatus": "Non défini",
       "statusGroup": "Anchored",
       "destination": "SEA TRIAL",
@@ -298,44 +207,11 @@
       "eta": "2026-09-11T17:00:00.000Z",
       "anchorStartedAt": "2026-10-07T20:02:41.140695Z",
       "position": {
-        "lat": 47.286825,
-        "lon": -2.1971249999999998
+        "lat": 47.28682833333333,
+        "lon": -2.1971266666666667
       },
-      "updatedAt": "2026-10-10 00:22:00.357705415 +0000 UTC",
+      "updatedAt": "2026-10-10 06:22:42.271965691 +0000 UTC",
       "areaName": "Estuaire de la Loire / Saint-Nazaire",
-      "cargoContext": "Position réelle captée depuis le signal public du navire ; détails statiques conservés par MMSI quand le flux les transmet.",
-      "sourceConfidence": "high"
-    },
-    {
-      "mmsi": "305793000",
-      "imo": "9618848",
-      "name": "RHOGAS",
-      "callSign": "V2FT7  ",
-      "flagCountry": "Antigua and Barbuda",
-      "flagCode": "AG",
-      "vesselType": "Tanker",
-      "vesselTypeGroup": "Tanker",
-      "lengthM": 113,
-      "beamM": 19,
-      "grossTonnage": 0,
-      "speedKnots": 0.2,
-      "headingDeg": 297,
-      "courseDeg": 0,
-      "navStatus": "Au mouillage",
-      "statusGroup": "Anchored",
-      "destination": "FR DON ACHORAGE",
-      "lastDeparturePort": {
-        "name": "Non connu",
-        "country": "non confirmé"
-      },
-      "eta": "2026-10-07T16:00:00.000Z",
-      "anchorStartedAt": "2026-10-09T19:31:35Z",
-      "position": {
-        "lat": 47.136075,
-        "lon": -2.415853333333333
-      },
-      "updatedAt": "2026-10-10 00:19:30.331114089 +0000 UTC",
-      "areaName": "Mouillage extérieur sud Loire",
       "cargoContext": "Position réelle captée depuis le signal public du navire ; détails statiques conservés par MMSI quand le flux les transmet.",
       "sourceConfidence": "high"
     },
@@ -351,10 +227,10 @@
       "lengthM": 138,
       "beamM": 20,
       "grossTonnage": 0,
-      "speedKnots": 0.1,
-      "headingDeg": 294,
-      "courseDeg": 7,
-      "navStatus": "Au mouillage",
+      "speedKnots": 0,
+      "headingDeg": 0,
+      "courseDeg": null,
+      "navStatus": "Immobile ou très lent",
       "statusGroup": "Anchored",
       "destination": "FRNTE",
       "lastDeparturePort": {
@@ -362,29 +238,29 @@
         "country": "non confirmé"
       },
       "eta": "2026-10-09T08:00:00.000Z",
-      "anchorStartedAt": null,
+      "anchorStartedAt": "2026-10-10 00:21:16.618467914 +0000 UTC",
       "position": {
-        "lat": 47.1252,
-        "lon": -2.43821
+        "lat": 47.12358,
+        "lon": -2.44062
       },
-      "updatedAt": "2026-10-10 00:21:16.618467914 +0000 UTC",
+      "updatedAt": "2026-10-10 06:21:10.399406808 +0000 UTC",
       "areaName": "Mouillage extérieur sud Loire",
       "cargoContext": "Position réelle captée depuis le signal public du navire ; détails statiques conservés par MMSI quand le flux les transmet.",
       "sourceConfidence": "high"
     },
     {
-      "mmsi": "255915649",
+      "mmsi": "226340000",
       "imo": "",
-      "name": "SONGA ORION",
-      "flagCountry": "Portugal",
-      "flagCode": "PT",
+      "name": "SANDVIKEN",
+      "flagCountry": "France",
+      "flagCode": "FR",
       "vesselType": "Navire AIS",
       "vesselTypeGroup": "Other",
       "lengthM": 0,
       "grossTonnage": 0,
-      "speedKnots": 0,
-      "headingDeg": 279,
-      "courseDeg": 340.5,
+      "speedKnots": 0.1,
+      "headingDeg": 6,
+      "courseDeg": 281,
       "navStatus": "Au mouillage",
       "statusGroup": "Anchored",
       "destination": "Non déclarée",
@@ -394,41 +270,44 @@
       },
       "anchorStartedAt": null,
       "position": {
-        "lat": 47.108851666666666,
-        "lon": -2.4159816666666667
+        "lat": 47.13309666666667,
+        "lon": -2.43406
       },
-      "updatedAt": "2026-10-10 00:21:23.732188996 +0000 UTC",
+      "updatedAt": "2026-10-10 06:20:35.899033373 +0000 UTC",
       "areaName": "Mouillage extérieur sud Loire",
       "cargoContext": "Position réelle captée depuis le signal public du navire ; détails statiques conservés par MMSI quand le flux les transmet.",
       "sourceConfidence": "high"
     },
     {
-      "mmsi": "227950210",
-      "imo": "",
-      "name": "VALDOMAR",
-      "flagCountry": "France",
-      "flagCode": "FR",
-      "vesselType": "Navire AIS",
-      "vesselTypeGroup": "Other",
-      "lengthM": 0,
+      "mmsi": "255915649",
+      "imo": "9831024",
+      "name": "SONGA ORION",
+      "callSign": "CQ2107 ",
+      "flagCountry": "Portugal",
+      "flagCode": "PT",
+      "vesselType": "Tanker",
+      "vesselTypeGroup": "Tanker",
+      "lengthM": 140,
+      "beamM": 23,
       "grossTonnage": 0,
       "speedKnots": 0,
       "headingDeg": 0,
-      "courseDeg": 360,
+      "courseDeg": null,
       "navStatus": "Immobile ou très lent",
       "statusGroup": "Anchored",
-      "destination": "Non déclarée",
+      "destination": "FRDON",
       "lastDeparturePort": {
         "name": "Non connu",
         "country": "non confirmé"
       },
-      "anchorStartedAt": null,
+      "eta": "2026-10-07T21:00:00.000Z",
+      "anchorStartedAt": "2026-10-10 00:21:23.732188996 +0000 UTC",
       "position": {
-        "lat": 47.258493333333334,
-        "lon": -2.3499416666666666
+        "lat": 47.10703,
+        "lon": -2.4202
       },
-      "updatedAt": "2026-10-10 00:18:31.622653296 +0000 UTC",
-      "areaName": "Approche Saint-Nazaire",
+      "updatedAt": "2026-10-10 06:19:34.689083021 +0000 UTC",
+      "areaName": "Mouillage extérieur sud Loire",
       "cargoContext": "Position réelle captée depuis le signal public du navire ; détails statiques conservés par MMSI quand le flux les transmet.",
       "sourceConfidence": "high"
     },
@@ -443,8 +322,8 @@
       "lengthM": 0,
       "grossTonnage": 0,
       "speedKnots": 0,
-      "headingDeg": 21,
-      "courseDeg": 162.5,
+      "headingDeg": 24,
+      "courseDeg": 210.8,
       "navStatus": "Immobile ou très lent",
       "statusGroup": "Anchored",
       "destination": "Non déclarée",
@@ -452,50 +331,53 @@
         "name": "Non connu",
         "country": "non confirmé"
       },
-      "anchorStartedAt": null,
+      "anchorStartedAt": "2026-10-10 00:17:22.327403916 +0000 UTC",
       "position": {
-        "lat": 47.26792666666667,
-        "lon": -2.2014133333333334
+        "lat": 47.26822166666667,
+        "lon": -2.20124
       },
-      "updatedAt": "2026-10-10 00:17:22.327403916 +0000 UTC",
+      "updatedAt": "2026-10-10 06:17:08.541080715 +0000 UTC",
       "areaName": "Estuaire de la Loire / Saint-Nazaire",
-      "cargoContext": "Position réelle captée depuis le signal public du navire ; détails statiques conservés par MMSI quand le flux les transmet.",
-      "sourceConfidence": "high"
-    },
-    {
-      "mmsi": "311000383",
-      "imo": "9737046",
-      "name": "AFRICAN JAY",
-      "flagCountry": "Bahamas",
-      "flagCode": "BS",
-      "vesselType": "Navire AIS",
-      "vesselTypeGroup": "Other",
-      "lengthM": 0,
-      "grossTonnage": 0,
-      "speedKnots": 10.2,
-      "headingDeg": 210,
-      "courseDeg": 203.4,
-      "navStatus": "En route au moteur",
-      "statusGroup": "Underway",
-      "destination": "Non déclarée",
-      "lastDeparturePort": {
-        "name": "Non connu",
-        "country": "non confirmé"
-      },
-      "anchorStartedAt": null,
-      "position": {
-        "lat": 47.17199,
-        "lon": -2.3056016666666665
-      },
-      "updatedAt": "2026-10-10 00:16:33.285975366 +0000 UTC",
-      "areaName": "Mouillage extérieur sud Loire",
       "cargoContext": "Position réelle captée depuis le signal public du navire ; détails statiques conservés par MMSI quand le flux les transmet.",
       "sourceConfidence": "high"
     },
     {
       "mmsi": "227681520",
-      "imo": "9381926",
+      "imo": "938192600",
       "name": "ANATIFE",
+      "callSign": "FGE8389",
+      "flagCountry": "France",
+      "flagCode": "FR",
+      "vesselType": "Tanker",
+      "vesselTypeGroup": "Tanker",
+      "lengthM": 41,
+      "beamM": 8,
+      "grossTonnage": 0,
+      "speedKnots": 0,
+      "headingDeg": 96,
+      "courseDeg": 320.6,
+      "navStatus": "En route au moteur",
+      "statusGroup": "Underway",
+      "destination": "DONGES",
+      "lastDeparturePort": {
+        "name": "Non connu",
+        "country": "non confirmé"
+      },
+      "eta": "2026-10-09T20:00:00.000Z",
+      "anchorStartedAt": null,
+      "position": {
+        "lat": 47.30556833333333,
+        "lon": -2.0814883333333336
+      },
+      "updatedAt": "2026-10-10 06:22:43.841105992 +0000 UTC",
+      "areaName": "Estuaire de la Loire / Saint-Nazaire",
+      "cargoContext": "Position réelle captée depuis le signal public du navire ; détails statiques conservés par MMSI quand le flux les transmet.",
+      "sourceConfidence": "high"
+    },
+    {
+      "mmsi": "228484600",
+      "imo": "",
+      "name": "AUGUSTIN FRESNEL",
       "flagCountry": "France",
       "flagCode": "FR",
       "vesselType": "Navire AIS",
@@ -503,8 +385,104 @@
       "lengthM": 0,
       "grossTonnage": 0,
       "speedKnots": 0,
-      "headingDeg": 95,
-      "courseDeg": 284.2,
+      "headingDeg": 99,
+      "courseDeg": 201.9,
+      "navStatus": "Amarré",
+      "statusGroup": "Moored",
+      "destination": "Non déclarée",
+      "lastDeparturePort": {
+        "name": "Non connu",
+        "country": "non confirmé"
+      },
+      "anchorStartedAt": null,
+      "position": {
+        "lat": 47.277953333333336,
+        "lon": -2.1998900000000003
+      },
+      "updatedAt": "2026-10-10 06:21:08.668988988 +0000 UTC",
+      "areaName": "Estuaire de la Loire / Saint-Nazaire",
+      "cargoContext": "Position réelle captée depuis le signal public du navire ; détails statiques conservés par MMSI quand le flux les transmet.",
+      "sourceConfidence": "high"
+    },
+    {
+      "mmsi": "305030000",
+      "imo": "9614701",
+      "name": "BBC RHONETAL",
+      "callSign": "V2HH3  ",
+      "flagCountry": "Antigua and Barbuda",
+      "flagCode": "AG",
+      "vesselType": "Cargo",
+      "vesselTypeGroup": "Cargo",
+      "lengthM": 162,
+      "beamM": 23,
+      "grossTonnage": 0,
+      "speedKnots": 0,
+      "headingDeg": 242,
+      "courseDeg": 284.5,
+      "navStatus": "Amarré",
+      "statusGroup": "Moored",
+      "destination": "FR MTX",
+      "lastDeparturePort": {
+        "name": "Non connu",
+        "country": "non confirmé"
+      },
+      "eta": "2026-10-09T16:30:00.000Z",
+      "anchorStartedAt": null,
+      "position": {
+        "lat": 47.29591833333333,
+        "lon": -2.1539833333333336
+      },
+      "updatedAt": "2026-10-10 06:21:12.836345514 +0000 UTC",
+      "areaName": "Estuaire de la Loire / Saint-Nazaire",
+      "cargoContext": "Position réelle captée depuis le signal public du navire ; détails statiques conservés par MMSI quand le flux les transmet.",
+      "sourceConfidence": "high"
+    },
+    {
+      "mmsi": "538008844",
+      "imo": "9875719",
+      "name": "DREAM TERRAX",
+      "callSign": "V7A2822",
+      "flagCountry": "Marshall Islands",
+      "flagCode": "MH",
+      "vesselType": "Tanker",
+      "vesselTypeGroup": "Tanker",
+      "lengthM": 99,
+      "beamM": 17,
+      "grossTonnage": 0,
+      "speedKnots": 0,
+      "headingDeg": 68,
+      "courseDeg": 332.7,
+      "navStatus": "Amarré",
+      "statusGroup": "Moored",
+      "destination": "FRDON",
+      "lastDeparturePort": {
+        "name": "Non connu",
+        "country": "non confirmé"
+      },
+      "eta": "2026-10-08T20:30:00.000Z",
+      "anchorStartedAt": null,
+      "position": {
+        "lat": 47.305535,
+        "lon": -2.0668533333333334
+      },
+      "updatedAt": "2026-10-10 06:19:12.64502167 +0000 UTC",
+      "areaName": "Estuaire de la Loire / Saint-Nazaire",
+      "cargoContext": "Position réelle captée depuis le signal public du navire ; détails statiques conservés par MMSI quand le flux les transmet.",
+      "sourceConfidence": "high"
+    },
+    {
+      "mmsi": "228473800",
+      "imo": "",
+      "name": "ESTIVENT",
+      "flagCountry": "France",
+      "flagCode": "FR",
+      "vesselType": "Navire AIS",
+      "vesselTypeGroup": "Other",
+      "lengthM": 0,
+      "grossTonnage": 0,
+      "speedKnots": 22.2,
+      "headingDeg": 177,
+      "courseDeg": 183.3,
       "navStatus": "En route au moteur",
       "statusGroup": "Underway",
       "destination": "Non déclarée",
@@ -514,89 +492,29 @@
       },
       "anchorStartedAt": null,
       "position": {
-        "lat": 47.305571666666665,
-        "lon": -2.0814916666666665
+        "lat": 47.199245,
+        "lon": -2.607458333333333
       },
-      "updatedAt": "2026-10-10 00:20:09.621184665 +0000 UTC",
-      "areaName": "Estuaire de la Loire / Saint-Nazaire",
-      "cargoContext": "Position réelle captée depuis le signal public du navire ; détails statiques conservés par MMSI quand le flux les transmet.",
-      "sourceConfidence": "high"
-    },
-    {
-      "mmsi": "228025700",
-      "imo": "9383560",
-      "name": "CIUDAD DE CADIZ",
-      "flagCountry": "France",
-      "flagCode": "FR",
-      "vesselType": "Navire AIS",
-      "vesselTypeGroup": "Other",
-      "lengthM": 0,
-      "grossTonnage": 0,
-      "speedKnots": 0,
-      "headingDeg": 263,
-      "courseDeg": 46.6,
-      "navStatus": "Amarré",
-      "statusGroup": "Moored",
-      "destination": "Non déclarée",
-      "lastDeparturePort": {
-        "name": "Non connu",
-        "country": "non confirmé"
-      },
-      "anchorStartedAt": null,
-      "position": {
-        "lat": 47.30513666666666,
-        "lon": -2.1100016666666668
-      },
-      "updatedAt": "2026-10-10 00:20:41.979125812 +0000 UTC",
-      "areaName": "Estuaire de la Loire / Saint-Nazaire",
-      "cargoContext": "Position réelle captée depuis le signal public du navire ; détails statiques conservés par MMSI quand le flux les transmet.",
-      "sourceConfidence": "high"
-    },
-    {
-      "mmsi": "228240900",
-      "imo": "",
-      "name": "F/V REVENGE",
-      "flagCountry": "France",
-      "flagCode": "FR",
-      "vesselType": "Navire AIS",
-      "vesselTypeGroup": "Other",
-      "lengthM": 0,
-      "grossTonnage": 0,
-      "speedKnots": 9,
-      "headingDeg": 158,
-      "courseDeg": 156.5,
-      "navStatus": "En pêche",
-      "statusGroup": "Working",
-      "destination": "Non déclarée",
-      "lastDeparturePort": {
-        "name": "Non connu",
-        "country": "non confirmé"
-      },
-      "anchorStartedAt": null,
-      "position": {
-        "lat": 47.3167,
-        "lon": -2.528115
-      },
-      "updatedAt": "2026-10-10 00:21:16.651802773 +0000 UTC",
+      "updatedAt": "2026-10-10 06:21:40.032379022 +0000 UTC",
       "areaName": "Mouillage extérieur au large de La Baule",
       "cargoContext": "Position réelle captée depuis le signal public du navire ; détails statiques conservés par MMSI quand le flux les transmet.",
       "sourceConfidence": "high"
     },
     {
-      "mmsi": "231875000",
+      "mmsi": "228124900",
       "imo": "",
-      "name": "FURE SKAGEN",
-      "flagCountry": "Faroe Islands",
-      "flagCode": "FO",
+      "name": "F/V EXOCET III",
+      "flagCountry": "France",
+      "flagCode": "FR",
       "vesselType": "Navire AIS",
       "vesselTypeGroup": "Other",
       "lengthM": 0,
       "grossTonnage": 0,
-      "speedKnots": 0,
-      "headingDeg": 68,
-      "courseDeg": 68,
-      "navStatus": "Amarré",
-      "statusGroup": "Moored",
+      "speedKnots": 3,
+      "headingDeg": 0,
+      "courseDeg": 356.1,
+      "navStatus": "En route au moteur",
+      "statusGroup": "Underway",
       "destination": "Non déclarée",
       "lastDeparturePort": {
         "name": "Non connu",
@@ -604,11 +522,11 @@
       },
       "anchorStartedAt": null,
       "position": {
-        "lat": 47.30466166666667,
-        "lon": -2.06978
+        "lat": 47.07350333333333,
+        "lon": -2.6023
       },
-      "updatedAt": "2026-10-10 00:18:45.895427836 +0000 UTC",
-      "areaName": "Estuaire de la Loire / Saint-Nazaire",
+      "updatedAt": "2026-10-10 06:21:19.412590097 +0000 UTC",
+      "areaName": "Sud-ouest de la baie du Pouliguen",
       "cargoContext": "Position réelle captée depuis le signal public du navire ; détails statiques conservés par MMSI quand le flux les transmet.",
       "sourceConfidence": "high"
     },
@@ -637,44 +555,41 @@
       "eta": "2026-10-03T04:00:00.000Z",
       "anchorStartedAt": null,
       "position": {
-        "lat": 47.30281,
-        "lon": -2.12771
+        "lat": 47.302793333333334,
+        "lon": -2.1277316666666666
       },
-      "updatedAt": "2026-10-10 00:20:30.998017156 +0000 UTC",
+      "updatedAt": "2026-10-10 06:17:49.161101651 +0000 UTC",
       "areaName": "Estuaire de la Loire / Saint-Nazaire",
       "cargoContext": "Position réelle captée depuis le signal public du navire ; détails statiques conservés par MMSI quand le flux les transmet.",
       "sourceConfidence": "high"
     },
     {
-      "mmsi": "224876000",
-      "imo": "9187318",
-      "name": "LAUDACE",
-      "callSign": "EAXA",
-      "flagCountry": "Spain",
-      "flagCode": "ES",
-      "vesselType": "Cargo",
-      "vesselTypeGroup": "Cargo",
-      "lengthM": 142,
-      "beamM": 21,
+      "mmsi": "228424700",
+      "imo": "",
+      "name": "INNO'VENT",
+      "flagCountry": "France",
+      "flagCode": "FR",
+      "vesselType": "Navire AIS",
+      "vesselTypeGroup": "Other",
+      "lengthM": 0,
       "grossTonnage": 0,
-      "speedKnots": 0.1,
-      "headingDeg": 51,
-      "courseDeg": 33.7,
-      "navStatus": "Amarré",
-      "statusGroup": "Moored",
-      "destination": "ES VGO",
+      "speedKnots": 21.4,
+      "headingDeg": 183,
+      "courseDeg": 180,
+      "navStatus": "En route au moteur",
+      "statusGroup": "Underway",
+      "destination": "Non déclarée",
       "lastDeparturePort": {
         "name": "Non connu",
         "country": "non confirmé"
       },
-      "eta": "2026-10-11T06:00:00.000Z",
       "anchorStartedAt": null,
       "position": {
-        "lat": 47.291439999999994,
-        "lon": -2.163925
+        "lat": 47.18720833333334,
+        "lon": -2.6087333333333333
       },
-      "updatedAt": "2026-10-10 00:21:36.061787645 +0000 UTC",
-      "areaName": "Estuaire de la Loire / Saint-Nazaire",
+      "updatedAt": "2026-10-10 06:22:18.021251103 +0000 UTC",
+      "areaName": "Mouillage extérieur au large de La Baule",
       "cargoContext": "Position réelle captée depuis le signal public du navire ; détails statiques conservés par MMSI quand le flux les transmet.",
       "sourceConfidence": "high"
     },
@@ -691,8 +606,8 @@
       "beamM": 22,
       "grossTonnage": 0,
       "speedKnots": 0,
-      "headingDeg": 258,
-      "courseDeg": 311,
+      "headingDeg": 257,
+      "courseDeg": 7.1,
       "navStatus": "Amarré",
       "statusGroup": "Moored",
       "destination": "FRMTX",
@@ -703,51 +618,18 @@
       "eta": "2026-10-06T18:00:00.000Z",
       "anchorStartedAt": null,
       "position": {
-        "lat": 47.30412666666667,
-        "lon": -2.120973333333333
+        "lat": 47.30413333333333,
+        "lon": -2.12098
       },
-      "updatedAt": "2026-10-10 00:20:42.089178174 +0000 UTC",
+      "updatedAt": "2026-10-10 06:20:45.113707571 +0000 UTC",
       "areaName": "Estuaire de la Loire / Saint-Nazaire",
       "cargoContext": "Position réelle captée depuis le signal public du navire ; détails statiques conservés par MMSI quand le flux les transmet.",
       "sourceConfidence": "high"
     },
     {
-      "mmsi": "228160900",
-      "imo": "9234408",
-      "name": "SAMUEL DE CHAMPLAIN",
-      "callSign": "FQCF",
-      "flagCountry": "France",
-      "flagCode": "FR",
-      "vesselType": "AIS type 90",
-      "vesselTypeGroup": "Other",
-      "lengthM": 117,
-      "beamM": 24,
-      "grossTonnage": 0,
-      "speedKnots": 0,
-      "headingDeg": 191,
-      "courseDeg": 133.8,
-      "navStatus": "Amarré",
-      "statusGroup": "Moored",
-      "destination": "DREDGING OPERATION",
-      "lastDeparturePort": {
-        "name": "Non connu",
-        "country": "non confirmé"
-      },
-      "eta": "2026-10-09T08:00:00.000Z",
-      "anchorStartedAt": null,
-      "position": {
-        "lat": 47.28352666666667,
-        "lon": -2.199613333333333
-      },
-      "updatedAt": "2026-10-10 00:18:23.741124694 +0000 UTC",
-      "areaName": "Estuaire de la Loire / Saint-Nazaire",
-      "cargoContext": "Position réelle captée depuis le signal public du navire ; détails statiques conservés par MMSI quand le flux les transmet.",
-      "sourceConfidence": "high"
-    },
-    {
-      "mmsi": "227671950",
+      "mmsi": "228210780",
       "imo": "",
-      "name": "VAL D'AVEL",
+      "name": "PIERRE BOUGUER",
       "flagCountry": "France",
       "flagCode": "FR",
       "vesselType": "Navire AIS",
@@ -755,8 +637,38 @@
       "lengthM": 0,
       "grossTonnage": 0,
       "speedKnots": 0,
-      "headingDeg": 0,
-      "courseDeg": 360,
+      "headingDeg": 129,
+      "courseDeg": 289.4,
+      "navStatus": "En route au moteur",
+      "statusGroup": "Underway",
+      "destination": "Non déclarée",
+      "lastDeparturePort": {
+        "name": "Non connu",
+        "country": "non confirmé"
+      },
+      "anchorStartedAt": null,
+      "position": {
+        "lat": 47.29985166666667,
+        "lon": -2.5171216666666667
+      },
+      "updatedAt": "2026-10-10 06:20:33.516731451 +0000 UTC",
+      "areaName": "Mouillage extérieur au large de La Baule",
+      "cargoContext": "Position réelle captée depuis le signal public du navire ; détails statiques conservés par MMSI quand le flux les transmet.",
+      "sourceConfidence": "high"
+    },
+    {
+      "mmsi": "538005406",
+      "imo": "",
+      "name": "STI FINCHLEY",
+      "flagCountry": "Marshall Islands",
+      "flagCode": "MH",
+      "vesselType": "Navire AIS",
+      "vesselTypeGroup": "Other",
+      "lengthM": 0,
+      "grossTonnage": 0,
+      "speedKnots": 0,
+      "headingDeg": 269,
+      "courseDeg": 347.2,
       "navStatus": "Amarré",
       "statusGroup": "Moored",
       "destination": "Non déclarée",
@@ -766,40 +678,43 @@
       },
       "anchorStartedAt": null,
       "position": {
-        "lat": 47.29087666666667,
-        "lon": -2.032426666666667
+        "lat": 47.30574166666667,
+        "lon": -2.096941666666667
       },
-      "updatedAt": "2026-10-10 00:21:47.198122358 +0000 UTC",
+      "updatedAt": "2026-10-10 06:19:14.224366232 +0000 UTC",
       "areaName": "Estuaire de la Loire / Saint-Nazaire",
       "cargoContext": "Position réelle captée depuis le signal public du navire ; détails statiques conservés par MMSI quand le flux les transmet.",
       "sourceConfidence": "high"
     },
     {
       "mmsi": "228365800",
-      "imo": "",
+      "imo": "9867762",
       "name": "VB MIRAGE",
+      "callSign": "FLUP   ",
       "flagCountry": "France",
       "flagCode": "FR",
-      "vesselType": "Navire AIS",
-      "vesselTypeGroup": "Other",
-      "lengthM": 0,
+      "vesselType": "Service vessel",
+      "vesselTypeGroup": "Service",
+      "lengthM": 30,
+      "beamM": 10,
       "grossTonnage": 0,
-      "speedKnots": 0,
+      "speedKnots": 0.1,
       "headingDeg": 25,
-      "courseDeg": 325.9,
+      "courseDeg": 25.6,
       "navStatus": "Amarré",
       "statusGroup": "Moored",
-      "destination": "Non déclarée",
+      "destination": "SAINTNAZAIRE",
       "lastDeparturePort": {
         "name": "Non connu",
         "country": "non confirmé"
       },
+      "eta": "2027-01-01T00:00:00.000Z",
       "anchorStartedAt": null,
       "position": {
-        "lat": 47.26764166666667,
-        "lon": -2.2015883333333335
+        "lat": 47.26764333333333,
+        "lon": -2.2016050000000003
       },
-      "updatedAt": "2026-10-10 00:17:19.626278848 +0000 UTC",
+      "updatedAt": "2026-10-10 06:20:08.13203391 +0000 UTC",
       "areaName": "Estuaire de la Loire / Saint-Nazaire",
       "cargoContext": "Position réelle captée depuis le signal public du navire ; détails statiques conservés par MMSI quand le flux les transmet.",
       "sourceConfidence": "high"
@@ -817,8 +732,8 @@
       "beamM": 10,
       "grossTonnage": 0,
       "speedKnots": 0,
-      "headingDeg": 231,
-      "courseDeg": 334.7,
+      "headingDeg": 276,
+      "courseDeg": 325.4,
       "navStatus": "En route au moteur",
       "statusGroup": "Underway",
       "destination": "SAINT NAZAIRE",
@@ -828,10 +743,10 @@
       },
       "anchorStartedAt": null,
       "position": {
-        "lat": 47.28742,
-        "lon": -2.17075
+        "lat": 47.30549333333333,
+        "lon": -2.0826766666666665
       },
-      "updatedAt": "2026-10-10 00:20:16.920956592 +0000 UTC",
+      "updatedAt": "2026-10-10 06:22:33.461888536 +0000 UTC",
       "areaName": "Estuaire de la Loire / Saint-Nazaire",
       "cargoContext": "Position réelle captée depuis le signal public du navire ; détails statiques conservés par MMSI quand le flux les transmet.",
       "sourceConfidence": "high"
@@ -850,7 +765,7 @@
       "grossTonnage": 0,
       "speedKnots": 0.1,
       "headingDeg": 0,
-      "courseDeg": 283.1,
+      "courseDeg": 309.5,
       "navStatus": "En route au moteur",
       "statusGroup": "Underway",
       "destination": "SAINT-NAZAIRE",
@@ -861,10 +776,10 @@
       "eta": "2026-10-12T11:00:00.000Z",
       "anchorStartedAt": null,
       "position": {
-        "lat": 47.26823,
-        "lon": -2.20119
+        "lat": 47.26794,
+        "lon": -2.20137
       },
-      "updatedAt": "2026-10-10 00:21:31.852647749 +0000 UTC",
+      "updatedAt": "2026-10-10 06:21:34.901590126 +0000 UTC",
       "areaName": "Estuaire de la Loire / Saint-Nazaire",
       "cargoContext": "Position réelle captée depuis le signal public du navire ; détails statiques conservés par MMSI quand le flux les transmet.",
       "sourceConfidence": "high"
@@ -881,7 +796,7 @@
       "grossTonnage": 0,
       "speedKnots": 0,
       "headingDeg": 0,
-      "courseDeg": 259.7,
+      "courseDeg": 293.6,
       "navStatus": "En route au moteur",
       "statusGroup": "Underway",
       "destination": "Non déclarée",
@@ -891,10 +806,10 @@
       },
       "anchorStartedAt": null,
       "position": {
-        "lat": 47.28698,
-        "lon": -2.1988166666666666
+        "lat": 47.286965,
+        "lon": -2.1988316666666665
       },
-      "updatedAt": "2026-10-10 00:21:02.989493708 +0000 UTC",
+      "updatedAt": "2026-10-10 06:22:56.524359899 +0000 UTC",
       "areaName": "Estuaire de la Loire / Saint-Nazaire",
       "cargoContext": "Position réelle captée depuis le signal public du navire ; détails statiques conservés par MMSI quand le flux les transmet.",
       "sourceConfidence": "high"
@@ -912,8 +827,8 @@
       "beamM": 10,
       "grossTonnage": 0,
       "speedKnots": 0,
-      "headingDeg": 242,
-      "courseDeg": 333.4,
+      "headingDeg": 245,
+      "courseDeg": 316.6,
       "navStatus": "En route au moteur",
       "statusGroup": "Underway",
       "destination": "ST NAZAIRE",
@@ -924,10 +839,10 @@
       "eta": "2027-05-30T15:00:00.000Z",
       "anchorStartedAt": null,
       "position": {
-        "lat": 47.29813166666667,
-        "lon": -2.1471666666666667
+        "lat": 47.298115,
+        "lon": -2.147165
       },
-      "updatedAt": "2026-10-10 00:21:45.568024819 +0000 UTC",
+      "updatedAt": "2026-10-10 06:22:49.865501496 +0000 UTC",
       "areaName": "Estuaire de la Loire / Saint-Nazaire",
       "cargoContext": "Position réelle captée depuis le signal public du navire ; détails statiques conservés par MMSI quand le flux les transmet.",
       "sourceConfidence": "high"
