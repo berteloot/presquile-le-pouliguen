@@ -168,15 +168,32 @@ function extractHighlights(pages) {
   return highlights;
 }
 
+// padel-labaule.fr answers 504 now and then (11 Nov 2026 failed the whole run on one).
+// A 5xx or a network error is tried again; a 4xx is a real answer and fails at once.
+const RETRY_WAITS_MS = process.env.PADEL_RETRY_WAITS_MS
+  ? process.env.PADEL_RETRY_WAITS_MS.split(",").map(Number)
+  : [5000, 20000];
+
 async function fetchJson(url) {
-  const response = await fetch(url, {
-    headers: {
-      accept: "application/json",
-      "user-agent": "LePouliguenLive/1.0 (+https://presquile-le-pouliguen.berteloot.org)",
-    },
-  });
-  if (!response.ok) throw new Error(`${url} returned HTTP ${response.status}`);
-  return response.json();
+  for (let attempt = 0; ; attempt += 1) {
+    let status = 0;
+    try {
+      const response = await fetch(url, {
+        headers: {
+          accept: "application/json",
+          "user-agent": "LePouliguenLive/1.0 (+https://presquile-le-pouliguen.berteloot.org)",
+        },
+      });
+      status = response.status;
+      if (response.ok) return await response.json();
+      throw new Error(`${url} returned HTTP ${status}`);
+    } catch (error) {
+      const final = attempt >= RETRY_WAITS_MS.length || (status >= 400 && status < 500);
+      if (final) throw error;
+      console.warn(`${error.message}, retrying`);
+      await new Promise((resolve) => setTimeout(resolve, RETRY_WAITS_MS[attempt]));
+    }
+  }
 }
 
 async function main() {
